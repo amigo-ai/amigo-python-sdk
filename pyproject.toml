@@ -21,7 +21,7 @@ dependencies = [
 gen-models = "scripts.gen_models:main"
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff", "datamodel-code-generator[http]"]
+dev = ["pytest", "pytest-asyncio", "python-dotenv", "ruff", "datamodel-code-generator[http]"]
 
 [tool.hatch.version]
 path = "src/__init__.py"
