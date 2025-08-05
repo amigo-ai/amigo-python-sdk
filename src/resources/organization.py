@@ -1,4 +1,3 @@
-from typing import Optional
 from src.generated.model import SrcAppEndpointsOrganizationGetOrganizationResponse
 from src.http_client import AmigoHttpClient
 
@@ -6,26 +5,18 @@ from src.http_client import AmigoHttpClient
 class OrganizationResource:
     """Organization resource for Amigo API operations."""
 
-    def __init__(self, http_client: AmigoHttpClient) -> None:
+    def __init__(self, http_client: AmigoHttpClient, organization_id: str) -> None:
         self._http = http_client
+        self._organization_id = organization_id
 
-    async def get(
-        self, organization_id: Optional[str] = None
-    ) -> SrcAppEndpointsOrganizationGetOrganizationResponse:
+    async def get(self) -> SrcAppEndpointsOrganizationGetOrganizationResponse:
         """
-        Get organization details.
-
-        Args:
-            organization_id: Organization ID to fetch.
-
-        Returns:
-            Organization data in JSON format.
+        Get the details of an organization.
         """
-        # Use provided organization_id or fall back to client config
-        org_id = organization_id or self._http._cfg.organization_id
-
         # Make the API request
-        response = await self._http.request("GET", f"/v1/{org_id}/organization/")
+        response = await self._http.request(
+            "GET", f"/v1/{self._organization_id}/organization/"
+        )
 
         # Parse response as pydantic model
         return SrcAppEndpointsOrganizationGetOrganizationResponse.model_validate_json(

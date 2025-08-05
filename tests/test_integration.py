@@ -1,6 +1,9 @@
 import os
 import pytest
-from src.generated.model import SrcAppEndpointsOrganizationGetOrganizationResponse
+from src.generated.model import (
+    SrcAppEndpointsOrganizationGetOrganizationResponse,
+    SrcAppEndpointsServiceGetServicesResponse,
+)
 from src.sdk_client import AmigoClient
 from src.config import AmigoConfig
 from src.errors import AuthenticationError
@@ -43,7 +46,15 @@ class TestOrganizationIntegration:
 
         return {var: os.getenv(var) for var in required_vars}
 
-    async def test_get_organization_with_env_vars(self):
+    async def test_get_services(self):
+        """Test getting services."""
+        async with AmigoClient() as client:
+            services = await client.service.get_services()
+
+            assert services is not None
+            assert isinstance(services, SrcAppEndpointsServiceGetServicesResponse)
+
+    async def test_get_organization(self):
         """Test getting organization details using environment variables for config."""
 
         # Create client using environment variables

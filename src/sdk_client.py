@@ -3,6 +3,7 @@ from typing import Any, Optional
 from src.config import AmigoConfig
 from src.http_client import AmigoHttpClient
 from src.resources.organization import OrganizationResource
+from src.resources.service import ServiceResource
 
 
 class AmigoClient:
@@ -60,7 +61,8 @@ class AmigoClient:
 
         # Initialize HTTP client and resources
         self._http = AmigoHttpClient(self._cfg, **httpx_kwargs)
-        self._organization = OrganizationResource(self._http)
+        self._organization = OrganizationResource(self._http, self._cfg.organization_id)
+        self._service = ServiceResource(self._http, self._cfg.organization_id)
 
     @property
     def config(self) -> AmigoConfig:
@@ -71,6 +73,11 @@ class AmigoClient:
     def organization(self) -> OrganizationResource:
         """Access organization resource."""
         return self._organization
+
+    @property
+    def service(self) -> ServiceResource:
+        """Access service resource."""
+        return self._service
 
     async def aclose(self) -> None:
         """Close the HTTP client."""
