@@ -1,5 +1,157 @@
-# Amigo TypeScript SDK
+# Amigo Python SDK
 
-[![Tests](https://github.com/amigo-ai/amigo-typescript-sdk/actions/workflows/test.yml/badge.svg)](https://github.com/amigo-ai/amigo-python-sdk/actions/workflows/test.yml)
-[![codecov](https://codecov.io/gh/amigo-ai/amigo-python-sdk/graph/badge.svg?token=1A7KVPV9ZR)](https://codecov.io/gh/amigo-ai/amigo-python-sdk)
+[![Tests](https://github.com/amigo-ai/amigo-python-sdk/actions/workflows/test.yml/badge.svg)](https://github.com/amigo-ai/amigo-python-sdk/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/amigo-ai/amigo-python-sdk/graph/badge.svg?token=YOUR_TOKEN_HERE)](https://codecov.io/gh/amigo-ai/amigo-python-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+The official Python SDK for the Amigo API, providing a simple and intuitive interface to interact with Amigo's AI services.
+
+## Installation
+
+Install the SDK using pip:
+
+```bash
+pip install amigo-python-sdk
+```
+
+Or add it to your requirements.txt:
+
+```txt
+amigo-python-sdk
+```
+
+## Quick Start
+
+```python
+import asyncio
+from amigo_python_sdk import AmigoClient
+
+# Initialize the client
+client = AmigoClient(
+    api_key="your-api-key",
+    api_key_id="your-api-key-id",
+    user_id="user-id",
+    org_id="your-organization-id",
+)
+
+# Get organization details
+async def example():
+    try:
+        async with client:
+            organization = await client.organizations.get_organization("your-org-id")
+            print("Organization:", organization)
+    except Exception as error:
+        print("Error:", error)
+
+# Run the example
+asyncio.run(example())
+```
+
+## Configuration
+
+The SDK requires the following configuration parameters:
+
+| Parameter    | Type | Required | Description                                                    |
+| ------------ | ---- | -------- | -------------------------------------------------------------- |
+| `api_key`    | str  | ✅       | API key from Amigo dashboard                                   |
+| `api_key_id` | str  | ✅       | API key ID from Amigo dashboard                                |
+| `user_id`    | str  | ✅       | User ID on whose behalf the request is made                    |
+| `org_id`     | str  | ✅       | Your organization ID                                           |
+| `base_url`   | str  | ❌       | Base URL of the Amigo API (defaults to `https://api.amigo.ai`) |
+
+### Environment Variables
+
+You can also configure the SDK using environment variables:
+
+```bash
+export AMIGO_API_KEY="your-api-key"
+export AMIGO_API_KEY_ID="your-api-key-id"
+export AMIGO_USER_ID="user-id"
+export AMIGO_ORG_ID="your-organization-id"
+export AMIGO_BASE_URL="https://api.amigo.ai"  # optional
+```
+
+Then initialize the client without parameters:
+
+```python
+from amigo_python_sdk import AmigoClient
+
+# Automatically loads from environment variables
+client = AmigoClient()
+```
+
+### Using .env Files
+
+Create a `.env` file in your project root:
+
+```env
+AMIGO_API_KEY=your-api-key
+AMIGO_API_KEY_ID=your-api-key-id
+AMIGO_USER_ID=user-id
+AMIGO_ORG_ID=your-organization-id
+```
+
+The SDK will automatically load these variables.
+
+### Getting Your API Credentials
+
+1. **API Key & API Key ID**: Generate these from your Amigo admin dashboard or programmatically using the API
+2. **Organization ID**: Found in your Amigo dashboard URL or organization settings
+3. **User ID**: The ID of the user you want to impersonate for API calls
+
+For detailed instructions on generating API keys, see the [Authentication Guide](https://docs.amigo.ai/developer-guide).
+
+## Available Resources
+
+The SDK provides access to the following resources:
+
+- **Organizations**: Manage organization settings and information
+- **Services**: Interact with Amigo services and AI capabilities
+
+## Error Handling
+
+The SDK provides typed error handling:
+
+```python
+from amigo_python_sdk import AmigoClient
+from amigo_python_sdk.errors import (
+    AuthenticationError,
+    NotFoundError,
+    BadRequestError,
+    ValidationError
+)
+
+async def example_with_error_handling():
+    client = AmigoClient()
+
+    try:
+        async with client:
+            result = await client.organizations.get_organization("org-id")
+    except AuthenticationError as error:
+        print("Authentication failed:", error)
+    except NotFoundError as error:
+        print("Resource not found:", error)
+    except BadRequestError as error:
+        print("Bad request:", error)
+    except ValidationError as error:
+        print("Validation error:", error)
+    except Exception as error:
+        print("Unexpected error:", error)
+```
+
+## Development
+
+For detailed development setup, testing, and contribution guidelines, see [DEVELOPMENT.md](DEVELOPMENT.md).
+
+## Documentation
+
+- **Developer Guide**: [https://docs.amigo.ai/developer-guide](https://docs.amigo.ai/developer-guide)
+- **API Reference**: [https://docs.amigo.ai/api-reference](https://docs.amigo.ai/api-reference)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For questions, issues, or feature requests, please visit our [GitHub repository](https://github.com/amigo-ai/amigo-python-sdk) or contact support through the Amigo dashboard.
