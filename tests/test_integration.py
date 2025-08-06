@@ -9,6 +9,7 @@ from src.config import AmigoConfig
 from src.errors import AuthenticationError
 
 
+@pytest.mark.integration
 class TestOrganizationIntegration:
     """Integration tests for Amigo API.
 

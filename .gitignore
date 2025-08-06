@@ -7,3 +7,10 @@ __pycache__
 .vscode
 
 src/generated
+
+dist/
+
+# Coverage files
+htmlcov/
+coverage.xml
+.coverage
