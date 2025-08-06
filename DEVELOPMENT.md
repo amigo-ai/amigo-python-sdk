@@ -31,9 +31,39 @@ ruff format --check .     # Check if code is formatted correctly
 pytest                    # Run tests (unit tests only)
 pytest --cov=src --cov-report=xml --cov-report=term  # Run tests with coverage
 
-# Generate models (if needed)
+# Model management
 gen-models                # Generate Pydantic models from API spec
 ```
+
+## 🏗 Model Generation
+
+The SDK uses generated Pydantic models from the Amigo API OpenAPI specification.
+
+### **When to Regenerate Models:**
+
+- API schema has been updated
+- New endpoints or models are available
+- Before major releases
+
+### **How to Update Models:**
+
+```bash
+# Regenerate models from latest API spec
+gen-models
+
+# Check what changed
+git diff src/generated/model.py
+
+# Run tests to ensure compatibility
+check
+```
+
+### **Model Management Strategy:**
+
+- ✅ **Models are committed** to the repository for stability
+- ✅ **CI doesn't regenerate** - tests the same models you develop with
+- ✅ **Manual regeneration** when needed via `gen-models`
+- ✅ **Version controlled** - can see model changes in PRs
 
 ## 🛠 IDE/Editor Setup for Automatic Linting & Formatting
 
@@ -137,6 +167,14 @@ Ruff handles import sorting automatically:
 check --fix  # This will reorganize imports
 ```
 
+### Model import errors
+
+If you see `ModuleNotFoundError: No module named 'src.generated'`:
+
+```bash
+gen-models  # Regenerate the models
+```
+
 ## 📊 Coverage Reports
 
 After running tests with coverage, you can view detailed coverage reports:
@@ -181,6 +219,12 @@ check --fix
 check --fast
 ```
 
+### Update models and test:
+
+```bash
+gen-models && check
+```
+
 ### Full development setup from scratch:
 
 ```bash
@@ -194,3 +238,4 @@ python -m venv .venv && source .venv/bin/activate && pip install -e ".[dev]"
 - **Use `check`** (full) before pushing to ensure everything passes CI
 - **IDE auto-formatting** handles most formatting automatically
 - **VS Code settings** already configured for optimal workflow
+- **Regenerate models** before major releases or when API changes
