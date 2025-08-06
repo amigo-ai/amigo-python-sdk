@@ -1,13 +1,13 @@
 """Shared test helpers for resource tests."""
 
-from datetime import datetime, timezone, timedelta
-from unittest.mock import Mock, patch
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
+from unittest.mock import Mock, patch
 
 from src.generated.model import (
+    ServiceInstance,
     SrcAppEndpointsOrganizationGetOrganizationResponse,
     SrcAppEndpointsServiceGetServicesResponse,
-    ServiceInstance,
 )
 
 

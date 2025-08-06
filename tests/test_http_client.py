@@ -1,10 +1,11 @@
-import pytest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
+import pytest
+
 from src.config import AmigoConfig
-from src.http_client import AmigoHttpClient
 from src.errors import AuthenticationError, BadRequestError
+from src.http_client import AmigoHttpClient
 
 
 @pytest.fixture

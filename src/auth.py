@@ -1,7 +1,8 @@
 import httpx
+
 from src.config import AmigoConfig
-from src.generated.model import SrcAppEndpointsUserSignInWithApiKeyResponse
 from src.errors import AuthenticationError
+from src.generated.model import SrcAppEndpointsUserSignInWithApiKeyResponse
 
 
 async def sign_in_with_api_key(

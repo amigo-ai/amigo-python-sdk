@@ -1,7 +1,6 @@
 import pytest
 from dotenv import load_dotenv
 
-
 # Load environment variables from .env file for testing
 load_dotenv()
 

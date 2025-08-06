@@ -1,12 +1,14 @@
 import os
+
 import pytest
+
+from src.config import AmigoConfig
+from src.errors import AuthenticationError
 from src.generated.model import (
     SrcAppEndpointsOrganizationGetOrganizationResponse,
     SrcAppEndpointsServiceGetServicesResponse,
 )
 from src.sdk_client import AmigoClient
-from src.config import AmigoConfig
-from src.errors import AuthenticationError
 
 
 @pytest.mark.integration

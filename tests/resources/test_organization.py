@@ -1,12 +1,12 @@
 import pytest
 
 from src.config import AmigoConfig
-from src.http_client import AmigoHttpClient
-from src.resources.organization import OrganizationResource
 from src.errors import NotFoundError
 from src.generated.model import SrcAppEndpointsOrganizationGetOrganizationResponse
+from src.http_client import AmigoHttpClient
+from src.resources.organization import OrganizationResource
 
-from .helpers import mock_http_request, create_organization_response_data
+from .helpers import create_organization_response_data, mock_http_request
 
 
 @pytest.fixture

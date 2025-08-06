@@ -1,7 +1,7 @@
 from pathlib import Path
+
 import httpx
-from datamodel_code_generator import InputFileType, generate
-from datamodel_code_generator import DataModelType
+from datamodel_code_generator import DataModelType, InputFileType, generate
 
 
 def main() -> None:

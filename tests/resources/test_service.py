@@ -1,12 +1,12 @@
 import pytest
 
 from src.config import AmigoConfig
-from src.http_client import AmigoHttpClient
-from src.resources.service import ServiceResource
 from src.errors import NotFoundError
 from src.generated.model import SrcAppEndpointsServiceGetServicesResponse
+from src.http_client import AmigoHttpClient
+from src.resources.service import ServiceResource
 
-from .helpers import mock_http_request, create_services_response_data
+from .helpers import create_services_response_data, mock_http_request
 
 
 @pytest.fixture
@@ -43,7 +43,7 @@ class TestServiceResource:
             assert result.services[0].id == "service-1"
             assert result.services[0].name == "Customer Support Bot"
             assert result.services[1].id == "service-2"
-            assert result.has_more == False
+            assert not result.has_more
             assert result.continuation_token is None
 
     @pytest.mark.asyncio

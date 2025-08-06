@@ -1,5 +1,6 @@
-import pytest
 from datetime import datetime, timedelta
+
+import pytest
 
 from src.auth import sign_in_with_api_key
 from src.config import AmigoConfig

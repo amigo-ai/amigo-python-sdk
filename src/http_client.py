@@ -2,6 +2,7 @@ import datetime as dt
 from typing import Any, Optional
 
 import httpx
+
 from src.auth import sign_in_with_api_key
 from src.config import AmigoConfig
 from src.errors import AuthenticationError, raise_for_status

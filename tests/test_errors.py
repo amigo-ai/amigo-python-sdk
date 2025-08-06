@@ -1,12 +1,13 @@
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 from src.errors import (
     AmigoError,
     AuthenticationError,
     BadRequestError,
-    ValidationError,
     ServerError,
+    ValidationError,
     get_error_class_for_status_code,
     raise_for_status,
 )
