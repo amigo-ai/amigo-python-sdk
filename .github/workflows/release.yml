@@ -92,18 +92,16 @@ jobs:
       - name: Upload to TestPyPI
         if: ${{ !inputs.dry_run && !inputs.production }}
         env:
-          HATCH_INDEX_USER: __token__
-          HATCH_INDEX_AUTH: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
         run: |
           echo "🔄 Uploading to TestPyPI..."
-          hatch publish --repo https://test.pypi.org/legacy/
+          hatch publish --repo test
           echo "✅ Package uploaded to TestPyPI"
 
       - name: Upload to PyPI
         if: ${{ !inputs.dry_run && inputs.production }}
         env:
-          HATCH_INDEX_USER: __token__
-          HATCH_INDEX_AUTH: ${{ secrets.PYPI_API_TOKEN }}
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         run: |
           echo "🔄 Uploading to PyPI..."
           hatch publish
