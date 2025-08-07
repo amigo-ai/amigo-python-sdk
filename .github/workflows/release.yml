@@ -23,6 +23,9 @@ on:
         default: false
         type: boolean
 
+permissions:
+  contents: write
+
 jobs:
   # Reuse the existing test workflow
   test:
