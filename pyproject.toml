@@ -39,6 +39,16 @@ path = "src/__init__.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/"]
 
+[tool.hatch.publish.index]
+url = "https://upload.pypi.org/legacy/"
+user = "__token__"
+auth = "env:PYPI_API_TOKEN"
+
+[tool.hatch.publish.index.test]
+url = "https://test.pypi.org/legacy/"
+user = "__token__"
+auth = "env:TEST_PYPI_API_TOKEN"
+
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = [
