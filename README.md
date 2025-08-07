@@ -141,7 +141,7 @@ async def example_with_error_handling():
 
 ## Development
 
-For detailed development setup, testing, and contribution guidelines, see [DEVELOPMENT.md](DEVELOPMENT.md).
+For detailed development setup, testing, and contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Documentation
 
