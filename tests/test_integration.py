@@ -165,10 +165,40 @@ class TestOrganizationIntegration:
             assert agent_version is not None
             assert isinstance(agent_version, OrganizationCreateAgentVersionResponse)
 
+            # After creating a version, verify it shows up in get_agent_versions
+            from src.generated.model import (
+                GetAgentVersionsParametersQuery,
+                OrganizationGetAgentVersionsResponse,
+            )
+
+            versions_resp = await client.organization.get_agent_versions(
+                agent_id=agent_id,
+                params=GetAgentVersionsParametersQuery(),
+            )
+
+            assert versions_resp is not None
+            assert isinstance(versions_resp, OrganizationGetAgentVersionsResponse)
+            assert any(v.id == agent_version.id for v in versions_resp.agent_versions)
+
     async def test_delete_agent(self, agent_id):
         """Test deleting an agent."""
         async with AmigoClient() as client:
             await client.organization.delete_agent(agent_id=agent_id)
+
+    async def test_get_agents(self):
+        """Test listing agents for the organization."""
+        from src.generated.model import (
+            GetAgentsParametersQuery,
+            OrganizationGetAgentsResponse,
+        )
+
+        async with AmigoClient() as client:
+            resp = await client.organization.get_agents(
+                params=GetAgentsParametersQuery()
+            )
+
+            assert resp is not None
+            assert isinstance(resp, OrganizationGetAgentsResponse)
 
     async def test_invalid_credentials_raises_authentication_error(self):
         """Test that invalid credentials raise appropriate authentication errors."""
