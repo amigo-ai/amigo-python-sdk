@@ -41,7 +41,7 @@ class OrganizationResource:
         response = await self._http.request(
             "POST",
             f"/v1/{self._organization_id}/organization/agent",
-            json=body.model_dump(),
+            json=body.model_dump(mode="json", exclude_none=True),
         )
 
         return OrganizationCreateAgentResponse.model_validate_json(response.text)
@@ -55,11 +55,14 @@ class OrganizationResource:
         """
         Create a version of an agent.
         """
+
         response = await self._http.request(
             "POST",
             f"/v1/{self._organization_id}/organization/agent/{agent_id}/",
-            json=body.model_dump(),
-            params=params.model_dump() if params else None,
+            json=body.model_dump(mode="json", exclude_none=True),
+            params=(
+                params.model_dump(mode="json", exclude_none=True) if params else None
+            ),
         )
 
         return OrganizationCreateAgentVersionResponse.model_validate_json(response.text)
@@ -73,7 +76,7 @@ class OrganizationResource:
         response = await self._http.request(
             "GET",
             f"/v1/{self._organization_id}/organization/agent",
-            params=params.model_dump(),
+            params=params.model_dump(mode="json", exclude_none=True),
         )
 
         return OrganizationGetAgentsResponse.model_validate_json(response.text)
@@ -96,7 +99,7 @@ class OrganizationResource:
         response = await self._http.request(
             "GET",
             f"/v1/{self._organization_id}/organization/agent/{agent_id}/version",
-            params=params.model_dump(),
+            params=params.model_dump(mode="json", exclude_none=True),
         )
 
         return OrganizationGetAgentVersionsResponse.model_validate_json(response.text)

@@ -6,12 +6,15 @@ import pytest
 from src.config import AmigoConfig
 from src.errors import AuthenticationError
 from src.generated.model import (
+    IdentityInput,
     OrganizationCreateAgentRequest,
     OrganizationCreateAgentResponse,
     OrganizationCreateAgentVersionRequest,
     OrganizationCreateAgentVersionResponse,
     OrganizationGetOrganizationResponse,
+    RelationshipToDeveloperInput,
     ServiceGetServicesResponse,
+    VoiceConfigInput,
 )
 from src.sdk_client import AmigoClient
 
@@ -128,13 +131,35 @@ class TestOrganizationIntegration:
 
             # Creation verified by type/instance assertions above
 
-    @pytest.mark.skip(reason="Create agent version is still a WIP")
     async def test_create_agent_version(self, agent_id):
         """Test creating an agent version."""
         async with AmigoClient() as client:
             agent_version = await client.organization.create_agent_version(
                 agent_id=agent_id,
-                body=OrganizationCreateAgentVersionRequest(initials="SDK"),
+                body=OrganizationCreateAgentVersionRequest(
+                    initials="SDK",
+                    identity=IdentityInput(
+                        name="sdk_integration_test_agent",
+                        role="sdk_integration_test_role",
+                        developed_by="SDK Integration Tests",
+                        default_spoken_language="eng",
+                        relationship_to_developer=RelationshipToDeveloperInput(
+                            ownership="user",
+                            type="assistant",
+                            conversation_visibility="visible",
+                            thought_visibility="hidden",
+                        ),
+                    ),
+                    background="SDK integration test background",
+                    behaviors=[],
+                    communication_patterns=[],
+                    voice_config=VoiceConfigInput(
+                        voice_id="iP95p4xoKVk53GoZ742B",
+                        stability=0.35,
+                        similarity_boost=0.9,
+                        style=0,
+                    ),
+                ),
             )
             print(agent_version)
             assert agent_version is not None

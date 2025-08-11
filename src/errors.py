@@ -133,10 +133,16 @@ def raise_for_status(response, message: str = None) -> None:
     # Use provided message or generate default
     if not message:
         message = f"HTTP {status_code} error"
-        if response_body and isinstance(response_body, dict):
-            api_message = response_body.get("message") or response_body.get("error")
-            if api_message:
-                message = str(api_message)
+        if isinstance(response_body, dict):
+            # Prefer common API error fields, including FastAPI's "detail"
+            for key in ("message", "error", "detail"):
+                api_message = response_body.get(key)
+                if api_message:
+                    message = str(api_message)
+                    break
+        elif isinstance(response_body, str) and response_body.strip():
+            # If the server returned a plain-text or JSON string body, surface it
+            message = response_body.strip()
 
     # Handle ValidationError special case for field errors
     if error_class == ValidationError and isinstance(response_body, dict):
