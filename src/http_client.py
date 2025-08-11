@@ -6,13 +6,13 @@ import httpx
 from src.auth import sign_in_with_api_key
 from src.config import AmigoConfig
 from src.errors import AuthenticationError, raise_for_status
-from src.generated.model import SrcAppEndpointsUserSignInWithApiKeyResponse
+from src.generated.model import UserSignInWithApiKeyResponse
 
 
 class AmigoHttpClient:
     def __init__(self, cfg: AmigoConfig, **httpx_kwargs: Any) -> None:
         self._cfg = cfg
-        self._token: Optional[SrcAppEndpointsUserSignInWithApiKeyResponse] = None
+        self._token: Optional[UserSignInWithApiKeyResponse] = None
         self._client = httpx.AsyncClient(
             base_url=cfg.base_url,
             **httpx_kwargs,

@@ -1,18 +1,42 @@
 import os
+from uuid import uuid4
 
 import pytest
 
 from src.config import AmigoConfig
 from src.errors import AuthenticationError
 from src.generated.model import (
-    SrcAppEndpointsOrganizationGetOrganizationResponse,
-    SrcAppEndpointsServiceGetServicesResponse,
+    OrganizationCreateAgentRequest,
+    OrganizationCreateAgentResponse,
+    OrganizationCreateAgentVersionRequest,
+    OrganizationCreateAgentVersionResponse,
+    OrganizationGetOrganizationResponse,
+    ServiceGetServicesResponse,
 )
 from src.sdk_client import AmigoClient
 
 
+# Function-scoped fixture to create and clean up an agent per test
+@pytest.fixture
+async def agent_id():
+    async with AmigoClient() as client:
+        unique_name = f"sdk_test_agent_{uuid4().hex[:8]}"
+        agent = await client.organization.create_agent(
+            body=OrganizationCreateAgentRequest(agent_name=unique_name),
+        )
+        try:
+            yield agent.id
+        finally:
+            try:
+                await client.organization.delete_agent(agent_id=agent.id)
+            except Exception:
+                # Best-effort cleanup; ignore if already deleted
+                pass
+
+
 @pytest.mark.integration
 class TestOrganizationIntegration:
+    agent_id: str | None = None
     """Integration tests for Amigo API.
 
     These tests make actual API calls to the Amigo service.
@@ -55,7 +79,7 @@ class TestOrganizationIntegration:
             services = await client.service.get_services()
 
             assert services is not None
-            assert isinstance(services, SrcAppEndpointsServiceGetServicesResponse)
+            assert isinstance(services, ServiceGetServicesResponse)
 
     async def test_get_organization(self):
         """Test getting organization details using environment variables for config."""
@@ -69,9 +93,7 @@ class TestOrganizationIntegration:
             assert organization is not None
 
             # Verify response is the correct pydantic model type
-            assert isinstance(
-                organization, SrcAppEndpointsOrganizationGetOrganizationResponse
-            )
+            assert isinstance(organization, OrganizationGetOrganizationResponse)
 
             # Verify model can serialize (proves it's valid)
             assert organization.model_dump_json() is not None
@@ -83,6 +105,45 @@ class TestOrganizationIntegration:
             assert organization.title is not None, (
                 "Organization title should not be None"
             )
+
+    async def test_create_agent(self):
+        """Test creating an agent."""
+        async with AmigoClient() as client:
+            unique_name = f"sdk_test_agent_{uuid4().hex[:8]}"
+            agent = None
+            try:
+                agent = await client.organization.create_agent(
+                    body=OrganizationCreateAgentRequest(agent_name=unique_name),
+                )
+                print(agent)
+                assert agent is not None
+                assert isinstance(agent, OrganizationCreateAgentResponse)
+            finally:
+                try:
+                    if agent and getattr(agent, "id", None):
+                        await client.organization.delete_agent(agent_id=agent.id)
+                except Exception:
+                    # Best-effort cleanup; ignore if deletion fails
+                    pass
+
+            # Creation verified by type/instance assertions above
+
+    @pytest.mark.skip(reason="Create agent version is still a WIP")
+    async def test_create_agent_version(self, agent_id):
+        """Test creating an agent version."""
+        async with AmigoClient() as client:
+            agent_version = await client.organization.create_agent_version(
+                agent_id=agent_id,
+                body=OrganizationCreateAgentVersionRequest(initials="SDK"),
+            )
+            print(agent_version)
+            assert agent_version is not None
+            assert isinstance(agent_version, OrganizationCreateAgentVersionResponse)
+
+    async def test_delete_agent(self, agent_id):
+        """Test deleting an agent."""
+        async with AmigoClient() as client:
+            await client.organization.delete_agent(agent_id=agent_id)
 
     async def test_invalid_credentials_raises_authentication_error(self):
         """Test that invalid credentials raise appropriate authentication errors."""

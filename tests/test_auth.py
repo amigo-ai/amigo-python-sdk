@@ -5,7 +5,7 @@ import pytest
 from src.auth import sign_in_with_api_key
 from src.config import AmigoConfig
 from src.errors import AuthenticationError
-from src.generated.model import SrcAppEndpointsUserSignInWithApiKeyResponse
+from src.generated.model import UserSignInWithApiKeyResponse
 
 
 # Mock config for testing
@@ -22,7 +22,7 @@ def mock_config():
 
 # Mock successful auth response
 @pytest.fixture
-def mock_success_response() -> SrcAppEndpointsUserSignInWithApiKeyResponse:
+def mock_success_response() -> UserSignInWithApiKeyResponse:
     expires_at = (datetime.now() + timedelta(hours=1)).isoformat()
     return {"id_token": "mock-bearer-token-123", "expires_at": expires_at}
 

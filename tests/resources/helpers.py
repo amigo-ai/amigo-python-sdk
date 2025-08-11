@@ -5,9 +5,9 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
 from src.generated.model import (
+    OrganizationGetOrganizationResponse,
+    ServiceGetServicesResponse,
     ServiceInstance,
-    SrcAppEndpointsOrganizationGetOrganizationResponse,
-    SrcAppEndpointsServiceGetServicesResponse,
 )
 
 
@@ -49,11 +49,9 @@ async def mock_http_request(mock_response_data, status_code=200):
         yield mock_response
 
 
-def create_organization_response_data() -> (
-    SrcAppEndpointsOrganizationGetOrganizationResponse
-):
-    """Create mock data matching SrcAppEndpointsOrganizationGetOrganizationResponse schema."""
-    return SrcAppEndpointsOrganizationGetOrganizationResponse(
+def create_organization_response_data() -> OrganizationGetOrganizationResponse:
+    """Create mock data matching OrganizationGetOrganizationResponse schema."""
+    return OrganizationGetOrganizationResponse(
         org_id="test-org-123",
         org_name="Test Organization",
         title="Your AI Assistant Platform",
@@ -67,9 +65,9 @@ def create_organization_response_data() -> (
     )
 
 
-def create_services_response_data() -> SrcAppEndpointsServiceGetServicesResponse:
-    """Create mock data matching SrcAppEndpointsServiceGetServicesResponse schema."""
-    return SrcAppEndpointsServiceGetServicesResponse(
+def create_services_response_data() -> ServiceGetServicesResponse:
+    """Create mock data matching ServiceGetServicesResponse schema."""
+    return ServiceGetServicesResponse(
         services=[
             ServiceInstance(
                 id="service-1",

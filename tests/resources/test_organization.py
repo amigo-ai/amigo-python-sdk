@@ -2,7 +2,7 @@ import pytest
 
 from src.config import AmigoConfig
 from src.errors import NotFoundError
-from src.generated.model import SrcAppEndpointsOrganizationGetOrganizationResponse
+from src.generated.model import OrganizationGetOrganizationResponse
 from src.http_client import AmigoHttpClient
 from src.resources.organization import OrganizationResource
 
@@ -38,9 +38,7 @@ class TestOrganizationResource:
         async with mock_http_request(mock_data):
             result = await organization_resource.get()
 
-            assert isinstance(
-                result, SrcAppEndpointsOrganizationGetOrganizationResponse
-            )
+            assert isinstance(result, OrganizationGetOrganizationResponse)
             assert result.org_id == "test-org-123"
             assert result.org_name == "Test Organization"
             assert result.title == "Your AI Assistant Platform"

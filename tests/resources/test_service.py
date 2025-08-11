@@ -2,7 +2,7 @@ import pytest
 
 from src.config import AmigoConfig
 from src.errors import NotFoundError
-from src.generated.model import SrcAppEndpointsServiceGetServicesResponse
+from src.generated.model import ServiceGetServicesResponse
 from src.http_client import AmigoHttpClient
 from src.resources.service import ServiceResource
 
@@ -38,7 +38,7 @@ class TestServiceResource:
         async with mock_http_request(mock_data):
             result = await service_resource.get_services()
 
-            assert isinstance(result, SrcAppEndpointsServiceGetServicesResponse)
+            assert isinstance(result, ServiceGetServicesResponse)
             assert len(result.services) == 2
             assert result.services[0].id == "service-1"
             assert result.services[0].name == "Customer Support Bot"

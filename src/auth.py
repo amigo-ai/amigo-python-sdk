@@ -2,12 +2,12 @@ import httpx
 
 from src.config import AmigoConfig
 from src.errors import AuthenticationError
-from src.generated.model import SrcAppEndpointsUserSignInWithApiKeyResponse
+from src.generated.model import UserSignInWithApiKeyResponse
 
 
 async def sign_in_with_api_key(
     cfg: AmigoConfig,
-) -> SrcAppEndpointsUserSignInWithApiKeyResponse:
+) -> UserSignInWithApiKeyResponse:
     """
     Sign in with API key.
     """
@@ -25,8 +25,6 @@ async def sign_in_with_api_key(
             raise AuthenticationError(f"Sign in with API key failed: {e}") from e
 
         try:
-            return SrcAppEndpointsUserSignInWithApiKeyResponse.model_validate_json(
-                response.text
-            )
+            return UserSignInWithApiKeyResponse.model_validate_json(response.text)
         except Exception as e:
             raise AuthenticationError(f"Invalid response format: {e}") from e
