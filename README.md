@@ -20,6 +20,10 @@ Or add it to your requirements.txt:
 amigo-python-sdk
 ```
 
+### API compatibility
+
+This SDK autogenerates its types from the latest Amigo OpenAPI schema. As a result, only the latest published SDK version is guaranteed to match the current API. If you pin to an older version, it may not include the newest endpoints or fields.
+
 ## Quick Start
 
 ```python
