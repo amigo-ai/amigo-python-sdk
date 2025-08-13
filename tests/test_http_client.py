@@ -4,8 +4,12 @@ from unittest.mock import Mock, patch
 import pytest
 
 from src.config import AmigoConfig
-from src.errors import AuthenticationError, BadRequestError
+from src.errors import AuthenticationError, BadRequestError, NotFoundError
 from src.http_client import AmigoHttpClient
+from tests.resources.helpers import (
+    mock_http_stream,
+    mock_http_stream_sequence,
+)
 
 
 @pytest.fixture
@@ -164,3 +168,40 @@ class TestAmigoHttpClient:
 
         # Client should be closed after context exit
         assert client._client.is_closed
+
+    @pytest.mark.asyncio
+    async def test_stream_lines_yields_and_sets_headers(self, mock_config):
+        client = AmigoHttpClient(mock_config)
+
+        async with mock_http_stream(
+            [" line1 ", "", "line2\n", " "], status_code=200
+        ) as tracker:
+            lines = []
+            async for ln in client.stream_lines("GET", "/stream-test"):
+                lines.append(ln)
+
+        assert lines == ["line1", "line2"]
+        headers = tracker["last_call"]["headers"]
+        assert headers["Authorization"] == "Bearer test-bearer-token"
+        assert headers["Accept"] == "application/x-ndjson"
+
+    @pytest.mark.asyncio
+    async def test_stream_lines_retries_once_on_401(self, mock_config):
+        client = AmigoHttpClient(mock_config)
+
+        async with mock_http_stream_sequence([(401, []), (200, ["ok"])]) as tracker:
+            lines = []
+            async for ln in client.stream_lines("GET", "/retry-401"):
+                lines.append(ln)
+
+        assert tracker["call_count"] == 2
+        assert lines == ["ok"]
+
+    @pytest.mark.asyncio
+    async def test_stream_lines_raises_on_non_2xx(self, mock_config):
+        client = AmigoHttpClient(mock_config)
+
+        async with mock_http_stream([], status_code=404):
+            with pytest.raises(NotFoundError):
+                async for _ in client.stream_lines("GET", "/not-found"):
+                    pass
