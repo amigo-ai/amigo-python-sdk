@@ -25,13 +25,15 @@ async def mock_http_request(mock_response_data, status_code=200):
     mock_response.status_code = status_code
     mock_response.is_success = status_code < 400
 
-    # Convert Pydantic objects to JSON strings for response.text
+    # Convert payload to JSON string for response.text
     if hasattr(mock_response_data, "model_dump_json"):
-        # It's a Pydantic object, convert to JSON
         mock_response.text = mock_response_data.model_dump_json()
-    else:
-        # It's already a string
+    elif isinstance(mock_response_data, str):
         mock_response.text = mock_response_data
+    else:
+        import json as _json
+
+        mock_response.text = _json.dumps(mock_response_data)
 
     # Create fresh auth token
     fresh_token = Mock(
@@ -39,14 +41,65 @@ async def mock_http_request(mock_response_data, status_code=200):
         expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
     )
 
-    def mock_request(*args, **kwargs):
-        return mock_response
-
     with (
         patch("src.http_client.sign_in_with_api_key", return_value=fresh_token),
         patch("httpx.AsyncClient.request", return_value=mock_response),
     ):
         yield mock_response
+
+
+@asynccontextmanager
+async def mock_http_stream(lines, status_code: int = 200):
+    """Mock httpx.AsyncClient.stream for NDJSON endpoints.
+
+    lines: list of dicts or JSON strings that will be yielded line-by-line.
+    status_code: HTTP status code to expose on the stream response.
+    """
+    # Normalize to JSON strings
+    json_lines = []
+    for item in lines:
+        if hasattr(item, "model_dump_json"):
+            json_lines.append(item.model_dump_json())
+        elif isinstance(item, str):
+            json_lines.append(item)
+        else:
+            import json as _json
+
+            json_lines.append(_json.dumps(item))
+
+    class _MockStreamResponse:
+        def __init__(self, status_code: int, lines: list[str]):
+            self.status_code = status_code
+            self._lines = lines
+
+        async def aiter_lines(self):
+            for ln in self._lines:
+                yield ln
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+    # Track last call data for assertions
+    tracker = {"last_call": None}
+
+    def _mock_stream(self, method, url, **kwargs):  # noqa: ANN001
+        tracker["last_call"] = {"method": method, "url": url, **kwargs}
+        return _MockStreamResponse(status_code, json_lines)
+
+    # Create fresh auth token
+    fresh_token = Mock(
+        id_token="test-bearer-token",
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+    )
+
+    with (
+        patch("src.http_client.sign_in_with_api_key", return_value=fresh_token),
+        patch("httpx.AsyncClient.stream", _mock_stream),
+    ):
+        yield tracker
 
 
 def create_organization_response_data() -> OrganizationGetOrganizationResponse:
