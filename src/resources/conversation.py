@@ -16,6 +16,7 @@ from src.generated.model import (
     ConversationInteractWithConversationResponse,
     ConversationRecommendResponsesForInteractionResponse,
     CreateConversationParametersQuery,
+    Format,
     GetConversationMessagesParametersQuery,
     GetConversationsParametersQuery,
     InteractWithConversationParametersQuery,
@@ -68,9 +69,12 @@ class ConversationResource:
     async def interact_with_conversation(
         self,
         conversation_id: str,
-        body: Any,
         params: InteractWithConversationParametersQuery,
         abort_event: asyncio.Event | None = None,
+        *,
+        text_message: str | None = None,
+        audio_bytes: bytes | None = None,
+        audio_content_type: Literal["audio/mpeg", "audio/wav"] | None = None,
     ) -> "AsyncGenerator[ConversationInteractWithConversationResponse, None]":
         """Interact with a conversation and stream NDJSON events.
 
@@ -78,12 +82,41 @@ class ConversationResource:
         """
 
         async def _generator():
+            request_kwargs: dict[str, Any] = {
+                "params": params.model_dump(mode="json", exclude_none=True),
+                "abort_event": abort_event,
+            }
+            # Route based on requested format
+            req_format = getattr(params, "request_format", None)
+            if req_format == Format.text:
+                if text_message is None:
+                    raise ValueError(
+                        "text_message is required when request_format is 'text'"
+                    )
+                text_bytes = text_message.encode("utf-8")
+                request_kwargs["files"] = {
+                    "recorded_message": (
+                        "message.txt",
+                        text_bytes,
+                        "text/plain; charset=utf-8",
+                    )
+                }
+            elif req_format == Format.voice:
+                if audio_bytes is None or audio_content_type is None:
+                    raise ValueError(
+                        "audio_bytes and audio_content_type are required when request_format is 'voice'"
+                    )
+                # Send raw bytes with appropriate content type
+                request_kwargs["content"] = audio_bytes
+                request_kwargs.setdefault("headers", {})
+                request_kwargs["headers"]["Content-Type"] = audio_content_type
+            else:
+                raise ValueError("Unsupported or missing request_format in params")
+
             async for line in self._http.stream_lines(
                 "POST",
                 f"/v1/{self._organization_id}/conversation/{conversation_id}/interact",
-                params=params.model_dump(mode="json", exclude_none=True),
-                json=body,
-                abort_event=abort_event,
+                **request_kwargs,
             ):
                 # Each line is a JSON object representing a discriminated union event
                 yield ConversationInteractWithConversationResponse.model_validate_json(
@@ -117,7 +150,9 @@ class ConversationResource:
         response = await self._http.request(
             "GET",
             f"/v1/{self._organization_id}/conversation/{conversation_id}/messages/",
-            params=params.model_dump(mode="json", exclude_none=True),
+            params=params.model_dump(
+                mode="json", exclude_none=True, exclude_defaults=True
+            ),
         )
         return ConversationGetConversationMessagesResponse.model_validate_json(
             response.text
