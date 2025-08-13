@@ -72,3 +72,46 @@ class TestSDKErrors:
         error = exc_info.value
         assert error.status_code == 401
         assert "Invalid API key" in str(error)
+
+    def test_status_code_mapping_unexpected_status_returns_base_error(self):
+        assert get_error_class_for_status_code(302) == AmigoError
+
+    def test_raise_for_status_uses_plain_text_when_json_fails(self):
+        mock_response = Mock()
+        mock_response.is_success = False
+        mock_response.status_code = 500
+        mock_response.json.side_effect = Exception("no json")
+        mock_response.text = "Server overloaded"
+
+        with pytest.raises(ServerError) as exc:
+            raise_for_status(mock_response)
+
+        assert "Server overloaded" in str(exc.value)
+
+    def test_raise_for_status_defaults_message_when_json_and_text_fail(self):
+        class DummyResponse:
+            is_success = False
+            status_code = 418
+
+            def json(self):
+                raise ValueError("bad json")
+
+            @property
+            def text(self):
+                raise ValueError("bad text")
+
+        with pytest.raises(BadRequestError) as exc:
+            raise_for_status(DummyResponse())
+
+        assert str(exc.value).startswith("HTTP 418 error")
+
+    def test_raise_for_status_validation_error_includes_field_errors(self):
+        mock_response = Mock()
+        mock_response.is_success = False
+        mock_response.status_code = 422
+        mock_response.json.return_value = {"errors": {"email": "Invalid format"}}
+
+        with pytest.raises(ValidationError) as exc:
+            raise_for_status(mock_response)
+
+        assert exc.value.field_errors == {"email": "Invalid format"}
