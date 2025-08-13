@@ -1,11 +1,17 @@
+import asyncio
 import datetime as dt
+from collections.abc import AsyncIterator
 from typing import Any, Optional
 
 import httpx
 
 from src.auth import sign_in_with_api_key
 from src.config import AmigoConfig
-from src.errors import AuthenticationError, raise_for_status
+from src.errors import (
+    AuthenticationError,
+    get_error_class_for_status_code,
+    raise_for_status,
+)
 from src.generated.model import UserSignInWithApiKeyResponse
 
 
@@ -48,6 +54,63 @@ class AmigoHttpClient:
         raise_for_status(resp)
 
         return resp
+
+    async def stream_lines(
+        self,
+        method: str,
+        path: str,
+        abort_event: asyncio.Event | None = None,
+        **kwargs,
+    ) -> AsyncIterator[str]:
+        """Stream response lines without buffering the full body.
+
+        - Adds Authorization and sensible streaming headers
+        - Retries once on 401 by refreshing the token
+        - Raises mapped errors for non-2xx without consuming the body
+        """
+        kwargs.setdefault("headers", {})
+        headers = kwargs["headers"]
+        headers["Authorization"] = f"Bearer {await self._ensure_token()}"
+        headers.setdefault("Accept", "application/x-ndjson")
+
+        async def _raise_light_if_error(resp: httpx.Response) -> None:
+            if 200 <= resp.status_code < 300:
+                return
+            error_class = get_error_class_for_status_code(resp.status_code)
+            # Avoid consuming the stream body for error reporting
+            raise error_class(
+                f"HTTP {resp.status_code} error", status_code=resp.status_code
+            )
+
+        async def _yield_from_response(resp: httpx.Response) -> AsyncIterator[str]:
+            await _raise_light_if_error(resp)
+            if abort_event and abort_event.is_set():
+                return
+            async for line in resp.aiter_lines():
+                if abort_event and abort_event.is_set():
+                    return
+                line_stripped = line.strip()
+                if not line_stripped:
+                    continue
+                yield line_stripped
+
+        # First attempt
+        if abort_event and abort_event.is_set():
+            return
+        async with self._client.stream(method, path, **kwargs) as resp:
+            if resp.status_code == 401:
+                # Refresh token and retry once
+                self._token = None
+                headers["Authorization"] = f"Bearer {await self._ensure_token()}"
+                if abort_event and abort_event.is_set():
+                    return
+                async with self._client.stream(method, path, **kwargs) as retry_resp:
+                    async for ln in _yield_from_response(retry_resp):
+                        yield ln
+                return
+
+            async for ln in _yield_from_response(resp):
+                yield ln
 
     async def aclose(self) -> None:
         await self._client.aclose()

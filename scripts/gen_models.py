@@ -50,6 +50,7 @@ def main() -> None:
             OpenAPIScope.Schemas,
             OpenAPIScope.Parameters,
             OpenAPIScope.Paths,
+            OpenAPIScope.Tags,
         ],
         snake_case_field=True,
         field_constraints=True,
