@@ -66,7 +66,7 @@ async def run() -> None:
                 ),
             )
             for m in getattr(messages_page, "messages", []) or []:
-                print("[message]", json.dumps(m, indent=2))
+                print("[message]", json.dumps(m.model_dump(mode="json"), indent=2))
 
             # 4) Finish the conversation
             print("Finishing conversation...")
@@ -95,7 +95,7 @@ async def log_events(label: str, events: AsyncGenerator) -> dict[str, str | None
     conversation_id: str | None = None
 
     async for evt in events:
-        event = evt.model_dump()
+        event = evt.model_dump(mode="json")
         event_type = event.get("type", None)
 
         if event_type == "new-message":
