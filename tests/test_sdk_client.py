@@ -4,8 +4,8 @@ from unittest.mock import patch
 
 import pytest
 
-from src.config import AmigoConfig
-from src.sdk_client import AmigoClient
+from amigo_sdk.config import AmigoConfig
+from amigo_sdk.sdk_client import AmigoClient
 
 
 @pytest.fixture

@@ -2,10 +2,10 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from src.auth import sign_in_with_api_key
-from src.config import AmigoConfig
-from src.errors import AuthenticationError
-from src.generated.model import UserSignInWithApiKeyResponse
+from amigo_sdk.auth import sign_in_with_api_key
+from amigo_sdk.config import AmigoConfig
+from amigo_sdk.errors import AuthenticationError
+from amigo_sdk.generated.model import UserSignInWithApiKeyResponse
 
 
 # Mock config for testing

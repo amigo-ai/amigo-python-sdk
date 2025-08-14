@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from src.errors import (
+from amigo_sdk.errors import (
     AmigoError,
     AuthenticationError,
     BadRequestError,

@@ -1,10 +1,10 @@
 import pytest
 
-from src.config import AmigoConfig
-from src.errors import NotFoundError
-from src.generated.model import ServiceGetServicesResponse
-from src.http_client import AmigoHttpClient
-from src.resources.service import ServiceResource
+from amigo_sdk.config import AmigoConfig
+from amigo_sdk.errors import NotFoundError
+from amigo_sdk.generated.model import ServiceGetServicesResponse
+from amigo_sdk.http_client import AmigoHttpClient
+from amigo_sdk.resources.service import ServiceResource
 
 from .helpers import create_services_response_data, mock_http_request
 

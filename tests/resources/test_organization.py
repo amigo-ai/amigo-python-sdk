@@ -2,9 +2,9 @@ from datetime import datetime, timezone
 
 import pytest
 
-from src.config import AmigoConfig
-from src.errors import NotFoundError
-from src.generated.model import (
+from amigo_sdk.config import AmigoConfig
+from amigo_sdk.errors import NotFoundError
+from amigo_sdk.generated.model import (
     GetAgentsParametersQuery,
     GetAgentVersionsParametersQuery,
     OrganizationCreateAgentRequest,
@@ -16,8 +16,8 @@ from src.generated.model import (
     OrganizationGetAgentVersionsResponse,
     OrganizationGetOrganizationResponse,
 )
-from src.http_client import AmigoHttpClient
-from src.resources.organization import OrganizationResource
+from amigo_sdk.http_client import AmigoHttpClient
+from amigo_sdk.resources.organization import OrganizationResource
 
 from .helpers import create_organization_response_data, mock_http_request
 
@@ -173,7 +173,7 @@ class TestOrganizationResource:
     async def test_get_agents_invalid_query_param_422(
         self, organization_resource: OrganizationResource
     ) -> None:
-        from src.errors import ValidationError as SDKValidationError
+        from amigo_sdk.errors import ValidationError as SDKValidationError
 
         params = GetAgentsParametersQuery()
 

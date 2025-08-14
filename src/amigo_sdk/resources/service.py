@@ -1,7 +1,10 @@
 from typing import Optional
 
-from src.generated.model import GetServicesParametersQuery, ServiceGetServicesResponse
-from src.http_client import AmigoHttpClient
+from amigo_sdk.generated.model import (
+    GetServicesParametersQuery,
+    ServiceGetServicesResponse,
+)
+from amigo_sdk.http_client import AmigoHttpClient
 
 
 class ServiceResource:

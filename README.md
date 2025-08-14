@@ -29,6 +29,7 @@ This SDK autogenerates its types from the latest Amigo OpenAPI schema. As a resu
 ```python
 import asyncio
 from amigo_python_sdk import AmigoClient
+from amigo_python_sdk.generated.model import GetConversationsParametersQuery
 
 # Initialize the client
 client = AmigoClient(
@@ -38,18 +39,24 @@ client = AmigoClient(
     org_id="your-organization-id",
 )
 
-# Get organization details
+# List recent conversations
 async def example():
     try:
         async with client:
-            organization = await client.organizations.get_organization("your-org-id")
-            print("Organization:", organization)
+            conversations = await client.conversation.get_conversations(
+                GetConversationsParametersQuery(limit=10, sort_by=["-created_at"])
+            )
+            print("Conversations:", conversations)
     except Exception as error:
         print("Error:", error)
 
 # Run the example
 asyncio.run(example())
 ```
+
+## Examples
+
+For more SDK usage examples see checkout the [examples/](examples/README.md) folder.
 
 ## Configuration
 
@@ -109,8 +116,9 @@ For detailed instructions on generating API keys, see the [Authentication Guide]
 
 The SDK provides access to the following resources:
 
-- **Organizations**: Manage organization settings and information
-- **Services**: Interact with Amigo services and AI capabilities
+- **Organizations**: Manage agents and get Organization fio
+- **Services**: Get available services
+- **Conversation**: Manage conversations
 
 ## Error Handling
 

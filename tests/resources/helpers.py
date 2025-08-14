@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
-from src.generated.model import (
+from amigo_sdk.generated.model import (
     OrganizationGetOrganizationResponse,
     ServiceGetServicesResponse,
     ServiceInstance,
@@ -42,7 +42,7 @@ async def mock_http_request(mock_response_data, status_code=200):
     )
 
     with (
-        patch("src.http_client.sign_in_with_api_key", return_value=fresh_token),
+        patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token),
         patch("httpx.AsyncClient.request", return_value=mock_response),
     ):
         yield mock_response
@@ -96,7 +96,7 @@ async def mock_http_stream(lines, status_code: int = 200):
     )
 
     with (
-        patch("src.http_client.sign_in_with_api_key", return_value=fresh_token),
+        patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token),
         patch("httpx.AsyncClient.stream", _mock_stream),
     ):
         yield tracker
@@ -157,7 +157,7 @@ async def mock_http_stream_sequence(sequence):
     )
 
     with (
-        patch("src.http_client.sign_in_with_api_key", return_value=fresh_token),
+        patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token),
         patch("httpx.AsyncClient.stream", _mock_stream),
     ):
         yield tracker

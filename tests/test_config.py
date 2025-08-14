@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 from pydantic import ValidationError
 
-from src.config import AmigoConfig
+from amigo_sdk.config import AmigoConfig
 
 
 @pytest.mark.unit

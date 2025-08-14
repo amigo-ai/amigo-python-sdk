@@ -19,7 +19,7 @@ def safe_class_name(name: str) -> str:
 def main() -> None:
     schema_url = "https://api.amigo.ai/v1/openapi.json"
     root = Path(__file__).parent.parent
-    out_dir = root / "src" / "generated"
+    out_dir = root / "src" / "amigo_sdk" / "generated"
     output_file = out_dir / "model.py"
     aliases_path = root / "aliases.json"
 

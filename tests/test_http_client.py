@@ -3,9 +3,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from src.config import AmigoConfig
-from src.errors import AuthenticationError, BadRequestError, NotFoundError
-from src.http_client import AmigoHttpClient
+from amigo_sdk.config import AmigoConfig
+from amigo_sdk.errors import AuthenticationError, BadRequestError, NotFoundError
+from amigo_sdk.http_client import AmigoHttpClient
 from tests.resources.helpers import (
     mock_http_stream,
     mock_http_stream_sequence,
@@ -50,7 +50,8 @@ class TestAmigoHttpClient:
         client = AmigoHttpClient(mock_config)
 
         with patch(
-            "src.http_client.sign_in_with_api_key", return_value=mock_token_response
+            "amigo_sdk.http_client.sign_in_with_api_key",
+            return_value=mock_token_response,
         ):
             token = await client._ensure_token()
 
@@ -74,7 +75,9 @@ class TestAmigoHttpClient:
             expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
 
-        with patch("src.http_client.sign_in_with_api_key", return_value=fresh_token):
+        with patch(
+            "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
+        ):
             token = await client._ensure_token()
 
         assert token == "fresh-token"
@@ -86,7 +89,8 @@ class TestAmigoHttpClient:
         client = AmigoHttpClient(mock_config)
 
         with patch(
-            "src.http_client.sign_in_with_api_key", side_effect=Exception("Auth failed")
+            "amigo_sdk.http_client.sign_in_with_api_key",
+            side_effect=Exception("Auth failed"),
         ):
             with pytest.raises(AuthenticationError):
                 await client._ensure_token()
@@ -106,7 +110,9 @@ class TestAmigoHttpClient:
             expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
 
-        with patch("src.http_client.sign_in_with_api_key", return_value=fresh_token):
+        with patch(
+            "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
+        ):
             await client.request("GET", "/test")
 
         request = httpx_mock.get_request()
@@ -132,7 +138,9 @@ class TestAmigoHttpClient:
             id_token="fresh-token",
             expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
-        with patch("src.http_client.sign_in_with_api_key", return_value=fresh_token):
+        with patch(
+            "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
+        ):
             response = await client.request("GET", "/test")
 
         assert response.status_code == 200
@@ -156,7 +164,9 @@ class TestAmigoHttpClient:
             expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
 
-        with patch("src.http_client.sign_in_with_api_key", return_value=fresh_token):
+        with patch(
+            "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
+        ):
             with pytest.raises(BadRequestError):
                 await client.request("GET", "/test")
 

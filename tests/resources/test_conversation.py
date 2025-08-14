@@ -2,9 +2,9 @@ import asyncio
 
 import pytest
 
-from src.config import AmigoConfig
-from src.errors import BadRequestError, ConflictError, NotFoundError
-from src.generated.model import (
+from amigo_sdk.config import AmigoConfig
+from amigo_sdk.errors import BadRequestError, ConflictError, NotFoundError
+from amigo_sdk.generated.model import (
     ConversationCreateConversationRequest,
     ConversationGenerateConversationStarterRequest,
     CreateConversationParametersQuery,
@@ -13,8 +13,8 @@ from src.generated.model import (
     GetConversationsParametersQuery,
     InteractWithConversationParametersQuery,
 )
-from src.http_client import AmigoHttpClient
-from src.resources.conversation import ConversationResource
+from amigo_sdk.http_client import AmigoHttpClient
+from amigo_sdk.resources.conversation import ConversationResource
 
 from .helpers import mock_http_request, mock_http_stream
 

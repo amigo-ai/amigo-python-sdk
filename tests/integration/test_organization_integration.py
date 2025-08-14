@@ -3,9 +3,9 @@ from uuid import uuid4
 
 import pytest
 
-from src.config import AmigoConfig
-from src.errors import AuthenticationError
-from src.generated.model import (
+from amigo_sdk.config import AmigoConfig
+from amigo_sdk.errors import AuthenticationError
+from amigo_sdk.generated.model import (
     IdentityInput,
     OrganizationCreateAgentRequest,
     OrganizationCreateAgentResponse,
@@ -16,7 +16,7 @@ from src.generated.model import (
     ServiceGetServicesResponse,
     VoiceConfigInput,
 )
-from src.sdk_client import AmigoClient
+from amigo_sdk.sdk_client import AmigoClient
 
 
 # Function-scoped fixture to create and clean up an agent per test
@@ -166,7 +166,7 @@ class TestOrganizationIntegration:
             assert isinstance(agent_version, OrganizationCreateAgentVersionResponse)
 
             # After creating a version, verify it shows up in get_agent_versions
-            from src.generated.model import (
+            from amigo_sdk.generated.model import (
                 GetAgentVersionsParametersQuery,
                 OrganizationGetAgentVersionsResponse,
             )
@@ -187,7 +187,7 @@ class TestOrganizationIntegration:
 
     async def test_get_agents(self):
         """Test listing agents for the organization."""
-        from src.generated.model import (
+        from amigo_sdk.generated.model import (
             GetAgentsParametersQuery,
             OrganizationGetAgentsResponse,
         )

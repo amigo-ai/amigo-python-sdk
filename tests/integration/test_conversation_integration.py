@@ -4,8 +4,8 @@ from collections.abc import AsyncGenerator
 
 import pytest
 
-from src.errors import ConflictError, NotFoundError
-from src.generated.model import (
+from amigo_sdk.errors import ConflictError, NotFoundError
+from amigo_sdk.generated.model import (
     ConversationCreateConversationRequest,
     ConversationCreatedEvent,
     ConversationEvent,
@@ -17,7 +17,7 @@ from src.generated.model import (
     InteractWithConversationParametersQuery,
     NewMessageEvent,
 )
-from src.sdk_client import AmigoClient
+from amigo_sdk.sdk_client import AmigoClient
 
 # Constants
 SERVICE_ID = os.getenv("AMIGO_TEST_SERVICE_ID", "689b81e7afdaf934f4b48f81")
@@ -28,7 +28,7 @@ async def pre_suite_cleanup() -> AsyncGenerator[None, None]:
     # Ensure env loaded and client can connect; verify service exists
     async with AmigoClient() as client:
         try:
-            from src.generated.model import GetServicesParametersQuery
+            from amigo_sdk.generated.model import GetServicesParametersQuery
 
             services = await client.service.get_services(
                 GetServicesParametersQuery(id=[SERVICE_ID])

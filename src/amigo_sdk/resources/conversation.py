@@ -5,7 +5,7 @@ from typing import Any, Literal
 
 from pydantic import AnyUrl, BaseModel
 
-from src.generated.model import (
+from amigo_sdk.generated.model import (
     ConversationCreateConversationRequest,
     ConversationCreateConversationResponse,
     ConversationGenerateConversationStarterRequest,
@@ -21,7 +21,7 @@ from src.generated.model import (
     GetConversationsParametersQuery,
     InteractWithConversationParametersQuery,
 )
-from src.http_client import AmigoHttpClient
+from amigo_sdk.http_client import AmigoHttpClient
 
 
 class GetMessageSourceResponse(BaseModel):

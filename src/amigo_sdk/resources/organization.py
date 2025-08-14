@@ -1,6 +1,6 @@
 from typing import Optional
 
-from src.generated.model import (
+from amigo_sdk.generated.model import (
     CreateAgentVersionParametersQuery,
     GetAgentsParametersQuery,
     GetAgentVersionsParametersQuery,
@@ -12,7 +12,7 @@ from src.generated.model import (
     OrganizationGetAgentVersionsResponse,
     OrganizationGetOrganizationResponse,
 )
-from src.http_client import AmigoHttpClient
+from amigo_sdk.http_client import AmigoHttpClient
 
 
 class OrganizationResource:

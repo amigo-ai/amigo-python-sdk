@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name="amigo-python-sdk"
+name="amigo_sdk"
 description = "Amigo AI Python SDK"
 readme = "README.md"
 requires-python = ">= 3.9"
@@ -34,10 +34,18 @@ dev = [
 ]
 
 [tool.hatch.version]
-path = "src/__init__.py"
+path = "src/amigo_sdk/__init__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/"]
+packages = [
+  "src/amigo_sdk",
+]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "examples",
+  "htmlcov",
+]
 
 [tool.hatch.publish.index]
 url = "https://upload.pypi.org/legacy/"
@@ -78,7 +86,7 @@ omit = [
     "*/__pycache__/*",
     "*/scripts/*",
     "*/generated/*",
-    "src/generated/*"
+    "src/amigo_sdk/generated/*"
 ]
 
 [tool.coverage.report]
@@ -104,7 +112,7 @@ directory = "htmlcov"
 target-version = "py39"
 line-length = 88
 exclude = [
-    "src/generated",
+    "src/amigo_sdk/generated",
     "**/__pycache__",
     ".pytest_cache",
     ".ruff_cache",
@@ -134,5 +142,5 @@ quote-style = "double"
 indent-style = "space"
 line-ending = "auto"
 exclude = [
-    "src/generated"
+    "src/amigo_sdk/generated"
 ]

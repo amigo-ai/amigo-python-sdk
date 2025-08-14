@@ -118,7 +118,7 @@ jobs:
       - name: Commit version bump
         if: ${{ !inputs.dry_run }}
         run: |
-          git add src/__init__.py
+          git add src/amigo_sdk/__init__.py
           git commit -m "Bump version to ${{ steps.new_version.outputs.version }}"
           git push origin HEAD
 

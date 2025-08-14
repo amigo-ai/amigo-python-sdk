@@ -5,14 +5,14 @@ from typing import Any, Optional
 
 import httpx
 
-from src.auth import sign_in_with_api_key
-from src.config import AmigoConfig
-from src.errors import (
+from amigo_sdk.auth import sign_in_with_api_key
+from amigo_sdk.config import AmigoConfig
+from amigo_sdk.errors import (
     AuthenticationError,
     get_error_class_for_status_code,
     raise_for_status,
 )
-from src.generated.model import UserSignInWithApiKeyResponse
+from amigo_sdk.generated.model import UserSignInWithApiKeyResponse
 
 
 class AmigoHttpClient:

@@ -1,10 +1,10 @@
 from typing import Any, Optional
 
-from src.config import AmigoConfig
-from src.http_client import AmigoHttpClient
-from src.resources.conversation import ConversationResource
-from src.resources.organization import OrganizationResource
-from src.resources.service import ServiceResource
+from amigo_sdk.config import AmigoConfig
+from amigo_sdk.http_client import AmigoHttpClient
+from amigo_sdk.resources.conversation import ConversationResource
+from amigo_sdk.resources.organization import OrganizationResource
+from amigo_sdk.resources.service import ServiceResource
 
 
 class AmigoClient:
