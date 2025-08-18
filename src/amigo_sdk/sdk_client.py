@@ -5,6 +5,7 @@ from amigo_sdk.http_client import AmigoHttpClient
 from amigo_sdk.resources.conversation import ConversationResource
 from amigo_sdk.resources.organization import OrganizationResource
 from amigo_sdk.resources.service import ServiceResource
+from amigo_sdk.resources.user import UserResource
 
 
 class AmigoClient:
@@ -65,6 +66,7 @@ class AmigoClient:
         self._organization = OrganizationResource(self._http, self._cfg.organization_id)
         self._service = ServiceResource(self._http, self._cfg.organization_id)
         self._conversation = ConversationResource(self._http, self._cfg.organization_id)
+        self._users = UserResource(self._http, self._cfg.organization_id)
 
     @property
     def config(self) -> AmigoConfig:
@@ -85,6 +87,11 @@ class AmigoClient:
     def conversation(self) -> ConversationResource:
         """Access conversation resource."""
         return self._conversation
+
+    @property
+    def users(self) -> UserResource:
+        """Access user resource."""
+        return self._users
 
     async def aclose(self) -> None:
         """Close the HTTP client."""
