@@ -1,5 +1,3 @@
-from datetime import datetime, timezone
-
 import pytest
 
 from amigo_sdk.config import AmigoConfig
@@ -7,10 +5,6 @@ from amigo_sdk.errors import NotFoundError
 from amigo_sdk.generated.model import (
     GetAgentsParametersQuery,
     GetAgentVersionsParametersQuery,
-    OrganizationCreateAgentRequest,
-    OrganizationCreateAgentResponse,
-    OrganizationCreateAgentVersionRequest,
-    OrganizationCreateAgentVersionResponse,
     OrganizationGetAgentsResponse,
     OrganizationGetAgentsResponseAgentInstance,
     OrganizationGetAgentVersionsResponse,
@@ -70,80 +64,6 @@ class TestOrganizationResource:
             with pytest.raises(NotFoundError):
                 await organization_resource.get()
 
-    # --- Create agent ---
-    @pytest.mark.asyncio
-    async def test_create_agent_happy_path(
-        self, organization_resource: OrganizationResource
-    ) -> None:
-        body = OrganizationCreateAgentRequest(agent_name="Test Agent")
-
-        mock_response = OrganizationCreateAgentResponse(id="agent-123")
-
-        async with mock_http_request(mock_response):
-            result = await organization_resource.create_agent(body=body)
-
-            assert isinstance(result, OrganizationCreateAgentResponse)
-            assert result.id == "agent-123"
-
-    def test_create_agent_invalid_body_params(self):
-        from pydantic import ValidationError as PydanticValidationError
-
-        with pytest.raises(PydanticValidationError):
-            OrganizationCreateAgentRequest(agent_name="")  # empty not allowed
-
-    @pytest.mark.asyncio
-    async def test_create_agent_non_2xx_raises_error(
-        self, organization_resource: OrganizationResource
-    ) -> None:
-        body = OrganizationCreateAgentRequest(agent_name="Test Agent")
-
-        async with mock_http_request(
-            '{"error": "Organization not found"}', status_code=404
-        ):
-            with pytest.raises(NotFoundError):
-                await organization_resource.create_agent(body=body)
-
-    # --- Create agent version ---
-    @pytest.mark.asyncio
-    async def test_create_agent_version_happy_path(
-        self, organization_resource: OrganizationResource
-    ) -> None:
-        body = OrganizationCreateAgentVersionRequest(voice_config=None)
-
-        mock_response = OrganizationCreateAgentVersionResponse(
-            id="ver-1", version=1, created_at=datetime.now(timezone.utc)
-        )
-
-        async with mock_http_request(mock_response):
-            result = await organization_resource.create_agent_version(
-                agent_id="agent-123",
-                body=body,
-            )
-
-            assert isinstance(result, OrganizationCreateAgentVersionResponse)
-            assert result.id == "ver-1"
-            assert result.version == 1
-
-    def test_create_agent_version_invalid_body_params(self):
-        from pydantic import ValidationError as PydanticValidationError
-
-        with pytest.raises(PydanticValidationError):
-            # voice_config expects VoiceConfigInput or FieldNotSet
-            OrganizationCreateAgentVersionRequest(voice_config=123)  # type: ignore[arg-type]
-
-    @pytest.mark.asyncio
-    async def test_create_agent_version_non_2xx_raises_error(
-        self, organization_resource: OrganizationResource
-    ) -> None:
-        body = OrganizationCreateAgentVersionRequest(voice_config=None)
-
-        async with mock_http_request('{"error": "Agent not found"}', status_code=404):
-            with pytest.raises(NotFoundError):
-                await organization_resource.create_agent_version(
-                    agent_id="missing-agent",
-                    body=body,
-                )
-
     # --- Get agents ---
     @pytest.mark.asyncio
     async def test_get_agents_happy_path(
@@ -181,24 +101,6 @@ class TestOrganizationResource:
             with pytest.raises(SDKValidationError):
                 await organization_resource.get_agents(params=params)
 
-    # --- Delete agent ---
-    @pytest.mark.asyncio
-    async def test_delete_agent_success(
-        self, organization_resource: OrganizationResource
-    ) -> None:
-        async with mock_http_request("{}", status_code=204):
-            # Should not raise
-            await organization_resource.delete_agent(agent_id="agent-1")
-
-    @pytest.mark.asyncio
-    async def test_delete_agent_not_found(
-        self, organization_resource: OrganizationResource
-    ) -> None:
-        async with mock_http_request('{"error": "Agent not found"}', status_code=404):
-            with pytest.raises(NotFoundError):
-                await organization_resource.delete_agent(agent_id="missing-agent")
-
-    # --- Get agent versions ---
     @pytest.mark.asyncio
     async def test_get_agent_versions_happy_path(
         self, organization_resource: OrganizationResource

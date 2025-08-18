@@ -1,40 +1,14 @@
 import os
-from uuid import uuid4
 
 import pytest
 
 from amigo_sdk.config import AmigoConfig
 from amigo_sdk.errors import AuthenticationError
 from amigo_sdk.generated.model import (
-    IdentityInput,
-    OrganizationCreateAgentRequest,
-    OrganizationCreateAgentResponse,
-    OrganizationCreateAgentVersionRequest,
-    OrganizationCreateAgentVersionResponse,
     OrganizationGetOrganizationResponse,
-    RelationshipToDeveloperInput,
     ServiceGetServicesResponse,
-    VoiceConfigInput,
 )
 from amigo_sdk.sdk_client import AmigoClient
-
-
-# Function-scoped fixture to create and clean up an agent per test
-@pytest.fixture
-async def agent_id():
-    async with AmigoClient() as client:
-        unique_name = f"sdk_test_agent_{uuid4().hex[:8]}"
-        agent = await client.organization.create_agent(
-            body=OrganizationCreateAgentRequest(agent_name=unique_name),
-        )
-        try:
-            yield agent.id
-        finally:
-            try:
-                await client.organization.delete_agent(agent_id=agent.id)
-            except Exception:
-                # Best-effort cleanup; ignore if already deleted
-                pass
 
 
 @pytest.mark.integration
@@ -108,82 +82,6 @@ class TestOrganizationIntegration:
             assert organization.title is not None, (
                 "Organization title should not be None"
             )
-
-    async def test_create_agent(self):
-        """Test creating an agent."""
-        async with AmigoClient() as client:
-            unique_name = f"sdk_test_agent_{uuid4().hex[:8]}"
-            agent = None
-            try:
-                agent = await client.organization.create_agent(
-                    body=OrganizationCreateAgentRequest(agent_name=unique_name),
-                )
-                print(agent)
-                assert agent is not None
-                assert isinstance(agent, OrganizationCreateAgentResponse)
-            finally:
-                try:
-                    if agent and getattr(agent, "id", None):
-                        await client.organization.delete_agent(agent_id=agent.id)
-                except Exception:
-                    # Best-effort cleanup; ignore if deletion fails
-                    pass
-
-            # Creation verified by type/instance assertions above
-
-    async def test_create_agent_version(self, agent_id):
-        """Test creating an agent version."""
-        async with AmigoClient() as client:
-            agent_version = await client.organization.create_agent_version(
-                agent_id=agent_id,
-                body=OrganizationCreateAgentVersionRequest(
-                    initials="SDK",
-                    identity=IdentityInput(
-                        name="sdk_integration_test_agent",
-                        role="sdk_integration_test_role",
-                        developed_by="SDK Integration Tests",
-                        default_spoken_language="eng",
-                        relationship_to_developer=RelationshipToDeveloperInput(
-                            ownership="user",
-                            type="assistant",
-                            conversation_visibility="visible",
-                            thought_visibility="hidden",
-                        ),
-                    ),
-                    background="SDK integration test background",
-                    behaviors=[],
-                    communication_patterns=[],
-                    voice_config=VoiceConfigInput(
-                        voice_id="iP95p4xoKVk53GoZ742B",
-                        stability=0.35,
-                        similarity_boost=0.9,
-                        style=0,
-                    ),
-                ),
-            )
-            print(agent_version)
-            assert agent_version is not None
-            assert isinstance(agent_version, OrganizationCreateAgentVersionResponse)
-
-            # After creating a version, verify it shows up in get_agent_versions
-            from amigo_sdk.generated.model import (
-                GetAgentVersionsParametersQuery,
-                OrganizationGetAgentVersionsResponse,
-            )
-
-            versions_resp = await client.organization.get_agent_versions(
-                agent_id=agent_id,
-                params=GetAgentVersionsParametersQuery(),
-            )
-
-            assert versions_resp is not None
-            assert isinstance(versions_resp, OrganizationGetAgentVersionsResponse)
-            assert any(v.id == agent_version.id for v in versions_resp.agent_versions)
-
-    async def test_delete_agent(self, agent_id):
-        """Test deleting an agent."""
-        async with AmigoClient() as client:
-            await client.organization.delete_agent(agent_id=agent_id)
 
     async def test_get_agents(self):
         """Test listing agents for the organization."""

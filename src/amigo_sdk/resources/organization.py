@@ -1,13 +1,6 @@
-from typing import Optional
-
 from amigo_sdk.generated.model import (
-    CreateAgentVersionParametersQuery,
     GetAgentsParametersQuery,
     GetAgentVersionsParametersQuery,
-    OrganizationCreateAgentRequest,
-    OrganizationCreateAgentResponse,
-    OrganizationCreateAgentVersionRequest,
-    OrganizationCreateAgentVersionResponse,
     OrganizationGetAgentsResponse,
     OrganizationGetAgentVersionsResponse,
     OrganizationGetOrganizationResponse,
@@ -32,41 +25,6 @@ class OrganizationResource:
 
         return OrganizationGetOrganizationResponse.model_validate_json(response.text)
 
-    async def create_agent(
-        self, body: OrganizationCreateAgentRequest
-    ) -> OrganizationCreateAgentResponse:
-        """
-        Create an agent for an organization.
-        """
-        response = await self._http.request(
-            "POST",
-            f"/v1/{self._organization_id}/organization/agent",
-            json=body.model_dump(mode="json", exclude_none=True),
-        )
-
-        return OrganizationCreateAgentResponse.model_validate_json(response.text)
-
-    async def create_agent_version(
-        self,
-        agent_id: str,
-        body: OrganizationCreateAgentVersionRequest,
-        params: Optional[CreateAgentVersionParametersQuery] = None,
-    ) -> OrganizationCreateAgentVersionResponse:
-        """
-        Create a version of an agent.
-        """
-
-        response = await self._http.request(
-            "POST",
-            f"/v1/{self._organization_id}/organization/agent/{agent_id}/",
-            json=body.model_dump(mode="json", exclude_none=True),
-            params=(
-                params.model_dump(mode="json", exclude_none=True) if params else None
-            ),
-        )
-
-        return OrganizationCreateAgentVersionResponse.model_validate_json(response.text)
-
     async def get_agents(
         self, params: GetAgentsParametersQuery
     ) -> OrganizationGetAgentsResponse:
@@ -80,15 +38,6 @@ class OrganizationResource:
         )
 
         return OrganizationGetAgentsResponse.model_validate_json(response.text)
-
-    async def delete_agent(self, agent_id: str) -> None:
-        """
-        Delete an agent for an organization.
-        """
-        await self._http.request(
-            "DELETE",
-            f"/v1/{self._organization_id}/organization/agent/{agent_id}/",
-        )
 
     async def get_agent_versions(
         self, agent_id: str, params: GetAgentVersionsParametersQuery
