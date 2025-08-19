@@ -1,6 +1,8 @@
 import asyncio
 import datetime as dt
+import random
 from collections.abc import AsyncIterator
+from email.utils import parsedate_to_datetime
 from typing import Any, Optional
 
 import httpx
@@ -16,13 +18,78 @@ from amigo_sdk.generated.model import UserSignInWithApiKeyResponse
 
 
 class AmigoHttpClient:
-    def __init__(self, cfg: AmigoConfig, **httpx_kwargs: Any) -> None:
+    def __init__(
+        self,
+        cfg: AmigoConfig,
+        *,
+        retry_max_attempts: int = 3,
+        retry_backoff_base: float = 0.25,
+        retry_max_delay_seconds: float = 30.0,
+        retry_on_status: set[int] | None = None,
+        retry_on_methods: set[str] | None = None,
+        **httpx_kwargs: Any,
+    ) -> None:
         self._cfg = cfg
         self._token: Optional[UserSignInWithApiKeyResponse] = None
         self._client = httpx.AsyncClient(
             base_url=cfg.base_url,
             **httpx_kwargs,
         )
+        # Retry configuration
+        self._retry_max_attempts = max(1, retry_max_attempts)
+        self._retry_backoff_base = retry_backoff_base
+        self._retry_max_delay_seconds = max(0.0, retry_max_delay_seconds)
+        self._retry_on_status = retry_on_status or {408, 429, 500, 502, 503, 504}
+        # Default to GET only; POST is handled specially for 429 + Retry-After
+        self._retry_on_methods = {m.upper() for m in (retry_on_methods or {"GET"})}
+
+    def _is_retryable_method(self, method: str) -> bool:
+        return method.upper() in self._retry_on_methods
+
+    def _is_retryable_response(self, method: str, resp: httpx.Response) -> bool:
+        status = resp.status_code
+        # Allow POST retry only for 429 when Retry-After header is present
+        if (
+            method.upper() == "POST"
+            and status == 429
+            and resp.headers.get("Retry-After")
+        ):
+            return True
+        return self._is_retryable_method(method) and status in self._retry_on_status
+
+    def _parse_retry_after_seconds(self, resp: httpx.Response) -> float | None:
+        retry_after = resp.headers.get("Retry-After")
+        if not retry_after:
+            return None
+        # Numeric seconds
+        try:
+            seconds = float(retry_after)
+            return max(0.0, seconds)
+        except ValueError:
+            pass
+        # HTTP-date format
+        try:
+            target_dt = parsedate_to_datetime(retry_after)
+            if target_dt is None:
+                return None
+            if target_dt.tzinfo is None:
+                target_dt = target_dt.replace(tzinfo=dt.UTC)
+            now = dt.datetime.now(dt.UTC)
+            delta_seconds = (target_dt - now).total_seconds()
+            return max(0.0, delta_seconds)
+        except Exception:
+            return None
+
+    def _retry_delay_seconds(self, attempt: int, resp: httpx.Response | None) -> float:
+        # Honor Retry-After when present (numeric or HTTP-date), clamped by max delay
+        if resp is not None:
+            ra_seconds = self._parse_retry_after_seconds(resp)
+            if ra_seconds is not None:
+                return min(self._retry_max_delay_seconds, ra_seconds)
+        # Exponential backoff with full jitter: U(0, min(cap, base * 2^(attempt-1)))
+        window = self._retry_backoff_base * (2 ** (attempt - 1))
+        window = min(window, self._retry_max_delay_seconds)
+        return random.uniform(0.0, window)
 
     async def _ensure_token(self) -> str:
         """Fetch or refresh bearer token ~5 min before expiry."""
@@ -40,20 +107,46 @@ class AmigoHttpClient:
 
     async def request(self, method: str, path: str, **kwargs) -> httpx.Response:
         kwargs.setdefault("headers", {})
-        kwargs["headers"]["Authorization"] = f"Bearer {await self._ensure_token()}"
+        attempt = 1
 
-        resp = await self._client.request(method, path, **kwargs)
-
-        # On 401 refresh token once and retry
-        if resp.status_code == 401:
-            self._token = None
+        while True:
             kwargs["headers"]["Authorization"] = f"Bearer {await self._ensure_token()}"
-            resp = await self._client.request(method, path, **kwargs)
 
-        # Check response status and raise appropriate errors
-        raise_for_status(resp)
+            resp: httpx.Response | None = None
+            try:
+                resp = await self._client.request(method, path, **kwargs)
 
-        return resp
+                # On 401 refresh token once and retry immediately
+                if resp.status_code == 401:
+                    self._token = None
+                    kwargs["headers"]["Authorization"] = (
+                        f"Bearer {await self._ensure_token()}"
+                    )
+                    resp = await self._client.request(method, path, **kwargs)
+
+            except (httpx.TimeoutException, httpx.TransportError):
+                # Retry only if method is allowed (e.g., GET); POST not retried for transport/timeouts
+                if (
+                    not self._is_retryable_method(method)
+                    or attempt >= self._retry_max_attempts
+                ):
+                    raise
+                await asyncio.sleep(self._retry_delay_seconds(attempt, None))
+                attempt += 1
+                continue
+
+            # Retry on configured HTTP status codes
+            if (
+                self._is_retryable_response(method, resp)
+                and attempt < self._retry_max_attempts
+            ):
+                await asyncio.sleep(self._retry_delay_seconds(attempt, resp))
+                attempt += 1
+                continue
+
+            # Check response status and raise appropriate errors
+            raise_for_status(resp)
+            return resp
 
     async def stream_lines(
         self,
