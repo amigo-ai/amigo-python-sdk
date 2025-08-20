@@ -1,7 +1,6 @@
 import asyncio
 import json
 import os
-from collections.abc import AsyncGenerator
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -40,8 +39,14 @@ async def run() -> None:
                 CreateConversationParametersQuery(response_format="text"),
             )
 
-            result = await log_events("create", create_events)
-            conversation_id = result.get("conversationId")
+            conversation_id: str | None = None
+            log_create = make_event_logger("create")
+            async for evt in create_events:
+                event = evt.model_dump(mode="json")
+                log_create(event)
+                if event.get("type") == "conversation-created":
+                    conversation_id = event.get("conversation_id")
+
             if not conversation_id:
                 raise RuntimeError("Conversation was not created (no id received).")
 
@@ -55,7 +60,12 @@ async def run() -> None:
                 text_message="Hello from the Amigo Python SDK example!",
             )
 
-            await log_events("interact", interaction_events)
+            log_interact = make_event_logger("interact")
+            async for evt in interaction_events:
+                event = evt.model_dump(mode="json")
+                log_interact(event)
+                if event.get("type") == "interaction-complete":
+                    break
 
             # 3) Get messages for the conversation and log them
             print("Fetching recent messages...")
@@ -79,25 +89,20 @@ async def run() -> None:
 
             print("Done.")
         except AmigoError as err:
-            # SDK error types include status code and optional context
-            print(
-                f"AmigoError ({type(err).__name__}) message={err} status_code={getattr(err, 'status_code', None)}"
-            )
+            print(err)
             raise SystemExit(1) from err
         except Exception as err:
             print("Unexpected error:", err)
             raise SystemExit(1) from err
 
 
-async def log_events(label: str, events: AsyncGenerator) -> dict[str, str | None]:
+def make_event_logger(label: str):
     new_message_count = 0
     printed_ellipsis = False
-    conversation_id: str | None = None
 
-    async for evt in events:
-        event = evt.model_dump(mode="json")
-        event_type = event.get("type", None)
-
+    def _log(event: dict) -> None:
+        nonlocal new_message_count, printed_ellipsis
+        event_type = event.get("type")
         if event_type == "new-message":
             if new_message_count < 3:
                 new_message_count += 1
@@ -105,15 +110,10 @@ async def log_events(label: str, events: AsyncGenerator) -> dict[str, str | None
             elif not printed_ellipsis:
                 printed_ellipsis = True
                 print(f"[{label} event] ... (more new-message events)")
-        else:
-            print(f"[{label} event] {json.dumps(event, indent=2)}")
+            return
+        print(f"[{label} event] {json.dumps(event, indent=2)}")
 
-        if event_type == "conversation-created":
-            conversation_id = event.get("conversation_id", None)
-        if event_type == "interaction-complete":
-            break
-
-    return {"conversationId": conversation_id}
+    return _log
 
 
 if __name__ == "__main__":

@@ -166,17 +166,29 @@ class AmigoHttpClient:
         headers["Authorization"] = f"Bearer {await self._ensure_token()}"
         headers.setdefault("Accept", "application/x-ndjson")
 
-        async def _raise_light_if_error(resp: httpx.Response) -> None:
+        async def _raise_status_with_body(resp: httpx.Response) -> None:
+            """Ensure response body is buffered, then raise mapped error with details."""
             if 200 <= resp.status_code < 300:
                 return
-            error_class = get_error_class_for_status_code(resp.status_code)
-            # Avoid consuming the stream body for error reporting
+            # Fully buffer the body so raise_for_status() can extract JSON/text safely
+            try:
+                await resp.aread()
+            except Exception:
+                pass
+            # If this is a real httpx.Response, use our rich raise_for_status
+            if hasattr(resp, "is_success"):
+                raise_for_status(resp)
+            # Otherwise, fall back to lightweight error mapping used in tests' mock responses
+            error_class = get_error_class_for_status_code(
+                getattr(resp, "status_code", 0)
+            )
             raise error_class(
-                f"HTTP {resp.status_code} error", status_code=resp.status_code
+                f"HTTP {getattr(resp, 'status_code', 'unknown')} error",
+                status_code=getattr(resp, "status_code", None),
             )
 
         async def _yield_from_response(resp: httpx.Response) -> AsyncIterator[str]:
-            await _raise_light_if_error(resp)
+            await _raise_status_with_body(resp)
             if abort_event and abort_event.is_set():
                 return
             async for line in resp.aiter_lines():
