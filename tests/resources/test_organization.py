@@ -3,11 +3,6 @@ import pytest
 from amigo_sdk.config import AmigoConfig
 from amigo_sdk.errors import NotFoundError
 from amigo_sdk.generated.model import (
-    GetAgentsParametersQuery,
-    GetAgentVersionsParametersQuery,
-    OrganizationGetAgentsResponse,
-    OrganizationGetAgentsResponseAgentInstance,
-    OrganizationGetAgentVersionsResponse,
     OrganizationGetOrganizationResponse,
 )
 from amigo_sdk.http_client import AmigoHttpClient
@@ -63,70 +58,3 @@ class TestOrganizationResource:
         ):
             with pytest.raises(NotFoundError):
                 await organization_resource.get()
-
-    # --- Get agents ---
-    @pytest.mark.asyncio
-    async def test_get_agents_happy_path(
-        self, organization_resource: OrganizationResource
-    ) -> None:
-        params = GetAgentsParametersQuery()
-
-        mock_response = OrganizationGetAgentsResponse(
-            agents=[
-                OrganizationGetAgentsResponseAgentInstance(
-                    id="agent-1", name="Agent One", deprecated=False, latest_version=1
-                )
-            ],
-            has_more=False,
-            continuation_token=None,
-        )
-
-        async with mock_http_request(mock_response):
-            result = await organization_resource.get_agents(params=params)
-
-            assert isinstance(result, OrganizationGetAgentsResponse)
-            assert len(result.agents) == 1
-            assert result.agents[0].id == "agent-1"
-            assert result.agents[0].name == "Agent One"
-
-    @pytest.mark.asyncio
-    async def test_get_agents_invalid_query_param_422(
-        self, organization_resource: OrganizationResource
-    ) -> None:
-        from amigo_sdk.errors import ValidationError as SDKValidationError
-
-        params = GetAgentsParametersQuery()
-
-        async with mock_http_request('{"detail": "invalid query"}', status_code=422):
-            with pytest.raises(SDKValidationError):
-                await organization_resource.get_agents(params=params)
-
-    @pytest.mark.asyncio
-    async def test_get_agent_versions_happy_path(
-        self, organization_resource: OrganizationResource
-    ) -> None:
-        params = GetAgentVersionsParametersQuery()
-
-        mock_response = OrganizationGetAgentVersionsResponse(
-            agent_versions=[], has_more=False, continuation_token=None
-        )
-
-        async with mock_http_request(mock_response):
-            result = await organization_resource.get_agent_versions(
-                agent_id="agent-1", params=params
-            )
-
-            assert isinstance(result, OrganizationGetAgentVersionsResponse)
-            assert result.agent_versions == []
-
-    @pytest.mark.asyncio
-    async def test_get_agent_versions_non_2xx_raises_error(
-        self, organization_resource: OrganizationResource
-    ) -> None:
-        params = GetAgentVersionsParametersQuery()
-
-        async with mock_http_request('{"error": "Agent not found"}', status_code=404):
-            with pytest.raises(NotFoundError):
-                await organization_resource.get_agent_versions(
-                    agent_id="missing-agent", params=params
-                )

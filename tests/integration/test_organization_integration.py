@@ -83,21 +83,6 @@ class TestOrganizationIntegration:
                 "Organization title should not be None"
             )
 
-    async def test_get_agents(self):
-        """Test listing agents for the organization."""
-        from amigo_sdk.generated.model import (
-            GetAgentsParametersQuery,
-            OrganizationGetAgentsResponse,
-        )
-
-        async with AmigoClient() as client:
-            resp = await client.organization.get_agents(
-                params=GetAgentsParametersQuery()
-            )
-
-            assert resp is not None
-            assert isinstance(resp, OrganizationGetAgentsResponse)
-
     async def test_invalid_credentials_raises_authentication_error(self):
         """Test that invalid credentials raise appropriate authentication errors."""
 
