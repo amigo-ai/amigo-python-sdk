@@ -59,6 +59,7 @@ class ConversationResource:
                 f"/v1/{self._organization_id}/conversation/",
                 params=params.model_dump(mode="json", exclude_none=True),
                 json=body.model_dump(mode="json", exclude_none=True),
+                headers={"Accept": "application/x-ndjson"},
                 abort_event=abort_event,
             ):
                 # Each line is a JSON object representing a discriminated union event
@@ -85,6 +86,7 @@ class ConversationResource:
             request_kwargs: dict[str, Any] = {
                 "params": params.model_dump(mode="json", exclude_none=True),
                 "abort_event": abort_event,
+                "headers": {"Accept": "application/x-ndjson"},
             }
             # Route based on requested format
             req_format = getattr(params, "request_format", None)
