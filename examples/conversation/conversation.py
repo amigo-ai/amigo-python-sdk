@@ -33,9 +33,7 @@ async def run() -> None:
             # 1) Create a conversation and log streamed events
             print("Creating conversation...")
             create_events = await client.conversation.create_conversation(
-                ConversationCreateConversationRequest(
-                    service_id=service_id, service_version_set_name="release"
-                ),
+                ConversationCreateConversationRequest(service_id=service_id),
                 CreateConversationParametersQuery(response_format="text"),
             )
 
