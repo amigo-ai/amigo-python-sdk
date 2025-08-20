@@ -69,8 +69,6 @@ Install extensions:
 - [Ruff](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff)
 - [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
 
-Settings are pre-configured in `.vscode/settings.json`.
-
 ## Troubleshooting
 
 - **Command not found:** Activate virtual environment with `source .venv/bin/activate`
