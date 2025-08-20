@@ -11,25 +11,25 @@ The official Python SDK for the Amigo API, providing a simple and intuitive inte
 Install the SDK using pip:
 
 ```bash
-pip install amigo-python-sdk
+pip install amigo_sdk
 ```
 
 Or add it to your requirements.txt:
 
 ```txt
-amigo-python-sdk
+amigo_sdk
 ```
 
 ### API compatibility
 
-This SDK autogenerates its types from the latest Amigo OpenAPI schema. As a result, only the latest published SDK version is guaranteed to match the current API. If you pin to an older version, it may not include the newest endpoints or fields.
+This SDK auto-generates its types from the latest [Amigo OpenAPI schema](https://api.amigo.ai/v1/openapi.json). As a result, only the latest published SDK version is guaranteed to match the current API. If you pin to an older version, it may not include the newest endpoints or fields.
 
 ## Quick Start
 
 ```python
 import asyncio
-from amigo_python_sdk import AmigoClient
-from amigo_python_sdk.generated.model import GetConversationsParametersQuery
+from amigo_sdk import AmigoClient
+from amigo_sdk.generated.model import GetConversationsParametersQuery
 
 # Initialize the client
 client = AmigoClient(
@@ -48,7 +48,7 @@ async def example():
             )
             print("Conversations:", conversations)
     except Exception as error:
-        print("Error:", error)
+        print(error)
 
 # Run the example
 asyncio.run(example())
@@ -85,7 +85,7 @@ export AMIGO_BASE_URL="https://api.amigo.ai"  # optional
 Then initialize the client without parameters:
 
 ```python
-from amigo_python_sdk import AmigoClient
+from amigo_sdk import AmigoClient
 
 # Automatically loads from environment variables
 client = AmigoClient()
@@ -116,17 +116,18 @@ For detailed instructions on generating API keys, see the [Authentication Guide]
 
 The SDK provides access to the following resources:
 
-- **Organizations**: Manage agents and get Organization fio
+- **Organizations**: Get Organization info
 - **Services**: Get available services
 - **Conversation**: Manage conversations
+- **User**: Manage users
 
 ## Error Handling
 
 The SDK provides typed error handling:
 
 ```python
-from amigo_python_sdk import AmigoClient
-from amigo_python_sdk.errors import (
+from amigo_sdk import AmigoClient
+from amigo_sdk.errors import (
     AuthenticationError,
     NotFoundError,
     BadRequestError,

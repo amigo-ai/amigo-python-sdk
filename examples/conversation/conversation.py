@@ -10,6 +10,7 @@ from amigo_sdk.generated.model import (
     ConversationCreateConversationRequest,
     CreateConversationParametersQuery,
     GetConversationMessagesParametersQuery,
+    GetConversationsParametersQuery,
     InteractWithConversationParametersQuery,
 )
 from amigo_sdk.sdk_client import AmigoClient
@@ -48,8 +49,19 @@ async def run() -> None:
             if not conversation_id:
                 raise RuntimeError("Conversation was not created (no id received).")
 
-            # 2) Interact with the conversation via text and log streamed events
-            print("Sending a text message to the conversation...")
+            # 2) Get the conversation
+            print("\nGetting conversation...")
+            conversation = await client.conversation.get_conversations(
+                GetConversationsParametersQuery(id=[conversation_id])
+            )
+            print(
+                json.dumps(
+                    conversation.conversations[0].model_dump(mode="json"), indent=2
+                ),
+            )
+
+            # 3) Interact with the conversation via text and log streamed events
+            print("\nSending a text message to the conversation...")
             interaction_events = await client.conversation.interact_with_conversation(
                 conversation_id,
                 InteractWithConversationParametersQuery(
@@ -65,8 +77,8 @@ async def run() -> None:
                 if event.get("type") == "interaction-complete":
                     break
 
-            # 3) Get messages for the conversation and log them
-            print("Fetching recent messages...")
+            # 4) Get messages for the conversation and log them
+            print("\nFetching recent messages...")
             messages_page = await client.conversation.get_conversation_messages(
                 conversation_id,
                 GetConversationMessagesParametersQuery(
@@ -76,8 +88,8 @@ async def run() -> None:
             for m in getattr(messages_page, "messages", []) or []:
                 print("[message]", json.dumps(m.model_dump(mode="json"), indent=2))
 
-            # 4) Finish the conversation
-            print("Finishing conversation...")
+            # 5) Finish the conversation
+            print("\nFinishing conversation...")
             try:
                 await client.conversation.finish_conversation(conversation_id)
                 print("Conversation finished.")
