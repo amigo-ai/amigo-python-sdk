@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -23,7 +23,7 @@ def mock_config():
 # Mock successful auth response
 @pytest.fixture
 def mock_success_response() -> UserSignInWithApiKeyResponse:
-    expires_at = (datetime.now() + timedelta(hours=1)).isoformat()
+    expires_at = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
     return {"id_token": "mock-bearer-token-123", "expires_at": expires_at}
 
 
