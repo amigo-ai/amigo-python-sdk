@@ -29,6 +29,11 @@ on:
         required: false
         type: boolean
         default: false
+      spec_url:
+        description: "OpenAPI spec URL to use for generation"
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -53,6 +58,24 @@ jobs:
           fetch-depth: 0
           # Use a token that can push tags and create releases
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ensure jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Fetch OpenAPI spec
+        id: fetch_spec
+        run: |
+          SPEC_URL="${{ inputs.spec_url }}"
+          if [ -z "$SPEC_URL" ]; then
+            SPEC_URL="https://api.amigo.ai/v1/openapi.json"
+          fi
+          curl -fSL -o openapi-new.json "$SPEC_URL"
+          mkdir -p specs
+          cp openapi-new.json specs/openapi-baseline.json
+
+      # Optional: if your generator can take a spec path
+      - name: Set spec path for generator
+        run: echo "OPENAPI_SPEC_PATH=$GITHUB_WORKSPACE/openapi-new.json" >> $GITHUB_ENV
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -115,7 +138,7 @@ jobs:
       - name: Commit version bump
         if: ${{ !inputs.dry_run }}
         run: |
-          git add src/amigo_sdk/__init__.py
+          git add -A
           git commit -m "Bump version to ${{ steps.new_version.outputs.version }}"
           git push origin HEAD
 
