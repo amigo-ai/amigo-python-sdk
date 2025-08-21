@@ -17,11 +17,6 @@ on:
         required: false
         default: false
         type: boolean
-      production:
-        description: "Upload to PyPI (instead of TestPyPI)"
-        required: false
-        default: false
-        type: boolean
 
 permissions:
   contents: write
@@ -95,18 +90,8 @@ jobs:
           echo "✅ Package built successfully"
           ls -la dist/
 
-      - name: Upload to TestPyPI
-        if: ${{ !inputs.dry_run && !inputs.production }}
-        env:
-          HATCH_INDEX_USER: __token__
-          HATCH_INDEX_AUTH: ${{ secrets.TEST_PYPI_API_TOKEN }}
-        run: |
-          echo "🔄 Uploading to TestPyPI..."
-          hatch publish --repo https://test.pypi.org/legacy/
-          echo "✅ Package uploaded to TestPyPI"
-
       - name: Upload to PyPI
-        if: ${{ !inputs.dry_run && inputs.production }}
+        if: ${{ !inputs.dry_run }}
         env:
           HATCH_INDEX_USER: __token__
           HATCH_INDEX_AUTH: ${{ secrets.PYPI_API_TOKEN }}
@@ -143,19 +128,17 @@ jobs:
 
             ### Package Information
             - **Version**: ${{ steps.new_version.outputs.version }}
-            - **Target**: ${{ inputs.production && 'PyPI (Production)' || 'TestPyPI' }}
+            - **Target**: PyPI
             - **Type**: ${{ inputs.version_type }} release
 
             ### Links
-            ${{ !inputs.production && format('- [View on TestPyPI](https://test.pypi.org/project/amigo-python-sdk/{0}/)', steps.new_version.outputs.version) || '' }}
-            ${{ inputs.production && format('- [View on PyPI](https://pypi.org/project/amigo-python-sdk/{0}/)', steps.new_version.outputs.version) || '' }}
+            ${{ format('- [View on PyPI](https://pypi.org/project/amigo_sdk/{0}/)', steps.new_version.outputs.version) }}
 
             ### Installation
             ```bash
-            ${{ !inputs.production && 'pip install --index-url https://test.pypi.org/simple/ amigo-python-sdk' || 'pip install amigo-python-sdk' }}
+            pip install amigo_sdk
             ```
           draft: false
-          prerelease: ${{ !inputs.production }}
 
       - name: Upload build artifacts
         if: always()
@@ -172,17 +155,13 @@ jobs:
           echo "- **Version**: ${{ steps.new_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Previous**: ${{ steps.current_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Type**: ${{ inputs.version_type }} release" >> $GITHUB_STEP_SUMMARY
-          echo "- **Target**: ${{ inputs.production && 'PyPI (Production)' || 'TestPyPI' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Target**: PyPI" >> $GITHUB_STEP_SUMMARY
           echo "- **Dry Run**: ${{ inputs.dry_run }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ "${{ inputs.dry_run }}" = "false" ]; then
             echo "### 📦 Package Links" >> $GITHUB_STEP_SUMMARY
-            if [ "${{ inputs.production }}" = "true" ]; then
-              echo "- [PyPI Package](https://pypi.org/project/amigo-python-sdk/${{ steps.new_version.outputs.version }}/)" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "- [TestPyPI Package](https://test.pypi.org/project/amigo-python-sdk/${{ steps.new_version.outputs.version }}/)" >> $GITHUB_STEP_SUMMARY
-            fi
+            echo "- [PyPI Package](https://pypi.org/project/amigo_sdk/${{ steps.new_version.outputs.version }}/)" >> $GITHUB_STEP_SUMMARY
             echo "- [GitHub Release](https://github.com/${{ github.repository }}/releases/tag/v${{ steps.new_version.outputs.version }})" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### 🚀 Next Steps" >> $GITHUB_STEP_SUMMARY
