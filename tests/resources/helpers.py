@@ -42,7 +42,9 @@ async def mock_http_request(mock_response_data, status_code=200):
     )
 
     with (
-        patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token),
+        patch(
+            "amigo_sdk.http_client.sign_in_with_api_key_async", return_value=fresh_token
+        ),
         patch("httpx.AsyncClient.request", return_value=mock_response),
     ):
         yield mock_response
@@ -96,7 +98,9 @@ async def mock_http_stream(lines, status_code: int = 200):
     )
 
     with (
-        patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token),
+        patch(
+            "amigo_sdk.http_client.sign_in_with_api_key_async", return_value=fresh_token
+        ),
         patch("httpx.AsyncClient.stream", _mock_stream),
     ):
         yield tracker
@@ -157,7 +161,9 @@ async def mock_http_stream_sequence(sequence):
     )
 
     with (
-        patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token),
+        patch(
+            "amigo_sdk.http_client.sign_in_with_api_key_async", return_value=fresh_token
+        ),
         patch("httpx.AsyncClient.stream", _mock_stream),
     ):
         yield tracker
