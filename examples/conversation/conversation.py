@@ -15,6 +15,26 @@ from amigo_sdk.generated.model import (
 from amigo_sdk.sdk_client import AmigoClient
 
 
+def make_event_logger(label: str):
+    new_message_count = 0
+    printed_ellipsis = False
+
+    def _log(event: dict) -> None:
+        nonlocal new_message_count, printed_ellipsis
+        event_type = event.get("type")
+        if event_type == "new-message":
+            if new_message_count < 3:
+                new_message_count += 1
+                print(f"[{label} event] {json.dumps(event, indent=2)}")
+            elif not printed_ellipsis:
+                printed_ellipsis = True
+                print(f"[{label} event] ... (more new-message events)")
+            return
+        print(f"[{label} event] {json.dumps(event, indent=2)}")
+
+    return _log
+
+
 def run() -> None:
     # Load env vars from examples/.env (shared by all examples)
     examples_env = Path(__file__).resolve().parent.parent / ".env"
@@ -35,9 +55,10 @@ def run() -> None:
             )
 
             conversation_id: str | None = None
+            log_create = make_event_logger("create")
             for evt in create_events:
                 event = evt.model_dump(mode="json")
-                print("[create event]", json.dumps(event, indent=2))
+                log_create(event)
                 if event.get("type") == "conversation-created":
                     conversation_id = event.get("conversation_id")
                 if event.get("type") == "interaction-complete":
@@ -64,9 +85,10 @@ def run() -> None:
                 ),
                 text_message="Hello from the Amigo Python SDK sync example!",
             )
+            log_interact = make_event_logger("interact")
             for evt in interaction_events:
                 event = evt.model_dump(mode="json")
-                print("[interact event]", json.dumps(event, indent=2))
+                log_interact(event)
                 if event.get("type") == "interaction-complete":
                     break
 
