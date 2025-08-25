@@ -1,17 +1,17 @@
 from typing import Any, Optional
 
 from amigo_sdk.config import AmigoConfig
-from amigo_sdk.http_client import AmigoHttpClient, AmigoSyncHttpClient
+from amigo_sdk.http_client import AmigoAsyncHttpClient, AmigoHttpClient
 from amigo_sdk.resources.conversation import (
+    AsyncConversationResource,
     ConversationResource,
-    SyncConversationResource,
 )
 from amigo_sdk.resources.organization import (
+    AsyncOrganizationResource,
     OrganizationResource,
-    SyncOrganizationResource,
 )
-from amigo_sdk.resources.service import ServiceResource, SyncServiceResource
-from amigo_sdk.resources.user import SyncUserResource, UserResource
+from amigo_sdk.resources.service import AsyncServiceResource, ServiceResource
+from amigo_sdk.resources.user import AsyncUserResource, UserResource
 
 
 class AsyncAmigoClient:
@@ -66,11 +66,15 @@ class AsyncAmigoClient:
                 ) from e
 
         # Initialize HTTP client and resources
-        self._http = AmigoHttpClient(self._cfg, **httpx_kwargs)
-        self._organization = OrganizationResource(self._http, self._cfg.organization_id)
-        self._service = ServiceResource(self._http, self._cfg.organization_id)
-        self._conversation = ConversationResource(self._http, self._cfg.organization_id)
-        self._users = UserResource(self._http, self._cfg.organization_id)
+        self._http = AmigoAsyncHttpClient(self._cfg, **httpx_kwargs)
+        self._organization = AsyncOrganizationResource(
+            self._http, self._cfg.organization_id
+        )
+        self._service = AsyncServiceResource(self._http, self._cfg.organization_id)
+        self._conversation = AsyncConversationResource(
+            self._http, self._cfg.organization_id
+        )
+        self._users = AsyncUserResource(self._http, self._cfg.organization_id)
 
     @property
     def config(self) -> AmigoConfig:
@@ -147,34 +151,30 @@ class AmigoClient:
                     "either as kwargs or environment variables."
                 ) from e
 
-        self._http = AmigoSyncHttpClient(self._cfg, **httpx_kwargs)
-        self._organization = SyncOrganizationResource(
-            self._http, self._cfg.organization_id
-        )
-        self._service = SyncServiceResource(self._http, self._cfg.organization_id)
-        self._conversation = SyncConversationResource(
-            self._http, self._cfg.organization_id
-        )
-        self._users = SyncUserResource(self._http, self._cfg.organization_id)
+        self._http = AmigoHttpClient(self._cfg, **httpx_kwargs)
+        self._organization = OrganizationResource(self._http, self._cfg.organization_id)
+        self._service = ServiceResource(self._http, self._cfg.organization_id)
+        self._conversation = ConversationResource(self._http, self._cfg.organization_id)
+        self._users = UserResource(self._http, self._cfg.organization_id)
 
     @property
     def config(self) -> AmigoConfig:
         return self._cfg
 
     @property
-    def organization(self) -> SyncOrganizationResource:
+    def organization(self) -> OrganizationResource:
         return self._organization
 
     @property
-    def service(self) -> SyncServiceResource:
+    def service(self) -> ServiceResource:
         return self._service
 
     @property
-    def conversation(self) -> SyncConversationResource:
+    def conversation(self) -> ConversationResource:
         return self._conversation
 
     @property
-    def users(self) -> SyncUserResource:
+    def users(self) -> UserResource:
         return self._users
 
     def aclose(self) -> None:

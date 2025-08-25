@@ -13,7 +13,7 @@ from amigo_sdk.errors import (
     RateLimitError,
     ServerError,
 )
-from amigo_sdk.http_client import AmigoSyncHttpClient
+from amigo_sdk.http_client import AmigoHttpClient
 
 
 @pytest.fixture
@@ -36,15 +36,15 @@ def mock_token_response():
 
 
 @pytest.mark.unit
-class TestAmigoSyncHttpClient:
+class TestAmigoHttpClientSync:
     def test_client_initialization(self, mock_config):
-        client = AmigoSyncHttpClient(mock_config, timeout=30)
+        client = AmigoHttpClient(mock_config, timeout=30)
         assert client._cfg == mock_config
         assert client._token is None
         assert str(client._client.base_url) == "https://api.example.com"
 
     def test_ensure_token_fetches_new_token(self, mock_config, mock_token_response):
-        client = AmigoSyncHttpClient(mock_config)
+        client = AmigoHttpClient(mock_config)
 
         with patch(
             "amigo_sdk.http_client.sign_in_with_api_key_sync",
@@ -56,7 +56,7 @@ class TestAmigoSyncHttpClient:
         assert client._token == mock_token_response
 
     def test_ensure_token_refreshes_expired_token(self, mock_config):
-        client = AmigoSyncHttpClient(mock_config)
+        client = AmigoHttpClient(mock_config)
 
         expired_token = Mock(
             id_token="expired-token",
@@ -78,7 +78,7 @@ class TestAmigoSyncHttpClient:
         assert client._token == fresh_token
 
     def test_ensure_token_handles_auth_failure(self, mock_config):
-        client = AmigoSyncHttpClient(mock_config)
+        client = AmigoHttpClient(mock_config)
 
         with patch(
             "amigo_sdk.http_client.sign_in_with_api_key_sync",
@@ -88,7 +88,7 @@ class TestAmigoSyncHttpClient:
                 client._ensure_token()
 
     def test_request_adds_authorization_header(self, mock_config):
-        client = AmigoSyncHttpClient(mock_config)
+        client = AmigoHttpClient(mock_config)
 
         fresh_token = Mock(
             id_token="test-bearer-token",
@@ -107,7 +107,7 @@ class TestAmigoSyncHttpClient:
         assert client._token.id_token == "test-bearer-token"
 
     def test_request_retries_on_401(self, mock_config):
-        client = AmigoSyncHttpClient(mock_config)
+        client = AmigoHttpClient(mock_config)
         fresh_token = Mock(
             id_token="fresh-token",
             expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
@@ -131,7 +131,7 @@ class TestAmigoSyncHttpClient:
         assert client._token.id_token == "fresh-token"
 
     def test_request_raises_error_for_non_2xx(self, mock_config):
-        client = AmigoSyncHttpClient(mock_config)
+        client = AmigoHttpClient(mock_config)
         fresh_token = Mock(
             id_token="tok",
             expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
@@ -147,13 +147,13 @@ class TestAmigoSyncHttpClient:
                 client.request("GET", "/bad")
 
     def test_sync_context_manager(self, mock_config):
-        with AmigoSyncHttpClient(mock_config) as client:
-            assert isinstance(client, AmigoSyncHttpClient)
+        with AmigoHttpClient(mock_config) as client:
+            assert isinstance(client, AmigoHttpClient)
 
         assert client._client.is_closed
 
     def test_stream_lines_yields_and_sets_headers(self, mock_config):
-        client = AmigoSyncHttpClient(mock_config)
+        client = AmigoHttpClient(mock_config)
 
         class _Resp:
             def __init__(self):
@@ -187,7 +187,7 @@ class TestAmigoSyncHttpClient:
         assert lines == ["line1", "line2"]
 
     def test_stream_lines_retries_once_on_401(self, mock_config):
-        client = AmigoSyncHttpClient(mock_config)
+        client = AmigoHttpClient(mock_config)
 
         class _Resp:
             def __init__(self, status_code, lines):
@@ -224,7 +224,7 @@ class TestAmigoSyncHttpClient:
         assert lines == ["ok"]
 
     def test_stream_lines_raises_on_non_2xx(self, mock_config):
-        client = AmigoSyncHttpClient(mock_config)
+        client = AmigoHttpClient(mock_config)
 
         class _Resp:
             def __init__(self):
@@ -254,7 +254,7 @@ class TestAmigoSyncHttpClient:
                 list(client.stream_lines("GET", "/not-found"))
 
     def test_request_retries_on_408_get(self, mock_config):
-        client = AmigoSyncHttpClient(mock_config, retry_max_attempts=3)
+        client = AmigoHttpClient(mock_config, retry_max_attempts=3)
         fresh_token = Mock(
             id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
         )
@@ -283,7 +283,7 @@ class TestAmigoSyncHttpClient:
         assert len(sleeps) == 1
 
     def test_request_retries_on_5xx_get(self, mock_config):
-        client = AmigoSyncHttpClient(mock_config, retry_max_attempts=3)
+        client = AmigoHttpClient(mock_config, retry_max_attempts=3)
         fresh_token = Mock(
             id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
         )
@@ -312,7 +312,7 @@ class TestAmigoSyncHttpClient:
         assert len(sleeps) == 1
 
     def test_request_retries_on_429_get_respects_retry_after_seconds(self, mock_config):
-        client = AmigoSyncHttpClient(
+        client = AmigoHttpClient(
             mock_config, retry_max_attempts=3, retry_max_delay_seconds=10.0
         )
         fresh_token = Mock(
@@ -345,7 +345,7 @@ class TestAmigoSyncHttpClient:
         assert sleeps[0] == pytest.approx(1.5, rel=1e-3)
 
     def test_request_retries_on_429_post_with_retry_after_seconds(self, mock_config):
-        client = AmigoSyncHttpClient(mock_config, retry_max_attempts=3)
+        client = AmigoHttpClient(mock_config, retry_max_attempts=3)
         fresh_token = Mock(
             id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
         )
@@ -378,7 +378,7 @@ class TestAmigoSyncHttpClient:
     def test_request_retries_on_429_post_with_retry_after_http_date(self, mock_config):
         future_dt = datetime.now(timezone.utc) + timedelta(seconds=3)
         http_date = format_datetime(future_dt)
-        client = AmigoSyncHttpClient(
+        client = AmigoHttpClient(
             mock_config, retry_max_attempts=3, retry_max_delay_seconds=30.0
         )
         fresh_token = Mock(
@@ -411,7 +411,7 @@ class TestAmigoSyncHttpClient:
         assert sleeps[0] == pytest.approx(3.0, abs=1.0)
 
     def test_request_does_not_retry_post_429_without_retry_after(self, mock_config):
-        client = AmigoSyncHttpClient(mock_config)
+        client = AmigoHttpClient(mock_config)
         fresh_token = Mock(
             id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
         )
@@ -440,7 +440,7 @@ class TestAmigoSyncHttpClient:
         assert sleeps == []
 
     def test_request_retries_on_timeout_get(self, mock_config):
-        client = AmigoSyncHttpClient(mock_config)
+        client = AmigoHttpClient(mock_config)
         fresh_token = Mock(
             id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
         )
@@ -472,7 +472,7 @@ class TestAmigoSyncHttpClient:
         assert len(sleeps) == 1
 
     def test_request_does_not_retry_post_on_timeout_by_default(self, mock_config):
-        client = AmigoSyncHttpClient(mock_config)
+        client = AmigoHttpClient(mock_config)
         fresh_token = Mock(
             id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
         )
@@ -491,7 +491,7 @@ class TestAmigoSyncHttpClient:
                 client.request("POST", "/timeout-post")
 
     def test_backoff_clamps_to_max_delay(self, mock_config):
-        client = AmigoSyncHttpClient(
+        client = AmigoHttpClient(
             mock_config, retry_backoff_base=100.0, retry_max_delay_seconds=0.5
         )
         fresh_token = Mock(
@@ -524,7 +524,7 @@ class TestAmigoSyncHttpClient:
         assert sleeps[0] == 0.5
 
     def test_max_attempts_limits_retries(self, mock_config):
-        client = AmigoSyncHttpClient(mock_config, retry_max_attempts=3)
+        client = AmigoHttpClient(mock_config, retry_max_attempts=3)
         fresh_token = Mock(
             id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
         )

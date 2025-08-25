@@ -21,7 +21,7 @@ from amigo_sdk.generated.model import (
     GetConversationsParametersQuery,
     InteractWithConversationParametersQuery,
 )
-from amigo_sdk.http_client import AmigoHttpClient, AmigoSyncHttpClient
+from amigo_sdk.http_client import AmigoAsyncHttpClient, AmigoHttpClient
 
 
 class GetMessageSourceResponse(BaseModel):
@@ -35,10 +35,10 @@ class GetMessageSourceResponse(BaseModel):
     content_type: Literal["audio/mpeg", "audio/wav"]
 
 
-class ConversationResource:
+class AsyncConversationResource:
     """Conversation resource for Amigo API operations."""
 
-    def __init__(self, http_client: AmigoHttpClient, organization_id: str) -> None:
+    def __init__(self, http_client: AmigoAsyncHttpClient, organization_id: str) -> None:
         self._http = http_client
         self._organization_id = organization_id
 
@@ -208,10 +208,10 @@ class ConversationResource:
         )
 
 
-class SyncConversationResource:
+class ConversationResource:
     """Conversation resource for synchronous operations."""
 
-    def __init__(self, http_client: AmigoSyncHttpClient, organization_id: str) -> None:
+    def __init__(self, http_client: AmigoHttpClient, organization_id: str) -> None:
         self._http = http_client
         self._organization_id = organization_id
 

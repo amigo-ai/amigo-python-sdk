@@ -13,7 +13,7 @@ from amigo_sdk.errors import (
     RateLimitError,
     ServerError,
 )
-from amigo_sdk.http_client import AmigoHttpClient
+from amigo_sdk.http_client import AmigoAsyncHttpClient
 from tests.resources.helpers import (
     mock_http_stream,
     mock_http_stream_sequence,
@@ -40,12 +40,12 @@ def mock_token_response():
 
 
 @pytest.mark.unit
-class TestAmigoHttpClient:
+class TestAmigoAsyncHttpClient:
     """Test suite for AmigoHttpClient."""
 
     def test_client_initialization(self, mock_config):
         """Test client initializes correctly with config."""
-        client = AmigoHttpClient(mock_config, timeout=30)
+        client = AmigoAsyncHttpClient(mock_config, timeout=30)
         assert client._cfg == mock_config
         assert client._token is None
         assert client._client.base_url == "https://api.example.com"
@@ -55,7 +55,7 @@ class TestAmigoHttpClient:
         self, mock_config, mock_token_response
     ):
         """Test _ensure_token fetches new token when none exists."""
-        client = AmigoHttpClient(mock_config)
+        client = AmigoAsyncHttpClient(mock_config)
 
         with patch(
             "amigo_sdk.http_client.sign_in_with_api_key",
@@ -69,7 +69,7 @@ class TestAmigoHttpClient:
     @pytest.mark.asyncio
     async def test_ensure_token_refreshes_expired_token(self, mock_config):
         """Test _ensure_token refreshes token when expired."""
-        client = AmigoHttpClient(mock_config)
+        client = AmigoAsyncHttpClient(mock_config)
 
         # Set an expired token (timezone-aware)
         expired_token = Mock(
@@ -94,7 +94,7 @@ class TestAmigoHttpClient:
     @pytest.mark.asyncio
     async def test_ensure_token_handles_auth_failure(self, mock_config):
         """Test _ensure_token raises AuthenticationError when auth fails."""
-        client = AmigoHttpClient(mock_config)
+        client = AmigoAsyncHttpClient(mock_config)
 
         with patch(
             "amigo_sdk.http_client.sign_in_with_api_key",
@@ -110,7 +110,7 @@ class TestAmigoHttpClient:
             method="GET", url="https://api.example.com/test", status_code=200
         )
 
-        client = AmigoHttpClient(mock_config)
+        client = AmigoAsyncHttpClient(mock_config)
 
         # Mock token that won't expire
         fresh_token = Mock(
@@ -140,7 +140,7 @@ class TestAmigoHttpClient:
             json={"success": True},
         )
 
-        client = AmigoHttpClient(mock_config)
+        client = AmigoAsyncHttpClient(mock_config)
 
         fresh_token = Mock(
             id_token="fresh-token",
@@ -165,7 +165,7 @@ class TestAmigoHttpClient:
             text="Bad Request",
         )
 
-        client = AmigoHttpClient(mock_config)
+        client = AmigoAsyncHttpClient(mock_config)
 
         fresh_token = Mock(
             id_token="test-bearer-token",
@@ -181,15 +181,15 @@ class TestAmigoHttpClient:
     @pytest.mark.asyncio
     async def test_async_context_manager(self, mock_config):
         """Test client works as async context manager."""
-        async with AmigoHttpClient(mock_config) as client:
-            assert isinstance(client, AmigoHttpClient)
+        async with AmigoAsyncHttpClient(mock_config) as client:
+            assert isinstance(client, AmigoAsyncHttpClient)
 
         # Client should be closed after context exit
         assert client._client.is_closed
 
     @pytest.mark.asyncio
     async def test_stream_lines_yields_and_sets_headers(self, mock_config):
-        client = AmigoHttpClient(mock_config)
+        client = AmigoAsyncHttpClient(mock_config)
 
         async with mock_http_stream(
             [" line1 ", "", "line2\n", " "], status_code=200
@@ -205,7 +205,7 @@ class TestAmigoHttpClient:
 
     @pytest.mark.asyncio
     async def test_stream_lines_retries_once_on_401(self, mock_config):
-        client = AmigoHttpClient(mock_config)
+        client = AmigoAsyncHttpClient(mock_config)
 
         async with mock_http_stream_sequence([(401, []), (200, ["ok"])]) as tracker:
             lines = []
@@ -217,7 +217,7 @@ class TestAmigoHttpClient:
 
     @pytest.mark.asyncio
     async def test_stream_lines_raises_on_non_2xx(self, mock_config):
-        client = AmigoHttpClient(mock_config)
+        client = AmigoAsyncHttpClient(mock_config)
 
         async with mock_http_stream([], status_code=404):
             with pytest.raises(NotFoundError):
@@ -233,7 +233,7 @@ class TestAmigoHttpClient:
             method="GET", url="https://api.example.com/r408", status_code=200
         )
 
-        client = AmigoHttpClient(mock_config, retry_max_attempts=3)
+        client = AmigoAsyncHttpClient(mock_config, retry_max_attempts=3)
 
         fresh_token = Mock(
             id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
@@ -264,7 +264,7 @@ class TestAmigoHttpClient:
             method="GET", url="https://api.example.com/r500", status_code=200
         )
 
-        client = AmigoHttpClient(mock_config, retry_max_attempts=3)
+        client = AmigoAsyncHttpClient(mock_config, retry_max_attempts=3)
         fresh_token = Mock(
             id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
         )
@@ -298,7 +298,7 @@ class TestAmigoHttpClient:
             method="GET", url="https://api.example.com/r429s", status_code=200
         )
 
-        client = AmigoHttpClient(
+        client = AmigoAsyncHttpClient(
             mock_config,
             retry_max_attempts=3,
             retry_max_delay_seconds=10.0,
@@ -337,7 +337,7 @@ class TestAmigoHttpClient:
             method="POST", url="https://api.example.com/r429p", status_code=200
         )
 
-        client = AmigoHttpClient(mock_config, retry_max_attempts=3)
+        client = AmigoAsyncHttpClient(mock_config, retry_max_attempts=3)
         fresh_token = Mock(
             id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
         )
@@ -375,7 +375,7 @@ class TestAmigoHttpClient:
             method="POST", url="https://api.example.com/r429pdate", status_code=200
         )
 
-        client = AmigoHttpClient(
+        client = AmigoAsyncHttpClient(
             mock_config, retry_max_attempts=3, retry_max_delay_seconds=30.0
         )
         fresh_token = Mock(
@@ -409,7 +409,7 @@ class TestAmigoHttpClient:
             status_code=429,
         )
 
-        client = AmigoHttpClient(mock_config)
+        client = AmigoAsyncHttpClient(mock_config)
         fresh_token = Mock(
             id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
         )
@@ -440,7 +440,7 @@ class TestAmigoHttpClient:
             method="GET", url="https://api.example.com/timeout", status_code=200
         )
 
-        client = AmigoHttpClient(mock_config)
+        client = AmigoAsyncHttpClient(mock_config)
         fresh_token = Mock(
             id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
         )
@@ -470,7 +470,7 @@ class TestAmigoHttpClient:
             exception=httpx.ReadTimeout("boom"),
         )
 
-        client = AmigoHttpClient(mock_config)
+        client = AmigoAsyncHttpClient(mock_config)
         fresh_token = Mock(
             id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
         )
@@ -492,7 +492,7 @@ class TestAmigoHttpClient:
         )
 
         # Make base large so window > cap; force uniform to pick window
-        client = AmigoHttpClient(
+        client = AmigoAsyncHttpClient(
             mock_config, retry_backoff_base=100.0, retry_max_delay_seconds=0.5
         )
         fresh_token = Mock(
@@ -529,7 +529,7 @@ class TestAmigoHttpClient:
             method="GET", url="https://api.example.com/max", status_code=500
         )
 
-        client = AmigoHttpClient(mock_config, retry_max_attempts=3)
+        client = AmigoAsyncHttpClient(mock_config, retry_max_attempts=3)
         fresh_token = Mock(
             id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
         )

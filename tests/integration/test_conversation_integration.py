@@ -17,7 +17,7 @@ from amigo_sdk.generated.model import (
     InteractWithConversationParametersQuery,
     NewMessageEvent,
 )
-from amigo_sdk.sdk_client import AmigoClient
+from amigo_sdk.sdk_client import AsyncAmigoClient
 
 # Constants
 SERVICE_ID = os.getenv("AMIGO_TEST_SERVICE_ID", "689b81e7afdaf934f4b48f81")
@@ -26,7 +26,7 @@ SERVICE_ID = os.getenv("AMIGO_TEST_SERVICE_ID", "689b81e7afdaf934f4b48f81")
 @pytest.fixture(scope="module", autouse=True)
 async def pre_suite_cleanup() -> AsyncGenerator[None, None]:
     # Ensure env loaded and client can connect; verify service exists
-    async with AmigoClient() as client:
+    async with AsyncAmigoClient() as client:
         try:
             from amigo_sdk.generated.model import GetServicesParametersQuery
 
@@ -71,7 +71,7 @@ class TestConversationIntegration:
     interaction_id: str | None = None
 
     async def test_create_conversation_streams_and_returns_ids(self):
-        async with AmigoClient() as client:
+        async with AsyncAmigoClient() as client:
             events = await client.conversation.create_conversation(
                 body=ConversationCreateConversationRequest(
                     service_id=SERVICE_ID,
@@ -104,7 +104,7 @@ class TestConversationIntegration:
         assert type(self).conversation_id is not None
         assert type(self).interaction_id is not None
 
-        async with AmigoClient() as client:
+        async with AsyncAmigoClient() as client:
             recs = await client.conversation.recommend_responses_for_interaction(
                 type(self).conversation_id, type(self).interaction_id
             )
@@ -115,7 +115,7 @@ class TestConversationIntegration:
     async def test_get_conversations_filter_by_id(self):
         assert type(self).conversation_id is not None
 
-        async with AmigoClient() as client:
+        async with AsyncAmigoClient() as client:
             resp = await client.conversation.get_conversations(
                 GetConversationsParametersQuery(id=[type(self).conversation_id])
             )
@@ -127,7 +127,7 @@ class TestConversationIntegration:
     async def test_interact_with_conversation_text_streams(self):
         assert type(self).conversation_id is not None
 
-        async with AmigoClient() as client:
+        async with AsyncAmigoClient() as client:
             events = await client.conversation.interact_with_conversation(
                 type(self).conversation_id,
                 params=InteractWithConversationParametersQuery(
@@ -161,7 +161,7 @@ class TestConversationIntegration:
     async def test_get_conversation_messages_pagination(self):
         assert type(self).conversation_id is not None
 
-        async with AmigoClient() as client:
+        async with AsyncAmigoClient() as client:
             page1 = await client.conversation.get_conversation_messages(
                 type(self).conversation_id,
                 GetConversationMessagesParametersQuery(
@@ -191,7 +191,7 @@ class TestConversationIntegration:
         assert type(self).conversation_id is not None
         assert type(self).interaction_id is not None
 
-        async with AmigoClient() as client:
+        async with AsyncAmigoClient() as client:
             insights = await client.conversation.get_interaction_insights(
                 type(self).conversation_id, type(self).interaction_id
             )
@@ -201,7 +201,7 @@ class TestConversationIntegration:
     async def test_finish_conversation_returns_acceptable_outcome(self):
         assert type(self).conversation_id is not None
 
-        async with AmigoClient() as client:
+        async with AsyncAmigoClient() as client:
             try:
                 await client.conversation.finish_conversation(
                     type(self).conversation_id

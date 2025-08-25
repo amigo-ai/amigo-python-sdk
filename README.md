@@ -24,34 +24,23 @@ amigo_sdk
 
 This SDK auto-generates its types from the latest [Amigo OpenAPI schema](https://api.amigo.ai/v1/openapi.json). As a result, only the latest published SDK version is guaranteed to match the current API. If you pin to an older version, it may not include the newest endpoints or fields.
 
-## Quick Start
+## Quick Start (sync)
 
 ```python
-import asyncio
 from amigo_sdk import AmigoClient
 from amigo_sdk.generated.model import GetConversationsParametersQuery
 
-# Initialize the client
-client = AmigoClient(
+# Initialize and use the client synchronously
+with AmigoClient(
     api_key="your-api-key",
     api_key_id="your-api-key-id",
     user_id="user-id",
-    org_id="your-organization-id",
-)
-
-# List recent conversations
-async def example():
-    try:
-        async with client:
-            conversations = await client.conversation.get_conversations(
-                GetConversationsParametersQuery(limit=10, sort_by=["-created_at"])
-            )
-            print("Conversations:", conversations)
-    except Exception as error:
-        print(error)
-
-# Run the example
-asyncio.run(example())
+    organization_id="your-organization-id",
+) as client:
+    conversations = client.conversation.get_conversations(
+        GetConversationsParametersQuery(limit=10, sort_by=["-created_at"])
+    )
+    print("Conversations:", conversations)
 ```
 
 ## Examples
@@ -62,13 +51,13 @@ For more SDK usage examples see checkout the [examples/](examples/README.md) fol
 
 The SDK requires the following configuration parameters:
 
-| Parameter    | Type | Required | Description                                                    |
-| ------------ | ---- | -------- | -------------------------------------------------------------- |
-| `api_key`    | str  | ✅       | API key from Amigo dashboard                                   |
-| `api_key_id` | str  | ✅       | API key ID from Amigo dashboard                                |
-| `user_id`    | str  | ✅       | User ID on whose behalf the request is made                    |
-| `org_id`     | str  | ✅       | Your organization ID                                           |
-| `base_url`   | str  | ❌       | Base URL of the Amigo API (defaults to `https://api.amigo.ai`) |
+| Parameter         | Type | Required | Description                                                    |
+| ----------------- | ---- | -------- | -------------------------------------------------------------- |
+| `api_key`         | str  | ✅       | API key from Amigo dashboard                                   |
+| `api_key_id`      | str  | ✅       | API key ID from Amigo dashboard                                |
+| `user_id`         | str  | ✅       | User ID on whose behalf the request is made                    |
+| `organization_id` | str  | ✅       | Your organization ID                                           |
+| `base_url`        | str  | ❌       | Base URL of the Amigo API (defaults to `https://api.amigo.ai`) |
 
 ### Environment Variables
 
@@ -78,7 +67,7 @@ You can also configure the SDK using environment variables:
 export AMIGO_API_KEY="your-api-key"
 export AMIGO_API_KEY_ID="your-api-key-id"
 export AMIGO_USER_ID="user-id"
-export AMIGO_ORG_ID="your-organization-id"
+export AMIGO_ORGANIZATION_ID="your-organization-id"
 export AMIGO_BASE_URL="https://api.amigo.ai"  # optional
 ```
 
@@ -88,7 +77,8 @@ Then initialize the client without parameters:
 from amigo_sdk import AmigoClient
 
 # Automatically loads from environment variables
-client = AmigoClient()
+with AmigoClient() as client:
+    ...
 ```
 
 ### Using .env Files
@@ -131,25 +121,23 @@ from amigo_sdk.errors import (
     AuthenticationError,
     NotFoundError,
     BadRequestError,
-    ValidationError
+    ValidationError,
 )
 
-async def example_with_error_handling():
-    client = AmigoClient()
-
-    try:
-        async with client:
-            result = await client.organizations.get_organization("org-id")
-    except AuthenticationError as error:
-        print("Authentication failed:", error)
-    except NotFoundError as error:
-        print("Resource not found:", error)
-    except BadRequestError as error:
-        print("Bad request:", error)
-    except ValidationError as error:
-        print("Validation error:", error)
-    except Exception as error:
-        print("Unexpected error:", error)
+try:
+    with AmigoClient() as client:
+        org = client.organization.get()
+        print("Organization:", org)
+except AuthenticationError as error:
+    print("Authentication failed:", error)
+except NotFoundError as error:
+    print("Resource not found:", error)
+except BadRequestError as error:
+    print("Bad request:", error)
+except ValidationError as error:
+    print("Validation error:", error)
+except Exception as error:
+    print("Unexpected error:", error)
 ```
 
 ## Development

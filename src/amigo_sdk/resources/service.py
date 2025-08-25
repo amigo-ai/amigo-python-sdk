@@ -4,10 +4,10 @@ from amigo_sdk.generated.model import (
     GetServicesParametersQuery,
     ServiceGetServicesResponse,
 )
-from amigo_sdk.http_client import AmigoHttpClient, AmigoSyncHttpClient
+from amigo_sdk.http_client import AmigoAsyncHttpClient, AmigoHttpClient
 
 
-class ServiceResource:
+class AsyncServiceResource:
     """Service resource for Amigo API operations."""
 
     def __init__(
@@ -30,8 +30,8 @@ class ServiceResource:
         return ServiceGetServicesResponse.model_validate_json(response.text)
 
 
-class SyncServiceResource:
-    def __init__(self, http_client: AmigoSyncHttpClient, organization_id: str) -> None:
+class ServiceResource:
+    def __init__(self, http_client: AmigoAsyncHttpClient, organization_id: str) -> None:
         self._http = http_client
         self._organization_id = organization_id
 

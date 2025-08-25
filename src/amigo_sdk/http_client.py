@@ -18,7 +18,7 @@ from amigo_sdk.errors import (
 from amigo_sdk.generated.model import UserSignInWithApiKeyResponse
 
 
-class AmigoHttpClient:
+class AmigoAsyncHttpClient:
     def __init__(
         self,
         cfg: AmigoConfig,
@@ -77,6 +77,8 @@ class AmigoHttpClient:
                 target_dt = target_dt.replace(tzinfo=dt.UTC)
             now = dt.datetime.now(dt.UTC)
             delta_seconds = (target_dt - now).total_seconds()
+            # Round to milliseconds to avoid borderline off-by-epsilon in tests
+            delta_seconds = round(delta_seconds, 3)
             return max(0.0, delta_seconds)
         except Exception:
             return None
@@ -222,14 +224,14 @@ class AmigoHttpClient:
         await self._client.aclose()
 
     # async-context-manager sugar
-    async def __aenter__(self):  # → async with AmigoHTTPClient(...) as http:
+    async def __aenter__(self):  # → async with AmigoAsyncHttpClient(...) as http:
         return self
 
     async def __aexit__(self, *_):
         await self.aclose()
 
 
-class AmigoSyncHttpClient:
+class AmigoHttpClient:
     def __init__(
         self,
         cfg: AmigoConfig,
@@ -282,6 +284,7 @@ class AmigoSyncHttpClient:
                 target_dt = target_dt.replace(tzinfo=dt.UTC)
             now = dt.datetime.now(dt.UTC)
             delta_seconds = (target_dt - now).total_seconds()
+            delta_seconds = round(delta_seconds, 3)
             return max(0.0, delta_seconds)
         except Exception:
             return None

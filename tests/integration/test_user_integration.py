@@ -8,7 +8,7 @@ from amigo_sdk.generated.model import (
     UserCreateInvitedUserRequest,
     UserUpdateUserInfoRequest,
 )
-from amigo_sdk.sdk_client import AmigoClient
+from amigo_sdk.sdk_client import AsyncAmigoClient
 
 
 @pytest.mark.integration
@@ -17,7 +17,7 @@ class TestUserIntegration:
     created_user_email: str | None = None
 
     async def test_create_user(self):
-        async with AmigoClient() as client:
+        async with AsyncAmigoClient() as client:
             unique_suffix = str(os.getpid()) + "-" + str(int(os.times().elapsed * 1000))
             email = f"py-sdk-it-{unique_suffix}@example.com"
             body = UserCreateInvitedUserRequest(
@@ -35,7 +35,7 @@ class TestUserIntegration:
 
     async def test_update_user(self):
         assert type(self).created_user_id is not None
-        async with AmigoClient() as client:
+        async with AsyncAmigoClient() as client:
             body = UserUpdateUserInfoRequest(
                 first_name="PY-Updated",
                 last_name="SDK-IT-Updated",
@@ -47,7 +47,7 @@ class TestUserIntegration:
     async def test_get_users_filters(self):
         assert type(self).created_user_id is not None
         assert type(self).created_user_email is not None
-        async with AmigoClient() as client:
+        async with AsyncAmigoClient() as client:
             by_id = await client.users.get_users(
                 GetUsersParametersQuery(user_id=[type(self).created_user_id])
             )
@@ -62,11 +62,11 @@ class TestUserIntegration:
 
     async def test_delete_user(self):
         assert type(self).created_user_id is not None
-        async with AmigoClient() as client:
+        async with AsyncAmigoClient() as client:
             await client.users.delete_user(type(self).created_user_id)
 
     async def test_error_cases(self):
-        async with AmigoClient() as client:
+        async with AsyncAmigoClient() as client:
             # Create with bad role
             body = UserCreateInvitedUserRequest(
                 first_name="Bad",
@@ -88,7 +88,9 @@ class TestUserIntegration:
                 await client.users.update_user("non-existent-id", upd)
 
             # Get users for invalid org triggers auth at token exchange → AuthenticationError
-            async with AmigoClient(organization_id="invalid-org-id-123") as bad_client:
+            async with AsyncAmigoClient(
+                organization_id="invalid-org-id-123"
+            ) as bad_client:
                 with pytest.raises(errors.AuthenticationError):
                     await bad_client.users.get_users()
 

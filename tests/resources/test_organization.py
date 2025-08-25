@@ -5,8 +5,8 @@ from amigo_sdk.errors import NotFoundError
 from amigo_sdk.generated.model import (
     OrganizationGetOrganizationResponse,
 )
-from amigo_sdk.http_client import AmigoHttpClient
-from amigo_sdk.resources.organization import OrganizationResource
+from amigo_sdk.http_client import AmigoAsyncHttpClient
+from amigo_sdk.resources.organization import AsyncOrganizationResource
 
 from .helpers import create_organization_response_data, mock_http_request
 
@@ -23,9 +23,9 @@ def mock_config():
 
 
 @pytest.fixture
-def organization_resource(mock_config) -> OrganizationResource:
-    http_client = AmigoHttpClient(mock_config)
-    return OrganizationResource(http_client, "test-org-123")
+def organization_resource(mock_config) -> AsyncOrganizationResource:
+    http_client = AmigoAsyncHttpClient(mock_config)
+    return AsyncOrganizationResource(http_client, "test-org-123")
 
 
 @pytest.mark.unit
@@ -34,7 +34,7 @@ class TestOrganizationResource:
 
     @pytest.mark.asyncio
     async def test_get_organization_returns_expected_data(
-        self, organization_resource: OrganizationResource
+        self, organization_resource: AsyncOrganizationResource
     ):
         """Test get method returns properly parsed organization data."""
         mock_data = create_organization_response_data()
@@ -50,7 +50,7 @@ class TestOrganizationResource:
 
     @pytest.mark.asyncio
     async def test_get_nonexistent_organization_raises_not_found(
-        self, organization_resource: OrganizationResource
+        self, organization_resource: AsyncOrganizationResource
     ) -> None:
         """Test get method raises NotFoundError for non-existent organization."""
         async with mock_http_request(

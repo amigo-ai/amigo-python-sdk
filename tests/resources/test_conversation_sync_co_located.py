@@ -1,8 +1,8 @@
 import pytest
 
 from amigo_sdk.config import AmigoConfig
-from amigo_sdk.http_client import AmigoSyncHttpClient
-from amigo_sdk.resources.conversation import SyncConversationResource
+from amigo_sdk.http_client import AmigoHttpClient
+from amigo_sdk.resources.conversation import ConversationResource
 
 
 @pytest.fixture
@@ -17,15 +17,15 @@ def mock_config() -> AmigoConfig:
 
 
 @pytest.fixture
-def conversation_resource(mock_config: AmigoConfig) -> SyncConversationResource:
-    http_client = AmigoSyncHttpClient(mock_config)
-    return SyncConversationResource(http_client, mock_config.organization_id)
+def conversation_resource(mock_config: AmigoConfig) -> ConversationResource:
+    http_client = AmigoHttpClient(mock_config)
+    return ConversationResource(http_client, mock_config.organization_id)
 
 
 @pytest.mark.unit
-class TestSyncConversationResourceUnit:
+class TestConversationResourceSyncUnit:
     def test_get_conversations_returns_data_and_passes_query_params(
-        self, conversation_resource: SyncConversationResource, monkeypatch
+        self, conversation_resource: ConversationResource, monkeypatch
     ) -> None:
         from amigo_sdk.generated.model import GetConversationsParametersQuery
 

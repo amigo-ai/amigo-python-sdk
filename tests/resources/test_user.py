@@ -9,8 +9,8 @@ from amigo_sdk.generated.model import (
     UserGetUsersResponse,
     UserUpdateUserInfoRequest,
 )
-from amigo_sdk.http_client import AmigoHttpClient
-from amigo_sdk.resources.user import UserResource
+from amigo_sdk.http_client import AmigoAsyncHttpClient
+from amigo_sdk.resources.user import AsyncUserResource
 
 from .helpers import mock_http_request
 
@@ -28,8 +28,8 @@ def mock_config():
 
 @pytest.fixture
 def user_resource(mock_config):
-    http_client = AmigoHttpClient(mock_config)
-    return UserResource(http_client, mock_config.organization_id)
+    http_client = AmigoAsyncHttpClient(mock_config)
+    return AsyncUserResource(http_client, mock_config.organization_id)
 
 
 @pytest.mark.unit

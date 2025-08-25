@@ -13,8 +13,8 @@ from amigo_sdk.generated.model import (
     GetConversationsParametersQuery,
     InteractWithConversationParametersQuery,
 )
-from amigo_sdk.http_client import AmigoHttpClient
-from amigo_sdk.resources.conversation import ConversationResource
+from amigo_sdk.http_client import AmigoAsyncHttpClient
+from amigo_sdk.resources.conversation import AsyncConversationResource
 
 from .helpers import mock_http_request, mock_http_stream
 
@@ -36,16 +36,16 @@ def mock_config() -> AmigoConfig:
 
 
 @pytest.fixture
-def conversation_resource(mock_config: AmigoConfig) -> ConversationResource:
-    http_client = AmigoHttpClient(mock_config)
-    return ConversationResource(http_client, mock_config.organization_id)
+def conversation_resource(mock_config: AmigoConfig) -> AsyncConversationResource:
+    http_client = AmigoAsyncHttpClient(mock_config)
+    return AsyncConversationResource(http_client, mock_config.organization_id)
 
 
 @pytest.mark.unit
-class TestConversationResourceUnit:
+class TestAsyncConversationResourceUnit:
     @pytest.mark.asyncio
     async def test_create_conversation_streams_events_and_yields_ids(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         async with mock_http_stream(
             [
@@ -95,7 +95,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_create_conversation_sends_body_and_query(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         body = ConversationCreateConversationRequest(
             service_id=TEST_SERVICE_ID, service_version_set_name="release"
@@ -124,7 +124,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_create_conversation_supports_abort(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         abort = asyncio.Event()
         abort.set()
@@ -139,7 +139,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_create_conversation_raises_on_non_2xx(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         async with mock_http_stream([], status_code=400):
             events = await conversation_resource.create_conversation(
@@ -152,7 +152,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_interact_with_conversation_text_streams_ndjson(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         async with mock_http_stream(
             [
@@ -201,7 +201,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_interact_with_conversation_voice_streaming(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         audio = b"\x00\x01\x02"
         async with mock_http_stream(
@@ -231,7 +231,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_interact_with_conversation_supports_abort(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         abort = asyncio.Event()
         abort.set()
@@ -249,7 +249,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_interact_with_conversation_raises_on_non_2xx(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         async with mock_http_stream([], status_code=400):
             events = await conversation_resource.interact_with_conversation(
@@ -265,7 +265,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_get_conversations_returns_data_and_passes_query_params(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         params = GetConversationsParametersQuery(
             service_id=[TEST_SERVICE_ID, TEST_SERVICE_ID_2],
@@ -282,7 +282,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_get_conversations_raises_not_found(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         async with mock_http_request("{}", status_code=404):
             with pytest.raises(NotFoundError):
@@ -292,7 +292,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_get_conversation_messages_returns_and_pagination(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         async with mock_http_request(
             {
@@ -323,7 +323,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_get_conversation_messages_raises_not_found(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         async with mock_http_request("{}", status_code=404):
             with pytest.raises(NotFoundError):
@@ -333,14 +333,14 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_finish_conversation_returns_void_on_204(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         async with mock_http_request("{}", status_code=204):
             await conversation_resource.finish_conversation("conv-4")
 
     @pytest.mark.asyncio
     async def test_finish_conversation_raises_conflict_on_409(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         async with mock_http_request("{}", status_code=409):
             with pytest.raises(ConflictError):
@@ -348,7 +348,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_finish_conversation_raises_not_found_on_404(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         async with mock_http_request("{}", status_code=404):
             with pytest.raises(NotFoundError):
@@ -356,7 +356,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_recommend_responses_returns_data(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         async with mock_http_request({"recommended_responses": ["hello"]}):
             data = await conversation_resource.recommend_responses_for_interaction(
@@ -366,7 +366,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_recommend_responses_raises_not_found(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         async with mock_http_request("{}", status_code=404):
             with pytest.raises(NotFoundError):
@@ -376,7 +376,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_get_interaction_insights_returns_data(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         async with mock_http_request(
             {
@@ -396,7 +396,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_get_interaction_insights_raises_not_found(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         async with mock_http_request("{}", status_code=404):
             with pytest.raises(NotFoundError):
@@ -406,7 +406,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_get_message_source_returns_data(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         async with mock_http_request(
             {
@@ -420,7 +420,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_get_message_source_raises_not_found(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         async with mock_http_request("{}", status_code=404):
             with pytest.raises(NotFoundError):
@@ -428,7 +428,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_generate_conversation_starters_returns_data(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         async with mock_http_request(
             {"prompts": [{"prompt": "Hi there", "facets": ["greeting"]}]}
@@ -447,7 +447,7 @@ class TestConversationResourceUnit:
 
     @pytest.mark.asyncio
     async def test_generate_conversation_starters_raises_on_non_2xx(
-        self, conversation_resource: ConversationResource
+        self, conversation_resource: AsyncConversationResource
     ) -> None:
         async with mock_http_request("{}", status_code=400):
             with pytest.raises(BadRequestError):

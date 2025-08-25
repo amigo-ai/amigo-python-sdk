@@ -8,7 +8,7 @@ from amigo_sdk.generated.model import (
     OrganizationGetOrganizationResponse,
     ServiceGetServicesResponse,
 )
-from amigo_sdk.sdk_client import AmigoClient
+from amigo_sdk.sdk_client import AsyncAmigoClient
 
 
 @pytest.mark.integration
@@ -52,7 +52,7 @@ class TestOrganizationIntegration:
 
     async def test_get_services(self):
         """Test getting services."""
-        async with AmigoClient() as client:
+        async with AsyncAmigoClient() as client:
             services = await client.service.get_services()
 
             assert services is not None
@@ -62,7 +62,7 @@ class TestOrganizationIntegration:
         """Test getting organization details using environment variables for config."""
 
         # Create client using environment variables
-        async with AmigoClient() as client:
+        async with AsyncAmigoClient() as client:
             # Get organization details
             organization = await client.organization.get()
 
@@ -95,7 +95,7 @@ class TestOrganizationIntegration:
 
         # Create client with invalid API key
         with pytest.raises(AuthenticationError):
-            async with AmigoClient(
+            async with AsyncAmigoClient(
                 api_key="invalid_key",
             ) as client:
                 await client.organization.get()
@@ -103,7 +103,7 @@ class TestOrganizationIntegration:
     async def test_client_config_property(self, required_env_vars):
         """Test that the client config property works correctly."""
 
-        async with AmigoClient() as client:
+        async with AsyncAmigoClient() as client:
             config = client.config
 
             # Verify config contains expected values

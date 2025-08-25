@@ -3,8 +3,8 @@ import pytest
 from amigo_sdk.config import AmigoConfig
 from amigo_sdk.errors import NotFoundError
 from amigo_sdk.generated.model import ServiceGetServicesResponse
-from amigo_sdk.http_client import AmigoHttpClient
-from amigo_sdk.resources.service import ServiceResource
+from amigo_sdk.http_client import AmigoAsyncHttpClient
+from amigo_sdk.resources.service import AsyncServiceResource
 
 from .helpers import create_services_response_data, mock_http_request
 
@@ -22,8 +22,8 @@ def mock_config():
 
 @pytest.fixture
 def service_resource(mock_config):
-    http_client = AmigoHttpClient(mock_config)
-    return ServiceResource(http_client, "test-org-123")
+    http_client = AmigoAsyncHttpClient(mock_config)
+    return AsyncServiceResource(http_client, "test-org-123")
 
 
 @pytest.mark.unit
