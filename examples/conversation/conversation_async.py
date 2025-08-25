@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 from pathlib import Path
@@ -12,7 +13,97 @@ from amigo_sdk.generated.model import (
     GetConversationsParametersQuery,
     InteractWithConversationParametersQuery,
 )
-from amigo_sdk.sdk_client import AmigoClient
+from amigo_sdk.sdk_client import AsyncAmigoClient
+
+
+async def run() -> None:
+    # Load env vars from examples/.env (shared by all examples)
+    examples_env = Path(__file__).resolve().parent.parent / ".env"
+    load_dotenv(dotenv_path=examples_env)
+
+    service_id = os.getenv("AMIGO_SERVICE_ID")
+    if not service_id:
+        raise SystemExit(
+            "Missing AMIGO_SERVICE_ID. Set it in your .env file (see .env.example)."
+        )
+
+    # AmigoClient reads other config from env (AMIGO_API_KEY, AMIGO_API_KEY_ID, AMIGO_USER_ID,
+    # AMIGO_ORGANIZATION_ID, optional AMIGO_BASE_URL). You can also pass them explicitly.
+    async with AsyncAmigoClient() as client:
+        try:
+            # 1) Create a conversation and log streamed events
+            print("Creating conversation...")
+            create_events = await client.conversation.create_conversation(
+                ConversationCreateConversationRequest(service_id=service_id),
+                CreateConversationParametersQuery(response_format="text"),
+            )
+
+            conversation_id: str | None = None
+            log_create = make_event_logger("create")
+            async for evt in create_events:
+                event = evt.model_dump(mode="json")
+                log_create(event)
+                if event.get("type") == "conversation-created":
+                    conversation_id = event.get("conversation_id")
+
+            if not conversation_id:
+                raise RuntimeError("Conversation was not created (no id received).")
+
+            # 2) Get the conversation
+            print("\nGetting conversation...")
+            conversation = await client.conversation.get_conversations(
+                GetConversationsParametersQuery(id=[conversation_id])
+            )
+            print(
+                json.dumps(
+                    conversation.conversations[0].model_dump(mode="json"), indent=2
+                ),
+            )
+
+            # 3) Interact with the conversation via text and log streamed events
+            print("\nSending a text message to the conversation...")
+            interaction_events = await client.conversation.interact_with_conversation(
+                conversation_id,
+                InteractWithConversationParametersQuery(
+                    request_format="text", response_format="text"
+                ),
+                text_message="Hello from the Amigo Python SDK example!",
+            )
+
+            log_interact = make_event_logger("interact")
+            async for evt in interaction_events:
+                event = evt.model_dump(mode="json")
+                log_interact(event)
+                if event.get("type") == "interaction-complete":
+                    break
+
+            # 4) Get messages for the conversation and log them
+            print("\nFetching recent messages...")
+            messages_page = await client.conversation.get_conversation_messages(
+                conversation_id,
+                GetConversationMessagesParametersQuery(
+                    limit=10, sort_by=["+created_at"]
+                ),
+            )
+            for m in getattr(messages_page, "messages", []) or []:
+                print("[message]", json.dumps(m.model_dump(mode="json"), indent=2))
+
+            # 5) Finish the conversation
+            print("\nFinishing conversation...")
+            try:
+                await client.conversation.finish_conversation(conversation_id)
+                print("Conversation finished.")
+            except (ConflictError, NotFoundError) as e:
+                # Acceptable eventual-consistency outcomes
+                print(f"Finish conversation warning: {type(e).__name__} - {e}")
+
+            print("Done.")
+        except AmigoError as err:
+            print(err)
+            raise SystemExit(1) from err
+        except Exception as err:
+            print("Unexpected error:", err)
+            raise SystemExit(1) from err
 
 
 def make_event_logger(label: str):
@@ -35,88 +126,5 @@ def make_event_logger(label: str):
     return _log
 
 
-def run() -> None:
-    # Load env vars from examples/.env (shared by all examples)
-    examples_env = Path(__file__).resolve().parent.parent / ".env"
-    load_dotenv(dotenv_path=examples_env)
-
-    service_id = os.getenv("AMIGO_SERVICE_ID")
-    if not service_id:
-        raise SystemExit(
-            "Missing AMIGO_SERVICE_ID. Set it in your .env file (see .env.example)."
-        )
-
-    with AmigoClient() as client:
-        try:
-            print("Creating conversation (sync)...")
-            create_events = client.conversation.create_conversation(
-                ConversationCreateConversationRequest(service_id=service_id),
-                CreateConversationParametersQuery(response_format="text"),
-            )
-
-            conversation_id: str | None = None
-            log_create = make_event_logger("create")
-            for evt in create_events:
-                event = evt.model_dump(mode="json")
-                log_create(event)
-                if event.get("type") == "conversation-created":
-                    conversation_id = event.get("conversation_id")
-                if event.get("type") == "interaction-complete":
-                    break
-
-            if not conversation_id:
-                raise RuntimeError("Conversation was not created (no id received).")
-
-            print("\nGetting conversation (sync)...")
-            conversation = client.conversation.get_conversations(
-                GetConversationsParametersQuery(id=[conversation_id])
-            )
-            print(
-                json.dumps(
-                    conversation.conversations[0].model_dump(mode="json"), indent=2
-                ),
-            )
-
-            print("\nSending a text message to the conversation (sync)...")
-            interaction_events = client.conversation.interact_with_conversation(
-                conversation_id,
-                InteractWithConversationParametersQuery(
-                    request_format="text", response_format="text"
-                ),
-                text_message="Hello from the Amigo Python SDK sync example!",
-            )
-            log_interact = make_event_logger("interact")
-            for evt in interaction_events:
-                event = evt.model_dump(mode="json")
-                log_interact(event)
-                if event.get("type") == "interaction-complete":
-                    break
-
-            print("\nFetching recent messages (sync)...")
-            messages_page = client.conversation.get_conversation_messages(
-                conversation_id,
-                GetConversationMessagesParametersQuery(
-                    limit=10, sort_by=["+created_at"]
-                ),
-            )
-            for m in getattr(messages_page, "messages", []) or []:
-                print("[message]", json.dumps(m.model_dump(mode="json"), indent=2))
-
-            print("\nFinishing conversation (sync)...")
-            try:
-                client.conversation.finish_conversation(conversation_id)
-                print("Conversation finished.")
-            except (ConflictError, NotFoundError) as e:
-                print(f"Finish conversation warning: {type(e).__name__} - {e}")
-
-            print("Done.")
-        except AmigoError as err:
-            print(err)
-            raise SystemExit(1) from err
-        except Exception as err:
-            print("Unexpected error:", err)
-            raise SystemExit(1) from err
-
-
 if __name__ == "__main__":
-    run()
+    asyncio.run(run())
