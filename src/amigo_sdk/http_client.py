@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 import httpx
 
-from amigo_sdk.auth import sign_in_with_api_key, sign_in_with_api_key_sync
+from amigo_sdk.auth import sign_in_with_api_key, sign_in_with_api_key_async
 from amigo_sdk.config import AmigoConfig
 from amigo_sdk.errors import (
     AuthenticationError,
@@ -100,7 +100,7 @@ class AmigoAsyncHttpClient:
             dt.UTC
         ) > self._token.expires_at - dt.timedelta(minutes=5):
             try:
-                self._token = await sign_in_with_api_key(self._cfg)
+                self._token = await sign_in_with_api_key_async(self._cfg)
             except Exception as e:
                 raise AuthenticationError(
                     "API-key exchange failed",
@@ -303,7 +303,7 @@ class AmigoHttpClient:
             dt.UTC
         ) > self._token.expires_at - dt.timedelta(minutes=5):
             try:
-                self._token = sign_in_with_api_key_sync(self._cfg)
+                self._token = sign_in_with_api_key(self._cfg)
             except Exception as e:
                 raise AuthenticationError("API-key exchange failed") from e
         return self._token.id_token

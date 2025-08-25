@@ -47,7 +47,7 @@ class TestAmigoHttpClientSync:
         client = AmigoHttpClient(mock_config)
 
         with patch(
-            "amigo_sdk.http_client.sign_in_with_api_key_sync",
+            "amigo_sdk.http_client.sign_in_with_api_key",
             return_value=mock_token_response,
         ):
             token = client._ensure_token()
@@ -70,7 +70,7 @@ class TestAmigoHttpClientSync:
         )
 
         with patch(
-            "amigo_sdk.http_client.sign_in_with_api_key_sync", return_value=fresh_token
+            "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
         ):
             token = client._ensure_token()
 
@@ -81,7 +81,7 @@ class TestAmigoHttpClientSync:
         client = AmigoHttpClient(mock_config)
 
         with patch(
-            "amigo_sdk.http_client.sign_in_with_api_key_sync",
+            "amigo_sdk.http_client.sign_in_with_api_key",
             side_effect=Exception("Auth failed"),
         ):
             with pytest.raises(AuthenticationError):
@@ -97,7 +97,7 @@ class TestAmigoHttpClientSync:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_sync",
+                "amigo_sdk.http_client.sign_in_with_api_key",
                 return_value=fresh_token,
             ),
             patch.object(httpx.Client, "request", return_value=httpx.Response(200)),
@@ -120,7 +120,7 @@ class TestAmigoHttpClientSync:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_sync",
+                "amigo_sdk.http_client.sign_in_with_api_key",
                 return_value=fresh_token,
             ),
             patch.object(httpx.Client, "request", new=fake_request),
@@ -138,8 +138,7 @@ class TestAmigoHttpClientSync:
         )
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_sync",
-                return_value=fresh_token,
+                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
             ),
             patch.object(httpx.Client, "request", return_value=httpx.Response(400)),
         ):
@@ -177,8 +176,7 @@ class TestAmigoHttpClientSync:
         )
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_sync",
-                return_value=fresh_token,
+                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
             ),
             patch.object(httpx.Client, "stream", return_value=_Resp()),
         ):
@@ -214,8 +212,7 @@ class TestAmigoHttpClientSync:
         )
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_sync",
-                return_value=fresh_token,
+                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
             ),
             patch.object(httpx.Client, "stream", new=fake_stream),
         ):
@@ -245,8 +242,7 @@ class TestAmigoHttpClientSync:
         )
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_sync",
-                return_value=fresh_token,
+                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
             ),
             patch.object(httpx.Client, "stream", return_value=_Resp()),
         ):
@@ -271,8 +267,7 @@ class TestAmigoHttpClientSync:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_sync",
-                return_value=fresh_token,
+                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
             ),
             patch.object(httpx.Client, "request", new=fake_request),
             patch("time.sleep", new=fake_sleep),
@@ -300,8 +295,7 @@ class TestAmigoHttpClientSync:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_sync",
-                return_value=fresh_token,
+                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
             ),
             patch.object(httpx.Client, "request", new=fake_request),
             patch("time.sleep", new=fake_sleep),
@@ -332,8 +326,7 @@ class TestAmigoHttpClientSync:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_sync",
-                return_value=fresh_token,
+                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
             ),
             patch.object(httpx.Client, "request", new=fake_request),
             patch("time.sleep", new=fake_sleep),
@@ -363,8 +356,7 @@ class TestAmigoHttpClientSync:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_sync",
-                return_value=fresh_token,
+                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
             ),
             patch.object(httpx.Client, "request", new=fake_request),
             patch("time.sleep", new=fake_sleep),
@@ -398,8 +390,7 @@ class TestAmigoHttpClientSync:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_sync",
-                return_value=fresh_token,
+                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
             ),
             patch.object(httpx.Client, "request", new=fake_request),
             patch("time.sleep", new=fake_sleep),
@@ -428,8 +419,7 @@ class TestAmigoHttpClientSync:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_sync",
-                return_value=fresh_token,
+                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
             ),
             patch.object(httpx.Client, "request", new=fake_request),
             patch("time.sleep", new=fake_sleep),
@@ -460,8 +450,7 @@ class TestAmigoHttpClientSync:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_sync",
-                return_value=fresh_token,
+                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
             ),
             patch.object(httpx.Client, "request", new=fake_request),
             patch("time.sleep", new=fake_sleep),
@@ -482,8 +471,7 @@ class TestAmigoHttpClientSync:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_sync",
-                return_value=fresh_token,
+                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
             ),
             patch.object(httpx.Client, "request", new=fake_request),
         ):
@@ -510,8 +498,7 @@ class TestAmigoHttpClientSync:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_sync",
-                return_value=fresh_token,
+                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
             ),
             patch.object(httpx.Client, "request", new=fake_request),
             patch("time.sleep", new=fake_sleep),
@@ -541,8 +528,7 @@ class TestAmigoHttpClientSync:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_sync",
-                return_value=fresh_token,
+                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
             ),
             patch.object(httpx.Client, "request", new=fake_request),
             patch("time.sleep", new=fake_sleep),

@@ -58,7 +58,7 @@ class TestAmigoAsyncHttpClient:
         client = AmigoAsyncHttpClient(mock_config)
 
         with patch(
-            "amigo_sdk.http_client.sign_in_with_api_key",
+            "amigo_sdk.http_client.sign_in_with_api_key_async",
             return_value=mock_token_response,
         ):
             token = await client._ensure_token()
@@ -84,7 +84,7 @@ class TestAmigoAsyncHttpClient:
         )
 
         with patch(
-            "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
+            "amigo_sdk.http_client.sign_in_with_api_key_async", return_value=fresh_token
         ):
             token = await client._ensure_token()
 
@@ -97,7 +97,7 @@ class TestAmigoAsyncHttpClient:
         client = AmigoAsyncHttpClient(mock_config)
 
         with patch(
-            "amigo_sdk.http_client.sign_in_with_api_key",
+            "amigo_sdk.http_client.sign_in_with_api_key_async",
             side_effect=Exception("Auth failed"),
         ):
             with pytest.raises(AuthenticationError):
@@ -119,7 +119,7 @@ class TestAmigoAsyncHttpClient:
         )
 
         with patch(
-            "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
+            "amigo_sdk.http_client.sign_in_with_api_key_async", return_value=fresh_token
         ):
             await client.request("GET", "/test")
 
@@ -147,7 +147,7 @@ class TestAmigoAsyncHttpClient:
             expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
         with patch(
-            "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
+            "amigo_sdk.http_client.sign_in_with_api_key_async", return_value=fresh_token
         ):
             response = await client.request("GET", "/test")
 
@@ -173,7 +173,7 @@ class TestAmigoAsyncHttpClient:
         )
 
         with patch(
-            "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
+            "amigo_sdk.http_client.sign_in_with_api_key_async", return_value=fresh_token
         ):
             with pytest.raises(BadRequestError):
                 await client.request("GET", "/test")
@@ -202,6 +202,17 @@ class TestAmigoAsyncHttpClient:
         headers = tracker["last_call"]["headers"]
         assert headers["Authorization"] == "Bearer test-bearer-token"
         assert headers["Accept"] == "application/x-ndjson"
+
+    @pytest.fixture(autouse=True)
+    def _mock_signin_token(self):
+        fresh_token = Mock(
+            id_token="test-bearer-token",
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        )
+        with patch(
+            "amigo_sdk.http_client.sign_in_with_api_key_async", return_value=fresh_token
+        ):
+            yield
 
     @pytest.mark.asyncio
     async def test_stream_lines_retries_once_on_401(self, mock_config):
@@ -246,7 +257,8 @@ class TestAmigoAsyncHttpClient:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
+                "amigo_sdk.http_client.sign_in_with_api_key_async",
+                return_value=fresh_token,
             ),
             patch("asyncio.sleep", new=fake_sleep),
         ):
@@ -275,7 +287,8 @@ class TestAmigoAsyncHttpClient:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
+                "amigo_sdk.http_client.sign_in_with_api_key_async",
+                return_value=fresh_token,
             ),
             patch("asyncio.sleep", new=fake_sleep),
         ):
@@ -313,7 +326,8 @@ class TestAmigoAsyncHttpClient:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
+                "amigo_sdk.http_client.sign_in_with_api_key_async",
+                return_value=fresh_token,
             ),
             patch("asyncio.sleep", new=fake_sleep),
         ):
@@ -348,7 +362,8 @@ class TestAmigoAsyncHttpClient:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
+                "amigo_sdk.http_client.sign_in_with_api_key_async",
+                return_value=fresh_token,
             ),
             patch("asyncio.sleep", new=fake_sleep),
         ):
@@ -388,7 +403,8 @@ class TestAmigoAsyncHttpClient:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
+                "amigo_sdk.http_client.sign_in_with_api_key_async",
+                return_value=fresh_token,
             ),
             patch("asyncio.sleep", new=fake_sleep),
         ):
@@ -420,7 +436,8 @@ class TestAmigoAsyncHttpClient:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
+                "amigo_sdk.http_client.sign_in_with_api_key_async",
+                return_value=fresh_token,
             ),
             patch("asyncio.sleep", new=fake_sleep),
         ):
@@ -451,7 +468,8 @@ class TestAmigoAsyncHttpClient:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
+                "amigo_sdk.http_client.sign_in_with_api_key_async",
+                return_value=fresh_token,
             ),
             patch("asyncio.sleep", new=fake_sleep),
         ):
@@ -476,7 +494,7 @@ class TestAmigoAsyncHttpClient:
         )
 
         with patch(
-            "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
+            "amigo_sdk.http_client.sign_in_with_api_key_async", return_value=fresh_token
         ):
             with pytest.raises(httpx.TimeoutException):
                 await client.request("POST", "/timeout-post")
@@ -505,7 +523,8 @@ class TestAmigoAsyncHttpClient:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
+                "amigo_sdk.http_client.sign_in_with_api_key_async",
+                return_value=fresh_token,
             ),
             patch("asyncio.sleep", new=fake_sleep),
             patch("random.uniform", side_effect=lambda a, b: b),
@@ -540,7 +559,8 @@ class TestAmigoAsyncHttpClient:
 
         with (
             patch(
-                "amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_token
+                "amigo_sdk.http_client.sign_in_with_api_key_async",
+                return_value=fresh_token,
             ),
             patch("asyncio.sleep", new=fake_sleep),
         ):

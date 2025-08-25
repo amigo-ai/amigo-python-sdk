@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from amigo_sdk.auth import sign_in_with_api_key
+from amigo_sdk.auth import sign_in_with_api_key_async
 from amigo_sdk.config import AmigoConfig
 from amigo_sdk.errors import AuthenticationError
 from amigo_sdk.generated.model import UserSignInWithApiKeyResponse
@@ -43,7 +43,7 @@ class TestAuth:
         )
 
         # Make the request
-        await sign_in_with_api_key(mock_config)
+        await sign_in_with_api_key_async(mock_config)
 
         # Verify the request was made correctly
         request = httpx_mock.get_request()
@@ -68,7 +68,7 @@ class TestAuth:
         )
 
         with pytest.raises(AuthenticationError):
-            await sign_in_with_api_key(mock_config)
+            await sign_in_with_api_key_async(mock_config)
 
     @pytest.mark.asyncio
     async def test_response_json_is_parsed_correctly(
@@ -82,7 +82,7 @@ class TestAuth:
             status_code=200,
         )
 
-        response = await sign_in_with_api_key(mock_config)
+        response = await sign_in_with_api_key_async(mock_config)
 
         # Verify response structure
         assert response.id_token == "mock-bearer-token-123"
@@ -102,6 +102,6 @@ class TestAuth:
         )
 
         with pytest.raises(AuthenticationError) as exc_info:
-            await sign_in_with_api_key(mock_config)
+            await sign_in_with_api_key_async(mock_config)
 
         assert "Invalid response format" in str(exc_info.value)

@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta, timezone
+from unittest.mock import Mock, patch
+
 import pytest
 
 from amigo_sdk.config import AmigoConfig
@@ -30,6 +33,18 @@ def mock_config():
 def user_resource(mock_config):
     http_client = AmigoAsyncHttpClient(mock_config)
     return AsyncUserResource(http_client, mock_config.organization_id)
+
+
+@pytest.fixture(autouse=True)
+def _mock_signin_token():
+    fresh_token = Mock(
+        id_token="tok",
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+    )
+    with patch(
+        "amigo_sdk.http_client.sign_in_with_api_key_async", return_value=fresh_token
+    ):
+        yield
 
 
 @pytest.mark.unit
