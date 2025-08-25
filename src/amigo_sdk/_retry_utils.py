@@ -3,7 +3,7 @@ import random
 from email.utils import parsedate_to_datetime
 from typing import Optional
 
-DEFAULT_RETRYABLE_STATUS: set[int] = {408, 429, 500, 502, 503, 504}
+DEFAULT_RETRYABLE_STATUS: set[int] = {429, 500, 502, 503, 504}
 
 
 def parse_retry_after_seconds(retry_after: Optional[str]) -> float | None:

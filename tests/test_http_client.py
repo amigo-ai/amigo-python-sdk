@@ -238,38 +238,6 @@ class TestAmigoAsyncHttpClient:
                     pass
 
     @pytest.mark.asyncio
-    async def test_request_retries_on_408_get(self, mock_config, httpx_mock):
-        httpx_mock.add_response(
-            method="GET", url="https://api.example.com/r408", status_code=408
-        )
-        httpx_mock.add_response(
-            method="GET", url="https://api.example.com/r408", status_code=200
-        )
-
-        client = AmigoAsyncHttpClient(mock_config, retry_max_attempts=3)
-
-        fresh_token = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
-        )
-
-        sleeps: list[float] = []
-
-        async def fake_sleep(seconds: float):
-            sleeps.append(seconds)
-
-        with (
-            patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_async",
-                return_value=fresh_token,
-            ),
-            patch("asyncio.sleep", new=fake_sleep),
-        ):
-            resp = await client.request("GET", "/r408")
-
-        assert resp.status_code == 200
-        assert len(sleeps) == 1
-
-    @pytest.mark.asyncio
     async def test_request_retries_on_5xx_get(self, mock_config, httpx_mock):
         httpx_mock.add_response(
             method="GET", url="https://api.example.com/r500", status_code=500
@@ -758,95 +726,6 @@ class TestAmigoAsyncHttpClient:
 
 
 @pytest.mark.unit
-class TestAmigoHttpClientSyncStubs:
-    """Stubs to add parity tests for the synchronous HTTP client."""
-
-    @pytest.mark.skip(reason="stub")
-    def test_client_initialization_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_ensure_token_fetches_new_token_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_ensure_token_refreshes_expired_token_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_ensure_token_handles_auth_failure_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_request_adds_authorization_header_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_request_retries_on_401_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_request_raises_error_for_non_2xx_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_context_manager_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_stream_lines_yields_and_sets_headers_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_stream_lines_retries_once_on_401_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_stream_lines_raises_on_non_2xx_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_request_retries_on_408_get_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_request_retries_on_5xx_get_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_request_retries_on_429_get_respects_retry_after_seconds_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_request_retries_on_429_post_with_retry_after_seconds_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_request_retries_on_429_post_with_retry_after_http_date_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_request_does_not_retry_post_429_without_retry_after_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_request_retries_on_timeout_get_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_request_does_not_retry_post_on_timeout_by_default_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_backoff_clamps_to_max_delay_sync(self):
-        pass
-
-    @pytest.mark.skip(reason="stub")
-    def test_max_attempts_limits_retries_sync(self):
-        pass
-
-
-@pytest.mark.unit
 class TestAmigoHttpClientSync:
     """Parity tests for the synchronous HTTP client."""
 
@@ -967,30 +846,6 @@ class TestAmigoHttpClientSync:
         with mock_http_stream_sync([], status_code=404):
             with pytest.raises(NotFoundError):
                 list(client.stream_lines("GET", "/not-found"))
-
-    def test_request_retries_on_408_get_sync(self, mock_config, httpx_mock):
-        httpx_mock.add_response(
-            method="GET", url="https://api.example.com/r408", status_code=408
-        )
-        httpx_mock.add_response(
-            method="GET", url="https://api.example.com/r408", status_code=200
-        )
-        client = AmigoHttpClient(mock_config, retry_max_attempts=3)
-        fresh = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
-        )
-        sleeps: list[float] = []
-
-        def fake_sleep(seconds: float):
-            sleeps.append(seconds)
-
-        with (
-            patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh),
-            patch("time.sleep", new=fake_sleep),
-        ):
-            resp = client.request("GET", "/r408")
-        assert resp.status_code == 200
-        assert len(sleeps) == 1
 
     def test_request_retries_on_5xx_get_sync(self, mock_config, httpx_mock):
         httpx_mock.add_response(
