@@ -22,6 +22,47 @@ from tests.resources.helpers import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _autouse_patch_sign_in():
+    fresh_async = Mock(
+        id_token="test-bearer-token",
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+    )
+    fresh_sync = Mock(
+        id_token="test-bearer-token",
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+    )
+    with (
+        patch(
+            "amigo_sdk.http_client.sign_in_with_api_key_async", return_value=fresh_async
+        ),
+        patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh_sync),
+    ):
+        yield
+
+
+@pytest.fixture
+def capture_async_sleeps(monkeypatch):
+    calls: list[float] = []
+
+    async def fake_sleep(seconds: float):
+        calls.append(seconds)
+
+    monkeypatch.setattr("asyncio.sleep", fake_sleep)
+    return calls
+
+
+@pytest.fixture
+def capture_sync_sleeps(monkeypatch):
+    calls: list[float] = []
+
+    def fake_sleep(seconds: float):
+        calls.append(seconds)
+
+    monkeypatch.setattr("time.sleep", fake_sleep)
+    return calls
+
+
 @pytest.fixture
 def mock_config():
     return AmigoConfig(
@@ -113,17 +154,7 @@ class TestAmigoAsyncHttpClient:
         )
 
         client = AmigoAsyncHttpClient(mock_config)
-
-        # Mock token that won't expire
-        fresh_token = Mock(
-            id_token="test-bearer-token",
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
-        )
-
-        with patch(
-            "amigo_sdk.http_client.sign_in_with_api_key_async", return_value=fresh_token
-        ):
-            await client.request("GET", "/test")
+        await client.request("GET", "/test")
 
         request = httpx_mock.get_request()
         assert request.headers["Authorization"] == "Bearer test-bearer-token"
@@ -168,17 +199,8 @@ class TestAmigoAsyncHttpClient:
         )
 
         client = AmigoAsyncHttpClient(mock_config)
-
-        fresh_token = Mock(
-            id_token="test-bearer-token",
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
-        )
-
-        with patch(
-            "amigo_sdk.http_client.sign_in_with_api_key_async", return_value=fresh_token
-        ):
-            with pytest.raises(BadRequestError):
-                await client.request("GET", "/test")
+        with pytest.raises(BadRequestError):
+            await client.request("GET", "/test")
 
     @pytest.mark.asyncio
     async def test_async_context_manager(self, mock_config):
@@ -205,17 +227,6 @@ class TestAmigoAsyncHttpClient:
         assert headers["Authorization"] == "Bearer test-bearer-token"
         assert headers["Accept"] == "application/x-ndjson"
 
-    @pytest.fixture(autouse=True)
-    def _mock_signin_token(self):
-        fresh_token = Mock(
-            id_token="test-bearer-token",
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
-        )
-        with patch(
-            "amigo_sdk.http_client.sign_in_with_api_key_async", return_value=fresh_token
-        ):
-            yield
-
     @pytest.mark.asyncio
     async def test_stream_lines_retries_once_on_401(self, mock_config):
         client = AmigoAsyncHttpClient(mock_config)
@@ -238,7 +249,9 @@ class TestAmigoAsyncHttpClient:
                     pass
 
     @pytest.mark.asyncio
-    async def test_request_retries_on_5xx_get(self, mock_config, httpx_mock):
+    async def test_request_retries_on_5xx_get(
+        self, mock_config, httpx_mock, capture_async_sleeps
+    ):
         httpx_mock.add_response(
             method="GET", url="https://api.example.com/r500", status_code=500
         )
@@ -247,29 +260,14 @@ class TestAmigoAsyncHttpClient:
         )
 
         client = AmigoAsyncHttpClient(mock_config, retry_max_attempts=3)
-        fresh_token = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
-        )
-        sleeps: list[float] = []
-
-        async def fake_sleep(seconds: float):
-            sleeps.append(seconds)
-
-        with (
-            patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_async",
-                return_value=fresh_token,
-            ),
-            patch("asyncio.sleep", new=fake_sleep),
-        ):
-            resp = await client.request("GET", "/r500")
+        resp = await client.request("GET", "/r500")
 
         assert resp.status_code == 200
-        assert len(sleeps) == 1
+        assert len(capture_async_sleeps) == 1
 
     @pytest.mark.asyncio
     async def test_request_retries_on_429_get_respects_retry_after_seconds(
-        self, mock_config, httpx_mock
+        self, mock_config, httpx_mock, capture_async_sleeps
     ):
         httpx_mock.add_response(
             method="GET",
@@ -286,90 +284,52 @@ class TestAmigoAsyncHttpClient:
             retry_max_attempts=3,
             retry_max_delay_seconds=10.0,
         )
-        fresh_token = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
-        )
-        sleeps: list[float] = []
-
-        async def fake_sleep(seconds: float):
-            sleeps.append(seconds)
-
-        with (
-            patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_async",
-                return_value=fresh_token,
-            ),
-            patch("asyncio.sleep", new=fake_sleep),
-        ):
-            resp = await client.request("GET", "/r429s")
+        resp = await client.request("GET", "/r429s")
 
         assert resp.status_code == 200
-        assert len(sleeps) == 1
-        assert sleeps[0] == pytest.approx(1.5, rel=1e-3)
+        assert len(capture_async_sleeps) == 1
+        assert capture_async_sleeps[0] == pytest.approx(1.5, rel=1e-3)
 
-    def test_request_retries_on_429_post_with_retry_after_seconds_sync(
-        self, mock_config, httpx_mock
+    @pytest.mark.parametrize(
+        "build_headers, expected_seconds",
+        [
+            (lambda: {"Retry-After": "0.5"}, 0.5),
+            (
+                lambda: {
+                    "Retry-After": format_datetime(
+                        datetime.now(timezone.utc) + timedelta(seconds=3)
+                    )
+                },
+                3.0,
+            ),
+        ],
+    )
+    def test_request_retries_on_429_post_with_retry_after_sync(
+        self,
+        mock_config,
+        httpx_mock,
+        capture_sync_sleeps,
+        build_headers,
+        expected_seconds,
     ):
         httpx_mock.add_response(
             method="POST",
             url="https://api.example.com/r429p",
             status_code=429,
-            headers={"Retry-After": "0.5"},
+            headers=build_headers(),
         )
         httpx_mock.add_response(
             method="POST", url="https://api.example.com/r429p", status_code=200
         )
-        client = AmigoHttpClient(mock_config, retry_max_attempts=3)
-        fresh = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
-        )
-        sleeps: list[float] = []
-
-        def fake_sleep(seconds: float):
-            sleeps.append(seconds)
-
-        with (
-            patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh),
-            patch("time.sleep", new=fake_sleep),
-        ):
-            resp = client.request("POST", "/r429p")
-        assert resp.status_code == 200
-        assert len(sleeps) == 1
-        assert sleeps[0] == pytest.approx(0.5, rel=1e-3)
-
-    def test_request_retries_on_429_post_with_retry_after_http_date_sync(
-        self, mock_config, httpx_mock
-    ):
-        future_dt = datetime.now(timezone.utc) + timedelta(seconds=3)
-        http_date = format_datetime(future_dt)
-        httpx_mock.add_response(
-            method="POST",
-            url="https://api.example.com/r429pdate",
-            status_code=429,
-            headers={"Retry-After": http_date},
-        )
-        httpx_mock.add_response(
-            method="POST", url="https://api.example.com/r429pdate", status_code=200
-        )
         client = AmigoHttpClient(
             mock_config, retry_max_attempts=3, retry_max_delay_seconds=30.0
         )
-        fresh = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
-        )
-        sleeps: list[float] = []
-
-        def fake_sleep(seconds: float):
-            sleeps.append(seconds)
-
-        with (
-            patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh),
-            patch("time.sleep", new=fake_sleep),
-        ):
-            resp = client.request("POST", "/r429pdate")
+        resp = client.request("POST", "/r429p")
         assert resp.status_code == 200
-        assert len(sleeps) == 1
-        assert sleeps[0] == pytest.approx(3.0, abs=1.0)
+        assert len(capture_sync_sleeps) == 1
+        assert capture_sync_sleeps[0] == pytest.approx(
+            expected_seconds, abs=1.0 if expected_seconds >= 1.0 else 1e-3
+        )
 
     def test_request_does_not_retry_post_429_without_retry_after_sync(
         self, mock_config, httpx_mock
@@ -378,23 +338,12 @@ class TestAmigoAsyncHttpClient:
             method="POST", url="https://api.example.com/r429pnora", status_code=429
         )
         client = AmigoHttpClient(mock_config)
-        fresh = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
-        )
-        sleeps: list[float] = []
+        with pytest.raises(RateLimitError):
+            client.request("POST", "/r429pnora")
 
-        def fake_sleep(seconds: float):
-            sleeps.append(seconds)
-
-        with (
-            patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh),
-            patch("time.sleep", new=fake_sleep),
-        ):
-            with pytest.raises(RateLimitError):
-                client.request("POST", "/r429pnora")
-        assert sleeps == []
-
-    def test_request_retries_on_timeout_get_sync(self, mock_config, httpx_mock):
+    def test_request_retries_on_timeout_get_sync(
+        self, mock_config, httpx_mock, capture_sync_sleeps
+    ):
         httpx_mock.add_exception(
             method="GET",
             url="https://api.example.com/timeout",
@@ -404,21 +353,9 @@ class TestAmigoAsyncHttpClient:
             method="GET", url="https://api.example.com/timeout", status_code=200
         )
         client = AmigoHttpClient(mock_config)
-        fresh = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
-        )
-        sleeps: list[float] = []
-
-        def fake_sleep(seconds: float):
-            sleeps.append(seconds)
-
-        with (
-            patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh),
-            patch("time.sleep", new=fake_sleep),
-        ):
-            resp = client.request("GET", "/timeout")
+        resp = client.request("GET", "/timeout")
         assert resp.status_code == 200
-        assert len(sleeps) == 1
+        assert len(capture_sync_sleeps) == 1
 
     def test_request_does_not_retry_post_on_timeout_by_default_sync(
         self, mock_config, httpx_mock
@@ -429,14 +366,12 @@ class TestAmigoAsyncHttpClient:
             exception=httpx.ReadTimeout("boom"),
         )
         client = AmigoHttpClient(mock_config)
-        fresh = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
-        )
-        with patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh):
-            with pytest.raises(httpx.TimeoutException):
-                client.request("POST", "/timeout-post")
+        with pytest.raises(httpx.TimeoutException):
+            client.request("POST", "/timeout-post")
 
-    def test_backoff_clamps_to_max_delay_sync(self, mock_config, httpx_mock):
+    def test_backoff_clamps_to_max_delay_sync(
+        self, mock_config, httpx_mock, capture_sync_sleeps
+    ):
         httpx_mock.add_response(
             method="GET", url="https://api.example.com/clamp", status_code=500
         )
@@ -446,25 +381,17 @@ class TestAmigoAsyncHttpClient:
         client = AmigoHttpClient(
             mock_config, retry_backoff_base=100.0, retry_max_delay_seconds=0.5
         )
-        fresh = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
-        )
-        sleeps: list[float] = []
-
-        def fake_sleep(seconds: float):
-            sleeps.append(seconds)
-
         with (
-            patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh),
-            patch("time.sleep", new=fake_sleep),
             patch("random.uniform", side_effect=lambda a, b: b),
         ):
             resp = client.request("GET", "/clamp")
         assert resp.status_code == 200
-        assert len(sleeps) == 1
-        assert sleeps[0] == 0.5
+        assert len(capture_sync_sleeps) == 1
+        assert capture_sync_sleeps[0] == 0.5
 
-    def test_max_attempts_limits_retries_sync(self, mock_config, httpx_mock):
+    def test_max_attempts_limits_retries_sync(
+        self, mock_config, httpx_mock, capture_sync_sleeps
+    ):
         httpx_mock.add_response(
             method="GET", url="https://api.example.com/max", status_code=500
         )
@@ -475,99 +402,53 @@ class TestAmigoAsyncHttpClient:
             method="GET", url="https://api.example.com/max", status_code=500
         )
         client = AmigoHttpClient(mock_config, retry_max_attempts=3)
-        fresh = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
-        )
-        sleeps: list[float] = []
-
-        def fake_sleep(seconds: float):
-            sleeps.append(seconds)
-
-        with (
-            patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh),
-            patch("time.sleep", new=fake_sleep),
-        ):
-            with pytest.raises(ServerError):
-                client.request("GET", "/max")
-        assert len(sleeps) == 2
+        with pytest.raises(ServerError):
+            client.request("GET", "/max")
+        assert len(capture_sync_sleeps) == 2
 
     @pytest.mark.asyncio
-    async def test_request_retries_on_429_post_with_retry_after_seconds(
-        self, mock_config, httpx_mock
+    @pytest.mark.parametrize(
+        "build_headers, expected_seconds",
+        [
+            (lambda: {"Retry-After": "0.5"}, 0.5),
+            (
+                lambda: {
+                    "Retry-After": format_datetime(
+                        datetime.now(timezone.utc) + timedelta(seconds=3)
+                    )
+                },
+                3.0,
+            ),
+        ],
+    )
+    async def test_request_retries_on_429_post_with_retry_after(
+        self,
+        mock_config,
+        httpx_mock,
+        capture_async_sleeps,
+        build_headers,
+        expected_seconds,
     ):
         httpx_mock.add_response(
             method="POST",
             url="https://api.example.com/r429p",
             status_code=429,
-            headers={"Retry-After": "0.5"},
+            headers=build_headers(),
         )
         httpx_mock.add_response(
             method="POST", url="https://api.example.com/r429p", status_code=200
         )
 
-        client = AmigoAsyncHttpClient(mock_config, retry_max_attempts=3)
-        fresh_token = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
-        )
-        sleeps: list[float] = []
-
-        async def fake_sleep(seconds: float):
-            sleeps.append(seconds)
-
-        with (
-            patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_async",
-                return_value=fresh_token,
-            ),
-            patch("asyncio.sleep", new=fake_sleep),
-        ):
-            resp = await client.request("POST", "/r429p")
-
-        assert resp.status_code == 200
-        assert len(sleeps) == 1
-        assert sleeps[0] == pytest.approx(0.5, rel=1e-3)
-
-    @pytest.mark.asyncio
-    async def test_request_retries_on_429_post_with_retry_after_http_date(
-        self, mock_config, httpx_mock
-    ):
-        future_dt = datetime.now(timezone.utc) + timedelta(seconds=3)
-        http_date = format_datetime(future_dt)
-
-        httpx_mock.add_response(
-            method="POST",
-            url="https://api.example.com/r429pdate",
-            status_code=429,
-            headers={"Retry-After": http_date},
-        )
-        httpx_mock.add_response(
-            method="POST", url="https://api.example.com/r429pdate", status_code=200
-        )
-
         client = AmigoAsyncHttpClient(
             mock_config, retry_max_attempts=3, retry_max_delay_seconds=30.0
         )
-        fresh_token = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
-        )
-        sleeps: list[float] = []
-
-        async def fake_sleep(seconds: float):
-            sleeps.append(seconds)
-
-        with (
-            patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_async",
-                return_value=fresh_token,
-            ),
-            patch("asyncio.sleep", new=fake_sleep),
-        ):
-            resp = await client.request("POST", "/r429pdate")
+        resp = await client.request("POST", "/r429p")
 
         assert resp.status_code == 200
-        assert len(sleeps) == 1
-        # Expect approximately 3 seconds (allow timing variance)
-        assert sleeps[0] == pytest.approx(3.0, abs=1.0)
+        assert len(capture_async_sleeps) == 1
+        assert capture_async_sleeps[0] == pytest.approx(
+            expected_seconds, abs=1.0 if expected_seconds >= 1.0 else 1e-3
+        )
 
     @pytest.mark.asyncio
     async def test_request_does_not_retry_post_429_without_retry_after(
@@ -601,7 +482,9 @@ class TestAmigoAsyncHttpClient:
         assert sleeps == []
 
     @pytest.mark.asyncio
-    async def test_request_retries_on_timeout_get(self, mock_config, httpx_mock):
+    async def test_request_retries_on_timeout_get(
+        self, mock_config, httpx_mock, capture_async_sleeps
+    ):
         httpx_mock.add_exception(
             method="GET",
             url="https://api.example.com/timeout",
@@ -612,25 +495,10 @@ class TestAmigoAsyncHttpClient:
         )
 
         client = AmigoAsyncHttpClient(mock_config)
-        fresh_token = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
-        )
-        sleeps: list[float] = []
-
-        async def fake_sleep(seconds: float):
-            sleeps.append(seconds)
-
-        with (
-            patch(
-                "amigo_sdk.http_client.sign_in_with_api_key_async",
-                return_value=fresh_token,
-            ),
-            patch("asyncio.sleep", new=fake_sleep),
-        ):
-            resp = await client.request("GET", "/timeout")
+        resp = await client.request("GET", "/timeout")
 
         assert resp.status_code == 200
-        assert len(sleeps) == 1
+        assert len(capture_async_sleeps) == 1
 
     @pytest.mark.asyncio
     async def test_request_does_not_retry_post_on_timeout_by_default(
@@ -776,14 +644,9 @@ class TestAmigoHttpClientSync:
             method="GET", url="https://api.example.com/test", status_code=200
         )
         client = AmigoHttpClient(mock_config)
-        fresh = Mock(
-            id_token="tok",
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
-        )
-        with patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh):
-            client.request("GET", "/test")
+        client.request("GET", "/test")
         req = httpx_mock.get_request()
-        assert req.headers["Authorization"] == "Bearer tok"
+        assert req.headers["Authorization"] == "Bearer test-bearer-token"
 
     def test_request_retries_on_401_sync(self, mock_config, httpx_mock):
         httpx_mock.add_response(
@@ -813,12 +676,8 @@ class TestAmigoHttpClientSync:
             text="Bad Request",
         )
         client = AmigoHttpClient(mock_config)
-        fresh = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
-        )
-        with patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh):
-            with pytest.raises(BadRequestError):
-                client.request("GET", "/test")
+        with pytest.raises(BadRequestError):
+            client.request("GET", "/test")
 
     def test_context_manager_sync(self, mock_config):
         with AmigoHttpClient(mock_config) as client:
@@ -847,7 +706,9 @@ class TestAmigoHttpClientSync:
             with pytest.raises(NotFoundError):
                 list(client.stream_lines("GET", "/not-found"))
 
-    def test_request_retries_on_5xx_get_sync(self, mock_config, httpx_mock):
+    def test_request_retries_on_5xx_get_sync(
+        self, mock_config, httpx_mock, capture_sync_sleeps
+    ):
         httpx_mock.add_response(
             method="GET", url="https://api.example.com/r500", status_code=500
         )
@@ -855,24 +716,12 @@ class TestAmigoHttpClientSync:
             method="GET", url="https://api.example.com/r500", status_code=200
         )
         client = AmigoHttpClient(mock_config, retry_max_attempts=3)
-        fresh = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
-        )
-        sleeps: list[float] = []
-
-        def fake_sleep(seconds: float):
-            sleeps.append(seconds)
-
-        with (
-            patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh),
-            patch("time.sleep", new=fake_sleep),
-        ):
-            resp = client.request("GET", "/r500")
+        resp = client.request("GET", "/r500")
         assert resp.status_code == 200
-        assert len(sleeps) == 1
+        assert len(capture_sync_sleeps) == 1
 
     def test_request_retries_on_429_get_respects_retry_after_seconds_sync(
-        self, mock_config, httpx_mock
+        self, mock_config, httpx_mock, capture_sync_sleeps
     ):
         httpx_mock.add_response(
             method="GET",
@@ -886,19 +735,7 @@ class TestAmigoHttpClientSync:
         client = AmigoHttpClient(
             mock_config, retry_max_attempts=3, retry_max_delay_seconds=10.0
         )
-        fresh = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
-        )
-        sleeps: list[float] = []
-
-        def fake_sleep(seconds: float):
-            sleeps.append(seconds)
-
-        with (
-            patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh),
-            patch("time.sleep", new=fake_sleep),
-        ):
-            resp = client.request("GET", "/r429s")
+        resp = client.request("GET", "/r429s")
         assert resp.status_code == 200
-        assert len(sleeps) == 1
-        assert sleeps[0] == pytest.approx(1.5, rel=1e-3)
+        assert len(capture_sync_sleeps) == 1
+        assert capture_sync_sleeps[0] == pytest.approx(1.5, rel=1e-3)
