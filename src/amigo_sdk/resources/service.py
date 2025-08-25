@@ -10,9 +10,7 @@ from amigo_sdk.http_client import AmigoAsyncHttpClient, AmigoHttpClient
 class AsyncServiceResource:
     """Service resource for Amigo API operations."""
 
-    def __init__(
-        self, http_client: AmigoHttpClient, organization_id: str
-    ) -> ServiceGetServicesResponse:
+    def __init__(self, http_client: AmigoAsyncHttpClient, organization_id: str) -> None:
         self._http = http_client
         self._organization_id = organization_id
 
@@ -31,7 +29,7 @@ class AsyncServiceResource:
 
 
 class ServiceResource:
-    def __init__(self, http_client: AmigoAsyncHttpClient, organization_id: str) -> None:
+    def __init__(self, http_client: AmigoHttpClient, organization_id: str) -> None:
         self._http = http_client
         self._organization_id = organization_id
 

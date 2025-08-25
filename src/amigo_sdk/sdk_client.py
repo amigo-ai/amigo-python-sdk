@@ -82,22 +82,22 @@ class AsyncAmigoClient:
         return self._cfg
 
     @property
-    def organization(self) -> OrganizationResource:
+    def organization(self) -> AsyncOrganizationResource:
         """Access organization resource."""
         return self._organization
 
     @property
-    def service(self) -> ServiceResource:
+    def service(self) -> AsyncServiceResource:
         """Access service resource."""
         return self._service
 
     @property
-    def conversation(self) -> ConversationResource:
+    def conversation(self) -> AsyncConversationResource:
         """Access conversation resource."""
         return self._conversation
 
     @property
-    def users(self) -> UserResource:
+    def users(self) -> AsyncUserResource:
         """Access user resource."""
         return self._users
 
