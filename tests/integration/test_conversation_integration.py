@@ -133,7 +133,7 @@ class TestConversationIntegration:
                 params=InteractWithConversationParametersQuery(
                     request_format="text", response_format="text"
                 ),
-                text_message="Hello, I'm sending a text message from the Python SDK!",
+                text_message="Hello, I'm sending a text message from the Python SDK asynchronously!",
             )
 
             saw_new_message = False
@@ -279,7 +279,7 @@ class TestConversationIntegrationSync:
                 params=InteractWithConversationParametersQuery(
                     request_format="text", response_format="text"
                 ),
-                text_message="Hello, I'm sending a text message from the Python SDK!",
+                text_message="Hello, I'm sending a text message from the Python SDK synchronously!",
             )
 
             saw_new_message = False

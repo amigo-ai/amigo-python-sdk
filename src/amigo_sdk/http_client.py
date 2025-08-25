@@ -3,6 +3,7 @@ import datetime as dt
 import random
 import time
 from collections.abc import AsyncIterator, Iterator
+from dataclasses import dataclass
 from email.utils import parsedate_to_datetime
 from typing import Any, Optional
 
@@ -17,48 +18,33 @@ from amigo_sdk.errors import (
 )
 from amigo_sdk.generated.model import UserSignInWithApiKeyResponse
 
+# -----------------------------
+# Shared helpers and structures
+# -----------------------------
 
-class AmigoAsyncHttpClient:
-    def __init__(
-        self,
-        cfg: AmigoConfig,
-        *,
-        retry_max_attempts: int = 3,
-        retry_backoff_base: float = 0.25,
-        retry_max_delay_seconds: float = 30.0,
-        retry_on_status: set[int] | None = None,
-        retry_on_methods: set[str] | None = None,
-        **httpx_kwargs: Any,
-    ) -> None:
-        self._cfg = cfg
-        self._token: Optional[UserSignInWithApiKeyResponse] = None
-        self._client = httpx.AsyncClient(
-            base_url=cfg.base_url,
-            **httpx_kwargs,
-        )
-        # Retry configuration
-        self._retry_max_attempts = max(1, retry_max_attempts)
-        self._retry_backoff_base = retry_backoff_base
-        self._retry_max_delay_seconds = max(0.0, retry_max_delay_seconds)
-        self._retry_on_status = retry_on_status or {408, 429, 500, 502, 503, 504}
-        # Default to GET only; POST is handled specially for 429 + Retry-After
-        self._retry_on_methods = {m.upper() for m in (retry_on_methods or {"GET"})}
 
-    def _is_retryable_method(self, method: str) -> bool:
-        return method.upper() in self._retry_on_methods
+@dataclass
+class _RetryConfig:
+    max_attempts: int
+    backoff_base: float
+    max_delay_seconds: float
+    on_status: set[int]
+    on_methods: set[str]
 
-    def _is_retryable_response(self, method: str, resp: httpx.Response) -> bool:
+    def is_retryable_method(self, method: str) -> bool:
+        return method.upper() in self.on_methods
+
+    def is_retryable_response(self, method: str, resp: httpx.Response) -> bool:
         status = resp.status_code
-        # Allow POST retry only for 429 when Retry-After header is present
         if (
             method.upper() == "POST"
             and status == 429
             and resp.headers.get("Retry-After")
         ):
             return True
-        return self._is_retryable_method(method) and status in self._retry_on_status
+        return self.is_retryable_method(method) and status in self.on_status
 
-    def _parse_retry_after_seconds(self, resp: httpx.Response) -> float | None:
+    def parse_retry_after_seconds(self, resp: httpx.Response) -> float | None:
         retry_after = resp.headers.get("Retry-After")
         if not retry_after:
             return None
@@ -83,22 +69,86 @@ class AmigoAsyncHttpClient:
         except Exception:
             return None
 
-    def _retry_delay_seconds(self, attempt: int, resp: httpx.Response | None) -> float:
+    def retry_delay_seconds(self, attempt: int, resp: httpx.Response | None) -> float:
         # Honor Retry-After when present (numeric or HTTP-date), clamped by max delay
         if resp is not None:
-            ra_seconds = self._parse_retry_after_seconds(resp)
+            ra_seconds = self.parse_retry_after_seconds(resp)
             if ra_seconds is not None:
-                return min(self._retry_max_delay_seconds, ra_seconds)
+                return min(self.max_delay_seconds, ra_seconds)
         # Exponential backoff with full jitter: U(0, min(cap, base * 2^(attempt-1)))
-        window = self._retry_backoff_base * (2 ** (attempt - 1))
-        window = min(window, self._retry_max_delay_seconds)
+        window = self.backoff_base * (2 ** (attempt - 1))
+        window = min(window, self.max_delay_seconds)
         return random.uniform(0.0, window)
+
+
+def _should_refresh_token(token: Optional[UserSignInWithApiKeyResponse]) -> bool:
+    if not token:
+        return True
+    return dt.datetime.now(dt.UTC) > token.expires_at - dt.timedelta(minutes=5)
+
+
+async def _raise_status_with_body_async(resp: httpx.Response) -> None:
+    if 200 <= resp.status_code < 300:
+        return
+    try:
+        await resp.aread()
+    except Exception:
+        pass
+    if hasattr(resp, "is_success"):
+        raise_for_status(resp)
+    error_class = get_error_class_for_status_code(getattr(resp, "status_code", 0))
+    raise error_class(
+        f"HTTP {getattr(resp, 'status_code', 'unknown')} error",
+        status_code=getattr(resp, "status_code", None),
+    )
+
+
+def _raise_status_with_body_sync(resp: httpx.Response) -> None:
+    if 200 <= resp.status_code < 300:
+        return
+    try:
+        _ = resp.text
+    except Exception:
+        pass
+    if hasattr(resp, "is_success"):
+        raise_for_status(resp)
+    error_class = get_error_class_for_status_code(getattr(resp, "status_code", 0))
+    raise error_class(
+        f"HTTP {getattr(resp, 'status_code', 'unknown')} error",
+        status_code=getattr(resp, "status_code", None),
+    )
+
+
+class AmigoAsyncHttpClient:
+    def __init__(
+        self,
+        cfg: AmigoConfig,
+        *,
+        retry_max_attempts: int = 3,
+        retry_backoff_base: float = 0.25,
+        retry_max_delay_seconds: float = 30.0,
+        retry_on_status: set[int] | None = None,
+        retry_on_methods: set[str] | None = None,
+        **httpx_kwargs: Any,
+    ) -> None:
+        self._cfg = cfg
+        self._token: Optional[UserSignInWithApiKeyResponse] = None
+        self._client = httpx.AsyncClient(
+            base_url=cfg.base_url,
+            **httpx_kwargs,
+        )
+        # Retry configuration
+        self._retry_cfg = _RetryConfig(
+            max(1, retry_max_attempts),
+            retry_backoff_base,
+            max(0.0, retry_max_delay_seconds),
+            retry_on_status or {408, 429, 500, 502, 503, 504},
+            {m.upper() for m in (retry_on_methods or {"GET"})},
+        )
 
     async def _ensure_token(self) -> str:
         """Fetch or refresh bearer token ~5 min before expiry."""
-        if not self._token or dt.datetime.now(
-            dt.UTC
-        ) > self._token.expires_at - dt.timedelta(minutes=5):
+        if _should_refresh_token(self._token):
             try:
                 self._token = await sign_in_with_api_key_async(self._cfg)
             except Exception as e:
@@ -130,20 +180,20 @@ class AmigoAsyncHttpClient:
             except (httpx.TimeoutException, httpx.TransportError):
                 # Retry only if method is allowed (e.g., GET); POST not retried for transport/timeouts
                 if (
-                    not self._is_retryable_method(method)
-                    or attempt >= self._retry_max_attempts
+                    not self._retry_cfg.is_retryable_method(method)
+                    or attempt >= self._retry_cfg.max_attempts
                 ):
                     raise
-                await asyncio.sleep(self._retry_delay_seconds(attempt, None))
+                await asyncio.sleep(self._retry_cfg.retry_delay_seconds(attempt, None))
                 attempt += 1
                 continue
 
             # Retry on configured HTTP status codes
             if (
-                self._is_retryable_response(method, resp)
-                and attempt < self._retry_max_attempts
+                self._retry_cfg.is_retryable_response(method, resp)
+                and attempt < self._retry_cfg.max_attempts
             ):
-                await asyncio.sleep(self._retry_delay_seconds(attempt, resp))
+                await asyncio.sleep(self._retry_cfg.retry_delay_seconds(attempt, resp))
                 attempt += 1
                 continue
 
@@ -169,29 +219,8 @@ class AmigoAsyncHttpClient:
         headers["Authorization"] = f"Bearer {await self._ensure_token()}"
         headers.setdefault("Accept", "application/x-ndjson")
 
-        async def _raise_status_with_body(resp: httpx.Response) -> None:
-            """Ensure response body is buffered, then raise mapped error with details."""
-            if 200 <= resp.status_code < 300:
-                return
-            # Fully buffer the body so raise_for_status() can extract JSON/text safely
-            try:
-                await resp.aread()
-            except Exception:
-                pass
-            # If this is a real httpx.Response, use our rich raise_for_status
-            if hasattr(resp, "is_success"):
-                raise_for_status(resp)
-            # Otherwise, fall back to lightweight error mapping used in tests' mock responses
-            error_class = get_error_class_for_status_code(
-                getattr(resp, "status_code", 0)
-            )
-            raise error_class(
-                f"HTTP {getattr(resp, 'status_code', 'unknown')} error",
-                status_code=getattr(resp, "status_code", None),
-            )
-
         async def _yield_from_response(resp: httpx.Response) -> AsyncIterator[str]:
-            await _raise_status_with_body(resp)
+            await _raise_status_with_body_async(resp)
             if abort_event and abort_event.is_set():
                 return
             async for line in resp.aiter_lines():
@@ -247,61 +276,16 @@ class AmigoHttpClient:
         self._token: Optional[UserSignInWithApiKeyResponse] = None
         self._client = httpx.Client(base_url=cfg.base_url, **httpx_kwargs)
         # Retry configuration
-        self._retry_max_attempts = max(1, retry_max_attempts)
-        self._retry_backoff_base = retry_backoff_base
-        self._retry_max_delay_seconds = max(0.0, retry_max_delay_seconds)
-        self._retry_on_status = retry_on_status or {408, 429, 500, 502, 503, 504}
-        # Default to GET only; POST is handled specially for 429 + Retry-After
-        self._retry_on_methods = {m.upper() for m in (retry_on_methods or {"GET"})}
-
-    def _is_retryable_method(self, method: str) -> bool:
-        return method.upper() in self._retry_on_methods
-
-    def _is_retryable_response(self, method: str, resp: httpx.Response) -> bool:
-        status = resp.status_code
-        if (
-            method.upper() == "POST"
-            and status == 429
-            and resp.headers.get("Retry-After")
-        ):
-            return True
-        return self._is_retryable_method(method) and status in self._retry_on_status
-
-    def _parse_retry_after_seconds(self, resp: httpx.Response) -> float | None:
-        retry_after = resp.headers.get("Retry-After")
-        if not retry_after:
-            return None
-        try:
-            seconds = float(retry_after)
-            return max(0.0, seconds)
-        except ValueError:
-            pass
-        try:
-            target_dt = parsedate_to_datetime(retry_after)
-            if target_dt is None:
-                return None
-            if target_dt.tzinfo is None:
-                target_dt = target_dt.replace(tzinfo=dt.UTC)
-            now = dt.datetime.now(dt.UTC)
-            delta_seconds = (target_dt - now).total_seconds()
-            delta_seconds = round(delta_seconds, 3)
-            return max(0.0, delta_seconds)
-        except Exception:
-            return None
-
-    def _retry_delay_seconds(self, attempt: int, resp: httpx.Response | None) -> float:
-        if resp is not None:
-            ra_seconds = self._parse_retry_after_seconds(resp)
-            if ra_seconds is not None:
-                return min(self._retry_max_delay_seconds, ra_seconds)
-        window = self._retry_backoff_base * (2 ** (attempt - 1))
-        window = min(window, self._retry_max_delay_seconds)
-        return random.uniform(0.0, window)
+        self._retry_cfg = _RetryConfig(
+            max(1, retry_max_attempts),
+            retry_backoff_base,
+            max(0.0, retry_max_delay_seconds),
+            retry_on_status or {408, 429, 500, 502, 503, 504},
+            {m.upper() for m in (retry_on_methods or {"GET"})},
+        )
 
     def _ensure_token(self) -> str:
-        if not self._token or dt.datetime.now(
-            dt.UTC
-        ) > self._token.expires_at - dt.timedelta(minutes=5):
+        if _should_refresh_token(self._token):
             try:
                 self._token = sign_in_with_api_key(self._cfg)
             except Exception as e:
@@ -327,18 +311,18 @@ class AmigoHttpClient:
 
             except (httpx.TimeoutException, httpx.TransportError):
                 if (
-                    not self._is_retryable_method(method)
-                ) or attempt >= self._retry_max_attempts:
+                    not self._retry_cfg.is_retryable_method(method)
+                ) or attempt >= self._retry_cfg.max_attempts:
                     raise
-                time.sleep(self._retry_delay_seconds(attempt, None))
+                time.sleep(self._retry_cfg.retry_delay_seconds(attempt, None))
                 attempt += 1
                 continue
 
             if (
-                self._is_retryable_response(method, resp)
-                and attempt < self._retry_max_attempts
+                self._retry_cfg.is_retryable_response(method, resp)
+                and attempt < self._retry_cfg.max_attempts
             ):
-                time.sleep(self._retry_delay_seconds(attempt, resp))
+                time.sleep(self._retry_cfg.retry_delay_seconds(attempt, resp))
                 attempt += 1
                 continue
 
@@ -357,25 +341,8 @@ class AmigoHttpClient:
         headers["Authorization"] = f"Bearer {self._ensure_token()}"
         headers.setdefault("Accept", "application/x-ndjson")
 
-        def _raise_status_with_body(resp: httpx.Response) -> None:
-            if 200 <= resp.status_code < 300:
-                return
-            try:
-                _ = resp.text
-            except Exception:
-                pass
-            if hasattr(resp, "is_success"):
-                raise_for_status(resp)
-            error_class = get_error_class_for_status_code(
-                getattr(resp, "status_code", 0)
-            )
-            raise error_class(
-                f"HTTP {getattr(resp, 'status_code', 'unknown')} error",
-                status_code=getattr(resp, "status_code", None),
-            )
-
         def _yield_from_response(resp: httpx.Response) -> Iterator[str]:
-            _raise_status_with_body(resp)
+            _raise_status_with_body_sync(resp)
             if abort_flag and abort_flag[0]:
                 return
             for line in resp.iter_lines():
