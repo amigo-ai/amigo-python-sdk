@@ -1,17 +1,21 @@
 from typing import Any, Optional
 
 from amigo_sdk.config import AmigoConfig
-from amigo_sdk.http_client import AmigoHttpClient
-from amigo_sdk.resources.conversation import ConversationResource
-from amigo_sdk.resources.organization import OrganizationResource
-from amigo_sdk.resources.service import ServiceResource
-from amigo_sdk.resources.user import UserResource
+from amigo_sdk.http_client import AmigoHttpClient, AmigoSyncHttpClient
+from amigo_sdk.resources.conversation import (
+    ConversationResource,
+    SyncConversationResource,
+)
+from amigo_sdk.resources.organization import (
+    OrganizationResource,
+    SyncOrganizationResource,
+)
+from amigo_sdk.resources.service import ServiceResource, SyncServiceResource
+from amigo_sdk.resources.user import SyncUserResource, UserResource
 
 
-class AmigoClient:
-    """
-    Amigo API client
-    """
+class AsyncAmigoClient:
+    """Amigo API client (asynchronous)."""
 
     def __init__(
         self,
@@ -103,3 +107,81 @@ class AmigoClient:
 
     async def __aexit__(self, *_):
         await self.aclose()
+
+
+class AmigoClient:
+    """Amigo API client (synchronous)."""
+
+    def __init__(
+        self,
+        *,
+        api_key: Optional[str] = None,
+        api_key_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        organization_id: Optional[str] = None,
+        base_url: Optional[str] = None,
+        config: Optional[AmigoConfig] = None,
+        **httpx_kwargs: Any,
+    ):
+        if config:
+            self._cfg = config
+        else:
+            cfg_dict: dict[str, Any] = {
+                k: v
+                for k, v in [
+                    ("api_key", api_key),
+                    ("api_key_id", api_key_id),
+                    ("user_id", user_id),
+                    ("organization_id", organization_id),
+                    ("base_url", base_url),
+                ]
+                if v is not None
+            }
+
+            try:
+                self._cfg = AmigoConfig(**cfg_dict)
+            except Exception as e:
+                raise ValueError(
+                    "AmigoClient configuration incomplete. "
+                    "Provide api_key, api_key_id, user_id, organization_id, base_url "
+                    "either as kwargs or environment variables."
+                ) from e
+
+        self._http = AmigoSyncHttpClient(self._cfg, **httpx_kwargs)
+        self._organization = SyncOrganizationResource(
+            self._http, self._cfg.organization_id
+        )
+        self._service = SyncServiceResource(self._http, self._cfg.organization_id)
+        self._conversation = SyncConversationResource(
+            self._http, self._cfg.organization_id
+        )
+        self._users = SyncUserResource(self._http, self._cfg.organization_id)
+
+    @property
+    def config(self) -> AmigoConfig:
+        return self._cfg
+
+    @property
+    def organization(self) -> SyncOrganizationResource:
+        return self._organization
+
+    @property
+    def service(self) -> SyncServiceResource:
+        return self._service
+
+    @property
+    def conversation(self) -> SyncConversationResource:
+        return self._conversation
+
+    @property
+    def users(self) -> SyncUserResource:
+        return self._users
+
+    def aclose(self) -> None:
+        self._http.aclose()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.aclose()

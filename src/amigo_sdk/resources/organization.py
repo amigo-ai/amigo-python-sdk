@@ -1,7 +1,7 @@
 from amigo_sdk.generated.model import (
     OrganizationGetOrganizationResponse,
 )
-from amigo_sdk.http_client import AmigoHttpClient
+from amigo_sdk.http_client import AmigoHttpClient, AmigoSyncHttpClient
 
 
 class OrganizationResource:
@@ -19,4 +19,16 @@ class OrganizationResource:
             "GET", f"/v1/{self._organization_id}/organization/"
         )
 
+        return OrganizationGetOrganizationResponse.model_validate_json(response.text)
+
+
+class SyncOrganizationResource:
+    def __init__(self, http_client: AmigoSyncHttpClient, organization_id: str) -> None:
+        self._http = http_client
+        self._organization_id = organization_id
+
+    def get(self) -> OrganizationGetOrganizationResponse:
+        response = self._http.request(
+            "GET", f"/v1/{self._organization_id}/organization/"
+        )
         return OrganizationGetOrganizationResponse.model_validate_json(response.text)
