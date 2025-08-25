@@ -15,10 +15,18 @@ from amigo_sdk.generated.model import (
     GetConversationsParametersQuery,
     InteractWithConversationParametersQuery,
 )
-from amigo_sdk.http_client import AmigoAsyncHttpClient
-from amigo_sdk.resources.conversation import AsyncConversationResource
+from amigo_sdk.http_client import AmigoAsyncHttpClient, AmigoHttpClient
+from amigo_sdk.resources.conversation import (
+    AsyncConversationResource,
+    ConversationResource,
+)
 
-from .helpers import mock_http_request, mock_http_stream
+from .helpers import (
+    mock_http_request,
+    mock_http_request_sync,
+    mock_http_stream,
+    mock_http_stream_sync,
+)
 
 # Readable 24-char hex service ids for tests
 TEST_SERVICE_ID = "0123456789abcdef01234567"
@@ -478,97 +486,411 @@ class TestAsyncConversationResourceUnit:
 
 
 @pytest.mark.unit
-class TestConversationResourceSyncStubs:
-    """Stubs for sync ConversationResource tests mirroring async coverage."""
+class TestConversationResourceSync:
+    """Sync ConversationResource tests mirroring async coverage."""
 
-    @pytest.mark.skip(reason="stub")
-    def test_create_conversation_streams_events_and_yields_ids_sync(self):
-        pass
+    def _resource(self, cfg: AmigoConfig) -> ConversationResource:
+        http = AmigoHttpClient(cfg)
+        return ConversationResource(http, cfg.organization_id)
 
-    @pytest.mark.skip(reason="stub")
-    def test_create_conversation_sends_body_and_query_sync(self):
-        pass
+    def test_create_conversation_streams_events_and_yields_ids_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_stream_sync(
+            [
+                {"type": "conversation-created", "conversation_id": "c-1"},
+                {
+                    "type": "new-message",
+                    "message": "hello",
+                    "transcript_alignment": [],
+                    "message_metadata": [],
+                    "stop": True,
+                    "sequence_number": 0,
+                    "message_id": "m-1",
+                },
+                {
+                    "type": "interaction-complete",
+                    "interaction_id": "i-1",
+                    "message_id": "m-1",
+                    "full_message": "",
+                    "conversation_completed": False,
+                },
+            ]
+        ):
+            events = conv.create_conversation(
+                ConversationCreateConversationRequest(
+                    service_id=TEST_SERVICE_ID,
+                    service_version_set_name="release",
+                ),
+                CreateConversationParametersQuery(response_format=Format.text),
+            )
 
-    @pytest.mark.skip(reason="stub")
-    def test_create_conversation_supports_abort_sync(self):
-        pass
+            saw_new_message = False
+            conversation_id = None
+            interaction_id = None
+            for resp in events:
+                event = resp.root
+                if getattr(event, "type", None) == "conversation-created":
+                    conversation_id = event.conversation_id
+                elif getattr(event, "type", None) == "new-message":
+                    saw_new_message = True
+                elif getattr(event, "type", None) == "interaction-complete":
+                    interaction_id = event.interaction_id
+                    break
 
-    @pytest.mark.skip(reason="stub")
-    def test_create_conversation_raises_on_non_2xx_sync(self):
-        pass
+            assert conversation_id == "c-1"
+            assert interaction_id == "i-1"
+            assert saw_new_message is True
 
-    @pytest.mark.skip(reason="stub")
-    def test_interact_with_conversation_text_streams_ndjson_sync(self):
-        pass
+    def test_create_conversation_sends_body_and_query_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        body = ConversationCreateConversationRequest(
+            service_id=TEST_SERVICE_ID, service_version_set_name="release"
+        )
+        params = CreateConversationParametersQuery(response_format=Format.text)
 
-    @pytest.mark.skip(reason="stub")
-    def test_interact_with_conversation_voice_streaming_sync(self):
-        pass
+        with mock_http_stream_sync(
+            [
+                {
+                    "type": "interaction-complete",
+                    "interaction_id": "i",
+                    "message_id": "m",
+                    "full_message": "",
+                    "conversation_completed": False,
+                }
+            ]
+        ) as tracker:
+            events = conv.create_conversation(body, params)
+            next(events)
+            call = tracker["last_call"]
+            assert call["method"] == "POST"
+            assert call["url"].endswith("/v1/org-1/conversation/")
+            assert call["json"]["service_id"] == TEST_SERVICE_ID
+            assert call["params"]["response_format"] == "text"
 
-    @pytest.mark.skip(reason="stub")
-    def test_interact_with_conversation_supports_abort_sync(self):
-        pass
+    def test_create_conversation_supports_abort_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        abort_flag = [True]
+        with mock_http_stream_sync([]):
+            events = conv.create_conversation(
+                ConversationCreateConversationRequest(service_id=TEST_SERVICE_ID),
+                CreateConversationParametersQuery(response_format=Format.text),
+                abort_flag=abort_flag,
+            )
+            for _ in events:
+                pytest.fail("should not yield when aborted")
 
-    @pytest.mark.skip(reason="stub")
-    def test_interact_with_conversation_raises_on_non_2xx_sync(self):
-        pass
+    def test_create_conversation_raises_on_non_2xx_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_stream_sync([], status_code=400):
+            events = conv.create_conversation(
+                ConversationCreateConversationRequest(service_id=TEST_SERVICE_ID),
+                CreateConversationParametersQuery(response_format=Format.text),
+            )
+            with pytest.raises(BadRequestError):
+                list(events)
 
-    @pytest.mark.skip(reason="stub")
-    def test_get_conversations_returns_data_and_passes_query_params_sync(self):
-        pass
+    def test_interact_with_conversation_text_streams_ndjson_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_stream_sync(
+            [
+                {
+                    "type": "new-message",
+                    "message": "ok",
+                    "message_metadata": [],
+                    "transcript_alignment": [],
+                    "stop": True,
+                    "sequence_number": 0,
+                    "message_id": "m-2",
+                },
+                {
+                    "type": "interaction-complete",
+                    "interaction_id": "i-2",
+                    "message_id": "m-2",
+                    "full_message": "",
+                    "conversation_completed": False,
+                },
+            ]
+        ) as tracker:
+            events = conv.interact_with_conversation(
+                TEST_INTERACTION_ID,
+                InteractWithConversationParametersQuery(
+                    request_format=Format.text, response_format=Format.text
+                ),
+                text_message="hello",
+            )
+            next(events)
+            call = tracker["last_call"]
+            assert call["url"].endswith(
+                f"/v1/org-1/conversation/{TEST_INTERACTION_ID}/interact"
+            )
+            assert call["params"]["request_format"] == "text"
+            assert call["files"]["recorded_message"][2].startswith("text/plain")
 
-    @pytest.mark.skip(reason="stub")
-    def test_get_conversations_raises_not_found_sync(self):
-        pass
+            saw_complete = False
+            for resp in events:
+                outer = resp.root
+                inner = getattr(outer, "root", outer)
+                if getattr(inner, "type", None) == "interaction-complete":
+                    saw_complete = True
+                    break
+            assert saw_complete is True
 
-    @pytest.mark.skip(reason="stub")
-    def test_get_conversation_messages_returns_and_pagination_sync(self):
-        pass
+    def test_interact_with_conversation_voice_streaming_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        audio = b"\x00\x01\x02"
+        with mock_http_stream_sync(
+            [
+                {
+                    "type": "interaction-complete",
+                    "interaction_id": "i-3",
+                    "message_id": "m-3",
+                    "full_message": "",
+                    "conversation_completed": False,
+                }
+            ]
+        ) as tracker:
+            events = conv.interact_with_conversation(
+                TEST_INTERACTION_ID,
+                InteractWithConversationParametersQuery(
+                    request_format=Format.voice, response_format=Format.text
+                ),
+                audio_bytes=audio,
+                audio_content_type="audio/wav",
+            )
+            next(events)
+            call = tracker["last_call"]
+            assert call["content"] == audio
+            assert call["headers"]["Content-Type"] == "audio/wav"
 
-    @pytest.mark.skip(reason="stub")
-    def test_get_conversation_messages_raises_not_found_sync(self):
-        pass
+    def test_interact_with_conversation_supports_abort_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        abort_flag = [True]
+        with mock_http_stream_sync([]):
+            events = conv.interact_with_conversation(
+                "conv-x",
+                InteractWithConversationParametersQuery(
+                    request_format=Format.text, response_format=Format.text
+                ),
+                text_message="hi",
+                abort_flag=abort_flag,
+            )
+            for _ in events:
+                pytest.fail("should not yield when aborted")
 
-    @pytest.mark.skip(reason="stub")
-    def test_finish_conversation_returns_void_on_204_sync(self):
-        pass
+    def test_interact_with_conversation_raises_on_non_2xx_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_stream_sync([], status_code=400):
+            events = conv.interact_with_conversation(
+                "conv-err",
+                InteractWithConversationParametersQuery(
+                    request_format=Format.text, response_format=Format.text
+                ),
+                text_message="hi",
+            )
+            with pytest.raises(BadRequestError):
+                list(events)
 
-    @pytest.mark.skip(reason="stub")
-    def test_finish_conversation_raises_conflict_on_409_sync(self):
-        pass
+    def test_get_conversations_returns_data_and_passes_query_params_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        params = GetConversationsParametersQuery(
+            service_id=[TEST_SERVICE_ID, TEST_SERVICE_ID_2],
+            is_finished=False,
+            limit=10,
+            continuation_token=5,
+            sort_by=["-created_at"],
+        )
+        with mock_http_request_sync(
+            {"conversations": [], "has_more": False, "continuation_token": None}
+        ):
+            data = conv.get_conversations(params)
+            assert data.has_more is False
 
-    @pytest.mark.skip(reason="stub")
-    def test_finish_conversation_raises_not_found_on_404_sync(self):
-        pass
+    def test_get_conversations_raises_not_found_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_request_sync("{}", status_code=404):
+            with pytest.raises(NotFoundError):
+                conv.get_conversations(GetConversationsParametersQuery())
 
-    @pytest.mark.skip(reason="stub")
-    def test_recommend_responses_returns_data_sync(self):
-        pass
+    def test_get_conversation_messages_returns_and_pagination_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_request_sync(
+            {
+                "messages": [
+                    {
+                        "id": "m1",
+                        "interaction_id": TEST_INTERACTION_ID,
+                        "timestamp": "2024-01-01T00:00:00Z",
+                        "created_at": "2024-01-01T00:00:00Z",
+                        "sender": "Agent",
+                        "message": "Hello",
+                        "format": "text",
+                        "message_type": "agent-message",
+                        "message_metadata": [],
+                    }
+                ],
+                "has_more": False,
+                "continuation_token": None,
+            }
+        ):
+            page1 = conv.get_conversation_messages(
+                "conv-3",
+                GetConversationMessagesParametersQuery(
+                    limit=1, continuation_token=7, sort_by=["+created_at"]
+                ),
+            )
+            assert len(page1.messages) == 1
 
-    @pytest.mark.skip(reason="stub")
-    def test_recommend_responses_raises_not_found_sync(self):
-        pass
+    def test_get_conversation_messages_raises_not_found_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_request_sync("{}", status_code=404):
+            with pytest.raises(NotFoundError):
+                conv.get_conversation_messages(
+                    "missing", GetConversationMessagesParametersQuery()
+                )
 
-    @pytest.mark.skip(reason="stub")
-    def test_get_interaction_insights_returns_data_sync(self):
-        pass
+    def test_finish_conversation_returns_void_on_204_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_request_sync("{}", status_code=204):
+            assert conv.finish_conversation("conv-4") is None
 
-    @pytest.mark.skip(reason="stub")
-    def test_get_interaction_insights_raises_not_found_sync(self):
-        pass
+    def test_finish_conversation_raises_conflict_on_409_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_request_sync("{}", status_code=409):
+            with pytest.raises(ConflictError):
+                conv.finish_conversation("conv-6")
 
-    @pytest.mark.skip(reason="stub")
-    def test_get_message_source_returns_data_sync(self):
-        pass
+    def test_finish_conversation_raises_not_found_on_404_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_request_sync("{}", status_code=404):
+            with pytest.raises(NotFoundError):
+                conv.finish_conversation("missing")
 
-    @pytest.mark.skip(reason="stub")
-    def test_get_message_source_raises_not_found_sync(self):
-        pass
+    def test_recommend_responses_returns_data_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_request_sync({"recommended_responses": ["hello"]}):
+            data = conv.recommend_responses_for_interaction("conv-7", "int-1")
+            assert isinstance(data.recommended_responses, list)
 
-    @pytest.mark.skip(reason="stub")
-    def test_generate_conversation_starters_returns_data_sync(self):
-        pass
+    def test_recommend_responses_raises_not_found_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_request_sync("{}", status_code=404):
+            with pytest.raises(NotFoundError):
+                conv.recommend_responses_for_interaction("conv-7", "missing")
 
-    @pytest.mark.skip(reason="stub")
-    def test_generate_conversation_starters_raises_on_non_2xx_sync(self):
-        pass
+    def test_get_interaction_insights_returns_data_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_request_sync(
+            {
+                "current_state_name": "Talking",
+                "current_state_action": "",
+                "current_state_objective": "",
+                "state_transition_logs": [],
+                "working_memory": [],
+                "reflections": [],
+                "triggered_dynamic_behavior_set_version_info": None,
+            }
+        ):
+            data = conv.get_interaction_insights("conv-8", "int-2")
+            assert isinstance(data.current_state_name, str)
+
+    def test_get_interaction_insights_raises_not_found_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_request_sync("{}", status_code=404):
+            with pytest.raises(NotFoundError):
+                conv.get_interaction_insights("conv-8", "missing")
+
+    def test_get_message_source_returns_data_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_request_sync(
+            {
+                "url": "https://example.com/file.wav",
+                "expires_at": "2030-01-01T00:00:00Z",
+                "content_type": "audio/wav",
+            }
+        ):
+            data = conv.get_message_source("conv-9", "msg-1")
+            assert str(data.url).startswith("https://")
+
+    def test_get_message_source_raises_not_found_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_request_sync("{}", status_code=404):
+            with pytest.raises(NotFoundError):
+                conv.get_message_source("conv-9", "missing")
+
+    def test_generate_conversation_starters_returns_data_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_request_sync(
+            {"prompts": [{"prompt": "Hi there", "facets": ["greeting"]}]}
+        ):
+            data = conv.generate_conversation_starters(
+                ConversationGenerateConversationStarterRequest(
+                    service_id=TEST_SERVICE_ID,
+                    service_version_set_name="release",
+                    facets=["greeting"],
+                    min_count=1,
+                    max_count=1,
+                    generation_instructions="say hi",
+                )
+            )
+            assert len(data.prompts) >= 1
+
+    def test_generate_conversation_starters_raises_on_non_2xx_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_request_sync("{}", status_code=400):
+            with pytest.raises(BadRequestError):
+                conv.generate_conversation_starters(
+                    ConversationGenerateConversationStarterRequest(
+                        service_id=TEST_SERVICE_ID,
+                        service_version_set_name="release",
+                        facets=["x"],
+                        min_count=1,
+                        max_count=1,
+                        generation_instructions="x",
+                    )
+                )
