@@ -475,3 +475,100 @@ class TestAsyncConversationResourceUnit:
                         generation_instructions="x",
                     )
                 )
+
+
+@pytest.mark.unit
+class TestConversationResourceSyncStubs:
+    """Stubs for sync ConversationResource tests mirroring async coverage."""
+
+    @pytest.mark.skip(reason="stub")
+    def test_create_conversation_streams_events_and_yields_ids_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_create_conversation_sends_body_and_query_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_create_conversation_supports_abort_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_create_conversation_raises_on_non_2xx_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_interact_with_conversation_text_streams_ndjson_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_interact_with_conversation_voice_streaming_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_interact_with_conversation_supports_abort_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_interact_with_conversation_raises_on_non_2xx_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_get_conversations_returns_data_and_passes_query_params_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_get_conversations_raises_not_found_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_get_conversation_messages_returns_and_pagination_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_get_conversation_messages_raises_not_found_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_finish_conversation_returns_void_on_204_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_finish_conversation_raises_conflict_on_409_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_finish_conversation_raises_not_found_on_404_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_recommend_responses_returns_data_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_recommend_responses_raises_not_found_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_get_interaction_insights_returns_data_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_get_interaction_insights_raises_not_found_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_get_message_source_returns_data_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_get_message_source_raises_not_found_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_generate_conversation_starters_returns_data_sync(self):
+        pass
+
+    @pytest.mark.skip(reason="stub")
+    def test_generate_conversation_starters_raises_on_non_2xx_sync(self):
+        pass

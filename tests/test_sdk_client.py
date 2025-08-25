@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from amigo_sdk.config import AmigoConfig
-from amigo_sdk.sdk_client import AsyncAmigoClient
+from amigo_sdk.sdk_client import AmigoClient, AsyncAmigoClient
 
 
 @pytest.fixture
@@ -77,3 +77,52 @@ class TestAsyncAmigoClient:
         async with AsyncAmigoClient(config=mock_config) as client:
             assert isinstance(client, AsyncAmigoClient)
             assert client.config == mock_config
+
+
+@pytest.mark.unit
+class TestAmigoClientSync:
+    """Parity tests for the synchronous SDK client."""
+
+    def test_client_initialization_with_config_sync(self, mock_config):
+        client = AmigoClient(config=mock_config)
+        assert client.config == mock_config
+        assert client._cfg == mock_config
+
+    def test_client_initialization_with_kwargs_sync(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(temp_dir)
+                with patch.dict(os.environ, {}, clear=True):
+                    client = AmigoClient(
+                        api_key="test-api-key",
+                        api_key_id="test-api-key-id",
+                        user_id="test-user-id",
+                        organization_id="test-org-id",
+                    )
+                    assert client.config.api_key == "test-api-key"
+                    assert client.config.organization_id == "test-org-id"
+            finally:
+                os.chdir(original_cwd)
+
+    def test_missing_config_raises_error_sync(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(temp_dir)
+                with patch.dict(os.environ, {}, clear=True):
+                    with pytest.raises(ValueError):
+                        AmigoClient(api_key="only-api-key")
+            finally:
+                os.chdir(original_cwd)
+
+    def test_resources_are_accessible_sync(self, mock_config):
+        client = AmigoClient(config=mock_config)
+        assert client.organization is not None
+        assert client.service is not None
+        assert hasattr(client.organization, "_http")
+        assert hasattr(client.service, "_http")
+
+    def test_context_manager_sync(self, mock_config):
+        with AmigoClient(config=mock_config) as client:
+            assert isinstance(client, AmigoClient)
