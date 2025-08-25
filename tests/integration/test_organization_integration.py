@@ -8,7 +8,34 @@ from amigo_sdk.generated.model import (
     OrganizationGetOrganizationResponse,
     ServiceGetServicesResponse,
 )
-from amigo_sdk.sdk_client import AsyncAmigoClient
+from amigo_sdk.sdk_client import AmigoClient, AsyncAmigoClient
+
+
+@pytest.fixture
+def required_env_vars():
+    """Check that required environment variables are set."""
+    required_vars = [
+        "AMIGO_API_KEY",
+        "AMIGO_API_KEY_ID",
+        "AMIGO_USER_ID",
+        "AMIGO_ORGANIZATION_ID",
+    ]
+
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+
+    if missing_vars:
+        pytest.fail(
+            f"Integration tests require environment variables to be set.\n"
+            f"Missing: {', '.join(missing_vars)}\n\n"
+            f"Please set these environment variables or create a .env file in the project root:\n"
+            f"AMIGO_API_KEY=your-api-key\n"
+            f"AMIGO_API_KEY_ID=your-api-key-id\n"
+            f"AMIGO_USER_ID=your-user-id\n"
+            f"AMIGO_ORGANIZATION_ID=your-organization-id\n"
+            f"AMIGO_BASE_URL=https://your-api-base-url (optional)"
+        )
+
+    return {var: os.getenv(var) for var in required_vars}
 
 
 @pytest.mark.integration
@@ -23,32 +50,6 @@ class TestOrganizationIntegration:
     Create a .env file in the project root or set environment variables directly.
     Tests will fail if required variables are missing.
     """
-
-    @pytest.fixture
-    def required_env_vars(self):
-        """Check that required environment variables are set."""
-        required_vars = [
-            "AMIGO_API_KEY",
-            "AMIGO_API_KEY_ID",
-            "AMIGO_USER_ID",
-            "AMIGO_ORGANIZATION_ID",
-        ]
-
-        missing_vars = [var for var in required_vars if not os.getenv(var)]
-
-        if missing_vars:
-            pytest.fail(
-                f"Integration tests require environment variables to be set.\n"
-                f"Missing: {', '.join(missing_vars)}\n\n"
-                f"Please set these environment variables or create a .env file in the project root:\n"
-                f"AMIGO_API_KEY=your-api-key\n"
-                f"AMIGO_API_KEY_ID=your-api-key-id\n"
-                f"AMIGO_USER_ID=your-user-id\n"
-                f"AMIGO_ORGANIZATION_ID=your-organization-id\n"
-                f"AMIGO_BASE_URL=https://your-api-base-url (optional)"
-            )
-
-        return {var: os.getenv(var) for var in required_vars}
 
     async def test_get_services(self):
         """Test getting services."""
@@ -121,6 +122,57 @@ class TestOrganizationIntegration:
         config = AmigoConfig()
 
         # Verify config contains expected values
+        assert config.api_key == required_env_vars["AMIGO_API_KEY"]
+        assert config.api_key_id == required_env_vars["AMIGO_API_KEY_ID"]
+        assert config.user_id == required_env_vars["AMIGO_USER_ID"]
+        assert config.organization_id == required_env_vars["AMIGO_ORGANIZATION_ID"]
+
+
+@pytest.mark.integration
+class TestOrganizationIntegrationSync:
+    def test_get_services(self):
+        with AmigoClient() as client:
+            services = client.service.get_services()
+
+            assert services is not None
+            assert isinstance(services, ServiceGetServicesResponse)
+
+    def test_get_organization(self):
+        with AmigoClient() as client:
+            organization = client.organization.get()
+
+            assert organization is not None
+            assert isinstance(organization, OrganizationGetOrganizationResponse)
+            assert organization.model_dump_json() is not None
+            assert hasattr(organization, "title")
+            assert organization.title is not None
+
+    def test_invalid_credentials_raises_authentication_error(self):
+        if not os.getenv("AMIGO_API_KEY"):
+            pytest.fail(
+                "Cannot test authentication error handling without valid credentials.\n"
+                "Please set AMIGO_API_KEY environment variable."
+            )
+
+        with pytest.raises(AuthenticationError):
+            with AmigoClient(api_key="invalid_key") as client:
+                client.organization.get()
+
+    def test_client_config_property(self, required_env_vars):
+        with AmigoClient() as client:
+            config = client.config
+
+            assert config.api_key == required_env_vars["AMIGO_API_KEY"]
+            assert config.api_key_id == required_env_vars["AMIGO_API_KEY_ID"]
+            assert config.user_id == required_env_vars["AMIGO_USER_ID"]
+            assert config.organization_id == required_env_vars["AMIGO_ORGANIZATION_ID"]
+            assert config.base_url == os.getenv(
+                "AMIGO_BASE_URL", "https://api.amigo.ai"
+            )
+
+    def test_config_creation(self, required_env_vars):
+        config = AmigoConfig()
+
         assert config.api_key == required_env_vars["AMIGO_API_KEY"]
         assert config.api_key_id == required_env_vars["AMIGO_API_KEY_ID"]
         assert config.user_id == required_env_vars["AMIGO_USER_ID"]
