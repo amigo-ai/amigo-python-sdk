@@ -108,7 +108,7 @@ class TestAuth:
 
 
 @pytest.mark.unit
-class TestAuthSyncStubs:
+class TestAuthSync:
     """Sync auth tests mirroring async coverage."""
 
     def test_signin_request_has_correct_headers_and_url_sync(
