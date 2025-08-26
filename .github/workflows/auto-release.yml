@@ -30,7 +30,9 @@ jobs:
           echo "spec_url=$SPEC_URL" >> $GITHUB_OUTPUT
 
       - name: Fetch current production spec
-        run: curl -fSL -o openapi-new.json "${{ steps.spec.outputs.spec_url }}"
+        run: |
+          mkdir -p specs
+          curl -fSL -o specs/openapi-new.json "${{ steps.spec.outputs.spec_url }}"
 
       - name: Check baseline presence
         id: baseline
@@ -46,7 +48,7 @@ jobs:
         run: |
           mkdir -p specs
           if [ ! -f specs/openapi-baseline.json ]; then
-            cp openapi-new.json specs/openapi-baseline.json
+            cp specs/openapi-new.json specs/openapi-baseline.json
           fi
 
       - name: Diagnostics (spec and baseline)
@@ -71,7 +73,7 @@ jobs:
                 with_entries(.value |= sort_deep)
               else . end;
             (del(.info) | del(.servers)) | sort_deep
-          ' openapi-new.json > new.norm.json
+          ' specs/openapi-new.json > new.norm.json
           if [ -f baseline.norm.json ]; then
             echo "BASELINE_NORM_SHA=$(sha256sum baseline.norm.json | awk '{print $1}')"
           else
@@ -99,10 +101,10 @@ jobs:
             BASELINE_PATHS_COUNT=0
             BASELINE_SCHEMAS_COUNT=0
           fi
-          NEW_PATHS_SHA=$(jq -cS '(.paths // {})' openapi-new.json | sha256sum | awk '{print $1}')
-          NEW_SCHEMAS_SHA=$(jq -cS '(.components.schemas // {})' openapi-new.json | sha256sum | awk '{print $1}')
-          NEW_PATHS_COUNT=$(jq -r '(.paths // {}) | keys | length' openapi-new.json)
-          NEW_SCHEMAS_COUNT=$(jq -r '(.components.schemas // {}) | keys | length' openapi-new.json)
+          NEW_PATHS_SHA=$(jq -cS '(.paths // {})' specs/openapi-new.json | sha256sum | awk '{print $1}')
+          NEW_SCHEMAS_SHA=$(jq -cS '(.components.schemas // {})' specs/openapi-new.json | sha256sum | awk '{print $1}')
+          NEW_PATHS_COUNT=$(jq -r '(.paths // {}) | keys | length' specs/openapi-new.json)
+          NEW_SCHEMAS_COUNT=$(jq -r '(.components.schemas // {}) | keys | length' specs/openapi-new.json)
           echo "BASELINE paths: count=$BASELINE_PATHS_COUNT sha=$BASELINE_PATHS_SHA"
           echo "NEW      paths: count=$NEW_PATHS_COUNT sha=$NEW_PATHS_SHA"
           echo "BASELINE schemas: count=$BASELINE_SCHEMAS_COUNT sha=$BASELINE_SCHEMAS_SHA"
@@ -114,7 +116,7 @@ jobs:
           else
             : > baseline.paths.txt
           fi
-          jq -r '(.paths // {}) | keys | sort[]' openapi-new.json > new.paths.txt
+          jq -r '(.paths // {}) | keys | sort[]' specs/openapi-new.json > new.paths.txt
           echo "Removed paths (in baseline, not in new):"; comm -23 baseline.paths.txt new.paths.txt || true
           echo "Added paths (in new, not in baseline):"; comm -13 baseline.paths.txt new.paths.txt || true
 
@@ -124,7 +126,7 @@ jobs:
           else
             : > baseline.schemas.txt
           fi
-          jq -r '(.components.schemas // {}) | keys | sort[]' openapi-new.json > new.schemas.txt
+          jq -r '(.components.schemas // {}) | keys | sort[]' specs/openapi-new.json > new.schemas.txt
           echo "Removed schemas (in baseline, not in new):"; comm -23 baseline.schemas.txt new.schemas.txt || true
           echo "Added schemas (in new, not in baseline):"; comm -13 baseline.schemas.txt new.schemas.txt || true
 
@@ -152,7 +154,7 @@ jobs:
                 with_entries(.value |= sort_deep)
               else . end;
             (del(.info) | del(.servers)) | sort_deep
-          ' openapi-new.json > new.norm.json
+          ' specs/openapi-new.json > new.norm.json
           if diff -q baseline.norm.json new.norm.json >/dev/null 2>&1; then
             echo "changed=false" >> $GITHUB_OUTPUT
           else

@@ -12,4 +12,7 @@ dist/
 # Coverage files
 htmlcov/
 coverage.xml
-.coverageopenapi-new.json
+.coverage
+
+# CI/Temp OpenAPI spec (fetched during workflows)
+specs/openapi-new.json

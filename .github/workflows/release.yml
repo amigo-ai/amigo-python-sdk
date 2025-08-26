@@ -69,13 +69,11 @@ jobs:
           if [ -z "$SPEC_URL" ]; then
             SPEC_URL="https://api.amigo.ai/v1/openapi.json"
           fi
-          curl -fSL -o openapi-new.json "$SPEC_URL"
           mkdir -p specs
-          cp openapi-new.json specs/openapi-baseline.json
+          curl -fSL -o specs/openapi-new.json "$SPEC_URL"
+          cp specs/openapi-new.json specs/openapi-baseline.json
 
-      # Optional: if your generator can take a spec path
-      - name: Set spec path for generator
-        run: echo "OPENAPI_SPEC_PATH=$GITHUB_WORKSPACE/openapi-new.json" >> $GITHUB_ENV
+      # Generator always fetches remote; no local spec path needed
 
       - name: Setup Python
         uses: actions/setup-python@v5
