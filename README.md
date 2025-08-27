@@ -28,7 +28,7 @@ This SDK auto-generates its types from the latest [Amigo OpenAPI schema](https:/
 
 ```python
 from amigo_sdk import AmigoClient
-from amigo_sdk.generated.model import GetConversationsParametersQuery
+from amigo_sdk.models import GetConversationsParametersQuery
 
 # Initialize and use the client synchronously
 with AmigoClient(

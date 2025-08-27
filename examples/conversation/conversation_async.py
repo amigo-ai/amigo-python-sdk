@@ -5,15 +5,15 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from amigo_sdk import AsyncAmigoClient
 from amigo_sdk.errors import AmigoError, ConflictError, NotFoundError
-from amigo_sdk.generated.model import (
+from amigo_sdk.models import (
     ConversationCreateConversationRequest,
     CreateConversationParametersQuery,
     GetConversationMessagesParametersQuery,
     GetConversationsParametersQuery,
     InteractWithConversationParametersQuery,
 )
-from amigo_sdk.sdk_client import AsyncAmigoClient
 
 
 async def run() -> None:

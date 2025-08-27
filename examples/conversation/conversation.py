@@ -4,15 +4,15 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from amigo_sdk import AmigoClient
 from amigo_sdk.errors import AmigoError, ConflictError, NotFoundError
-from amigo_sdk.generated.model import (
+from amigo_sdk.models import (
     ConversationCreateConversationRequest,
     CreateConversationParametersQuery,
     GetConversationMessagesParametersQuery,
     GetConversationsParametersQuery,
     InteractWithConversationParametersQuery,
 )
-from amigo_sdk.sdk_client import AmigoClient
 
 
 def make_event_logger(label: str):
