@@ -1,6 +1,7 @@
 import asyncio
 import datetime as dt
 import random
+import threading
 import time
 from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
@@ -333,7 +334,7 @@ class AmigoHttpClient:
         self,
         method: str,
         path: str,
-        abort_flag: list[bool] | None = None,
+        abort_event: threading.Event | None = None,
         **kwargs,
     ) -> Iterator[str]:
         kwargs.setdefault("headers", {})
@@ -343,23 +344,23 @@ class AmigoHttpClient:
 
         def _yield_from_response(resp: httpx.Response) -> Iterator[str]:
             _raise_status_with_body_sync(resp)
-            if abort_flag and abort_flag[0]:
+            if abort_event and abort_event.is_set():
                 return
             for line in resp.iter_lines():
-                if abort_flag and abort_flag[0]:
+                if abort_event and abort_event.is_set():
                     return
                 line_stripped = (line or "").strip()
                 if not line_stripped:
                     continue
                 yield line_stripped
 
-        if abort_flag and abort_flag[0]:
+        if abort_event and abort_event.is_set():
             return iter(())
         with self._client.stream(method, path, **kwargs) as resp:
             if resp.status_code == 401:
                 self._token = None
                 headers["Authorization"] = f"Bearer {self._ensure_token()}"
-                if abort_flag and abort_flag[0]:
+                if abort_event and abort_event.is_set():
                     return iter(())
                 with self._client.stream(method, path, **kwargs) as retry_resp:
                     for ln in _yield_from_response(retry_resp):

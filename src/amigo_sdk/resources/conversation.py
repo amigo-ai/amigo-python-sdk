@@ -1,4 +1,5 @@
 import asyncio
+import threading
 from collections.abc import AsyncGenerator, Iterator
 from datetime import datetime
 from typing import Any, Literal
@@ -219,7 +220,7 @@ class ConversationResource:
         self,
         body: ConversationCreateConversationRequest,
         params: CreateConversationParametersQuery,
-        abort_flag: list[bool] | None = None,
+        abort_event: threading.Event | None = None,
     ) -> Iterator[ConversationCreateConversationResponse]:
         def _iter():
             for line in self._http.stream_lines(
@@ -228,7 +229,7 @@ class ConversationResource:
                 params=params.model_dump(mode="json", exclude_none=True),
                 json=body.model_dump(mode="json", exclude_none=True),
                 headers={"Accept": "application/x-ndjson"},
-                abort_flag=abort_flag,
+                abort_event=abort_event,
             ):
                 yield ConversationCreateConversationResponse.model_validate_json(line)
 
@@ -238,7 +239,7 @@ class ConversationResource:
         self,
         conversation_id: str,
         params: InteractWithConversationParametersQuery,
-        abort_flag: list[bool] | None = None,
+        abort_event: threading.Event | None = None,
         *,
         text_message: str | None = None,
         audio_bytes: bytes | None = None,
@@ -248,7 +249,7 @@ class ConversationResource:
             request_kwargs: dict[str, Any] = {
                 "params": params.model_dump(mode="json", exclude_none=True),
                 "headers": {"Accept": "application/x-ndjson"},
-                "abort_flag": abort_flag,
+                "abort_event": abort_event,
             }
             req_format = getattr(params, "request_format", None)
             if req_format == Format.text:

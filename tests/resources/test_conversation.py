@@ -1,4 +1,5 @@
 import asyncio
+import threading
 
 import pytest
 
@@ -561,12 +562,13 @@ class TestConversationResourceSync:
         self, mock_config: AmigoConfig
     ) -> None:
         conv = self._resource(mock_config)
-        abort_flag = [True]
+        abort_event = threading.Event()
+        abort_event.set()
         with mock_http_stream_sync([]):
             events = conv.create_conversation(
                 ConversationCreateConversationRequest(service_id=TEST_SERVICE_ID),
                 CreateConversationParametersQuery(response_format=Format.text),
-                abort_flag=abort_flag,
+                abort_event=abort_event,
             )
             for _ in events:
                 pytest.fail("should not yield when aborted")
@@ -664,7 +666,8 @@ class TestConversationResourceSync:
         self, mock_config: AmigoConfig
     ) -> None:
         conv = self._resource(mock_config)
-        abort_flag = [True]
+        abort_event = threading.Event()
+        abort_event.set()
         with mock_http_stream_sync([]):
             events = conv.interact_with_conversation(
                 "conv-x",
@@ -672,7 +675,7 @@ class TestConversationResourceSync:
                     request_format=Format.text, response_format=Format.text
                 ),
                 text_message="hi",
-                abort_flag=abort_flag,
+                abort_event=abort_event,
             )
             for _ in events:
                 pytest.fail("should not yield when aborted")
