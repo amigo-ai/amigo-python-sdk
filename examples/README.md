@@ -2,7 +2,7 @@
 
 This folder contains small, readable examples for consuming the Amigo Python SDK.
 
-All examples share a single dependency installation from TestPyPI via `examples/requirements.txt`.
+All examples share an amigo_sdk dependency installation from PyPI via `examples/requirements.txt`.
 
 ## Setup
 
@@ -13,7 +13,7 @@ All examples share a single dependency installation from TestPyPI via `examples/
    source .venv/bin/activate
    ```
 
-2. Install shared dependencies (SDK from TestPyPI):
+2. Install shared dependencies (SDK from PyPI):
    ```bash
    pip install -r examples/requirements.txt
    ```
