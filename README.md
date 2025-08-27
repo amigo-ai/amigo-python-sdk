@@ -43,9 +43,38 @@ with AmigoClient(
     print("Conversations:", conversations)
 ```
 
+## Quick Start (async)
+
+```python
+import asyncio
+
+from amigo_sdk import AsyncAmigoClient
+from amigo_sdk.models import GetConversationsParametersQuery
+
+
+async def main():
+    async with AsyncAmigoClient(
+        api_key="your-api-key",
+        api_key_id="your-api-key-id",
+        user_id="user-id",
+        organization_id="your-organization-id",
+    ) as client:
+        conversations = await client.conversation.get_conversations(
+            GetConversationsParametersQuery(limit=10, sort_by=["-created_at"])
+        )
+        print("Conversations:", conversations)
+
+
+asyncio.run(main())
+```
+
 ## Examples
 
-For more SDK usage examples see checkout the [examples/](examples/README.md) folder.
+For more SDK usage examples see the [examples overview](examples/README.md). Direct links:
+
+- **Conversation (sync)**: [examples/conversation/conversation.py](examples/conversation/conversation.py)
+- **Conversation (async)**: [examples/conversation/conversation_async.py](examples/conversation/conversation_async.py)
+- **User management (sync)**: [examples/user/user-management.py](examples/user/user-management.py)
 
 ## Configuration
 
@@ -111,6 +140,43 @@ The SDK provides access to the following resources:
 - **Conversation**: Manage conversations
 - **User**: Manage users
 
+## Generated types
+
+The SDK ships with Pydantic models generated from the latest OpenAPI schema.
+
+- **Importing types**: Import directly from `amigo_sdk.models`
+
+  ```python
+  from amigo_sdk.models import (
+      GetConversationsParametersQuery,
+      ConversationCreateConversationRequest,
+      GetUsersParametersQuery,
+  )
+  ```
+
+- **Using types when calling SDK functions**: Pass request/query models to resource methods.
+
+  ```python
+  from amigo_sdk import AmigoClient
+  from amigo_sdk.models import GetConversationsParametersQuery
+
+  with AmigoClient() as client:
+     conversations = client.conversation.get_conversations(
+         GetConversationsParametersQuery(limit=20, sort_by=["-created_at"])
+     )
+  ```
+
+- **Parsing returned objects**: Responses are Pydantic models. Access fields directly or convert to dict/JSON.
+
+  ```python
+  # Access fields
+  first = conversations.conversations[0]
+  print(first.id, first.created_at)
+
+  # Convert to plain dict for logging/serialization
+  print(first.model_dump(mode="json"))
+  ```
+
 ## Error Handling
 
 The SDK provides typed error handling:
@@ -139,6 +205,20 @@ except ValidationError as error:
 except Exception as error:
     print("Unexpected error:", error)
 ```
+
+## Retries
+
+The HTTP client includes sensible, configurable retries:
+
+- **Defaults**:
+
+  - max attempts: 3
+  - backoff base: 0.25s (exponential with full jitter)
+  - max delay per attempt: 30s
+  - retry on status: {408, 429, 500, 502, 503, 504}
+  - retry on methods: {"GET"}
+  - special-case: POST is retried on 429 when `Retry-After` is present
+  - 401 triggers a one-time token refresh and immediate retry
 
 ## Development
 
