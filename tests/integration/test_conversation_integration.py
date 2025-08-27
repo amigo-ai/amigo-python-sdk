@@ -8,7 +8,6 @@ from amigo_sdk.errors import ConflictError, NotFoundError
 from amigo_sdk.generated.model import (
     ConversationCreateConversationRequest,
     ConversationCreatedEvent,
-    ConversationEvent,
     CreateConversationParametersQuery,
     ErrorEvent,
     GetConversationMessagesParametersQuery,
@@ -140,18 +139,16 @@ class TestConversationIntegration:
             saw_interaction_complete = False
             latest_interaction_id: str | None = None
 
-            async for resp in events:
-                outer = resp.root
-                if isinstance(outer, ErrorEvent):
-                    pytest.fail(f"error event: {outer.model_dump_json()}")
-                if isinstance(outer, ConversationEvent):
-                    evt = outer.root
-                    if isinstance(evt, NewMessageEvent):
-                        saw_new_message = True
-                    elif isinstance(evt, InteractionCompleteEvent):
-                        saw_interaction_complete = True
-                        latest_interaction_id = evt.interaction_id
-                        break
+            async for evt in events:
+                e = evt.root
+                if isinstance(e, ErrorEvent):
+                    pytest.fail(f"error event: {e.model_dump_json()}")
+                if isinstance(e, NewMessageEvent):
+                    saw_new_message = True
+                elif isinstance(e, InteractionCompleteEvent):
+                    saw_interaction_complete = True
+                    latest_interaction_id = e.interaction_id
+                    break
 
             assert saw_new_message is True
             assert saw_interaction_complete is True
@@ -286,18 +283,16 @@ class TestConversationIntegrationSync:
             saw_interaction_complete = False
             latest_interaction_id: str | None = None
 
-            for resp in events:
-                outer = resp.root
-                if isinstance(outer, ErrorEvent):
-                    pytest.fail(f"error event: {outer.model_dump_json()}")
-                if isinstance(outer, ConversationEvent):
-                    evt = outer.root
-                    if isinstance(evt, NewMessageEvent):
-                        saw_new_message = True
-                    elif isinstance(evt, InteractionCompleteEvent):
-                        saw_interaction_complete = True
-                        latest_interaction_id = evt.interaction_id
-                        break
+            for evt in events:
+                e = evt.root
+                if isinstance(e, ErrorEvent):
+                    pytest.fail(f"error event: {e.model_dump_json()}")
+                if isinstance(e, NewMessageEvent):
+                    saw_new_message = True
+                elif isinstance(e, InteractionCompleteEvent):
+                    saw_interaction_complete = True
+                    latest_interaction_id = e.interaction_id
+                    break
 
             assert saw_new_message is True
             assert saw_interaction_complete is True

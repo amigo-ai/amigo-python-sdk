@@ -61,6 +61,7 @@ def main() -> None:
         ),
         aliases=aliases,
         parent_scoped_naming=True,
+        collapse_root_models=True,
     )
 
     print(f"✅ Models regenerated → {output_file}")
