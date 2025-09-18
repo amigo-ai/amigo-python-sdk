@@ -39,6 +39,7 @@ path = "src/amigo_sdk/__init__.py"
 [tool.hatch.build.targets.wheel]
 packages = [
   "src/amigo_sdk",
+  "scripts",
 ]
 
 [tool.hatch.build.targets.sdist]
