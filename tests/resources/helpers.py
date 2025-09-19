@@ -5,7 +5,12 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
 from amigo_sdk.generated.model import (
+    FrontendView,
     OrganizationGetOrganizationResponse,
+    PermissionGrantInputAction,
+    PermissionGrantOutput,
+    RoleGetRolesResponse,
+    RoleInstance,
     ServiceGetServicesResponse,
     ServiceInstance,
 )
@@ -326,6 +331,29 @@ def create_organization_response_data() -> OrganizationGetOrganizationResponse:
             "Let's get you started with your first assistant.",
         ],
         default_user_preferences=None,
+    )
+
+
+def create_role_response_data() -> RoleGetRolesResponse:
+    return RoleGetRolesResponse(
+        roles=[
+            RoleInstance(
+                id="role-1",
+                name="role-name",
+                description="role-description",
+                frontend_view=FrontendView.client,
+                permission_grants=[
+                    PermissionGrantOutput(
+                        action=PermissionGrantInputAction.allow,
+                        permission_name="role-permission_name",
+                        conditions={},
+                        description="role-permission-description",
+                    )
+                ],
+                inherited_from="role-inherited_from",
+                is_base_role=True,
+            )
+        ]
     )
 
 

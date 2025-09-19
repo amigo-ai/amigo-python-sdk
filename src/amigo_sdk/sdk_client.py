@@ -2,16 +2,18 @@ from typing import Any, Optional
 
 from amigo_sdk.config import AmigoConfig
 from amigo_sdk.http_client import AmigoAsyncHttpClient, AmigoHttpClient
-from amigo_sdk.resources.conversation import (
+from amigo_sdk.resources import (
     AsyncConversationResource,
-    ConversationResource,
-)
-from amigo_sdk.resources.organization import (
     AsyncOrganizationResource,
+    AsyncRoleResource,
+    AsyncServiceResource,
+    AsyncUserResource,
+    ConversationResource,
     OrganizationResource,
+    RoleResource,
+    ServiceResource,
+    UserResource,
 )
-from amigo_sdk.resources.service import AsyncServiceResource, ServiceResource
-from amigo_sdk.resources.user import AsyncUserResource, UserResource
 
 
 class AsyncAmigoClient:
@@ -75,6 +77,7 @@ class AsyncAmigoClient:
             self._http, self._cfg.organization_id
         )
         self._users = AsyncUserResource(self._http, self._cfg.organization_id)
+        self._roles = AsyncRoleResource(self._http, self._cfg.organization_id)
 
     @property
     def config(self) -> AmigoConfig:
@@ -100,6 +103,11 @@ class AsyncAmigoClient:
     def users(self) -> AsyncUserResource:
         """Access user resource."""
         return self._users
+
+    @property
+    def roles(self) -> AsyncRoleResource:
+        """Access role resource."""
+        return self._roles
 
     async def aclose(self) -> None:
         """Close the HTTP client."""
@@ -156,6 +164,7 @@ class AmigoClient:
         self._service = ServiceResource(self._http, self._cfg.organization_id)
         self._conversation = ConversationResource(self._http, self._cfg.organization_id)
         self._users = UserResource(self._http, self._cfg.organization_id)
+        self._roles = RoleResource(self._http, self._cfg.organization_id)
 
     @property
     def config(self) -> AmigoConfig:
@@ -176,6 +185,10 @@ class AmigoClient:
     @property
     def users(self) -> UserResource:
         return self._users
+
+    @property
+    def roles(self) -> RoleResource:
+        return self._roles
 
     def aclose(self) -> None:
         self._http.aclose()
