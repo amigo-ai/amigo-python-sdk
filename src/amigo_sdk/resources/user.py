@@ -36,7 +36,7 @@ class AsyncUserResource:
         """Create (invite) a new user to the organization."""
         response = await self._http.request(
             "POST",
-            f"/v1/{self._organization_id}/user/invite",
+            f"/v1/{self._organization_id}/user/",
             json=body.model_dump(mode="json", exclude_none=True),
         )
         return UserCreateInvitedUserResponse.model_validate_json(response.text)
@@ -81,7 +81,7 @@ class UserResource:
     ) -> UserCreateInvitedUserResponse:
         response = self._http.request(
             "POST",
-            f"/v1/{self._organization_id}/user/invite",
+            f"/v1/{self._organization_id}/user/",
             json=body.model_dump(mode="json", exclude_none=True),
         )
         return UserCreateInvitedUserResponse.model_validate_json(response.text)
