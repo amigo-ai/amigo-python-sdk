@@ -312,11 +312,12 @@ class TestAmigoAsyncHttpClient:
         build_headers,
         expected_seconds,
     ):
-        httpx_mock.add_response(
-            method="POST",
-            url="https://api.example.com/r429p",
-            status_code=429,
-            headers=build_headers(),
+        # Use callback to generate headers at request time to avoid timing issues
+        def response_callback(request):
+            return httpx.Response(429, headers=build_headers())
+
+        httpx_mock.add_callback(
+            response_callback, method="POST", url="https://api.example.com/r429p"
         )
         httpx_mock.add_response(
             method="POST", url="https://api.example.com/r429p", status_code=200
@@ -429,11 +430,12 @@ class TestAmigoAsyncHttpClient:
         build_headers,
         expected_seconds,
     ):
-        httpx_mock.add_response(
-            method="POST",
-            url="https://api.example.com/r429p",
-            status_code=429,
-            headers=build_headers(),
+        # Use callback to generate headers at request time to avoid timing issues
+        def response_callback(request):
+            return httpx.Response(429, headers=build_headers())
+
+        httpx_mock.add_callback(
+            response_callback, method="POST", url="https://api.example.com/r429p"
         )
         httpx_mock.add_response(
             method="POST", url="https://api.example.com/r429p", status_code=200
