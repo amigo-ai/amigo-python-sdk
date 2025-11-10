@@ -396,6 +396,8 @@ class TestAsyncConversationResourceUnit:
                 "working_memory": [],
                 "reflections": [],
                 "triggered_dynamic_behavior_set_version_info": None,
+                "select_next_action_tool_call_logs": [],
+                "engage_user_tool_call_logs": [],
             }
         ):
             data = await conversation_resource.get_interaction_insights(
@@ -813,6 +815,8 @@ class TestConversationResourceSync:
                 "working_memory": [],
                 "reflections": [],
                 "triggered_dynamic_behavior_set_version_info": None,
+                "select_next_action_tool_call_logs": [],
+                "engage_user_tool_call_logs": [],
             }
         ):
             data = conv.get_interaction_insights("conv-8", "int-2")
