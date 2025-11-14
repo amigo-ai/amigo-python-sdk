@@ -1,4 +1,5 @@
 import asyncio
+import json
 import threading
 from collections.abc import AsyncGenerator, Iterator
 from datetime import datetime
@@ -34,6 +35,13 @@ class GetMessageSourceResponse(BaseModel):
     url: AnyUrl
     expires_at: datetime
     content_type: Literal["audio/mpeg", "audio/wav"]
+
+
+def _normalize_interaction_insights_payload(data: dict[str, Any]) -> dict[str, Any]:
+    """Backfill optional arrays that the API may omit."""
+    data.setdefault("select_next_action_tool_call_logs", [])
+    data.setdefault("engage_user_tool_call_logs", [])
+    return data
 
 
 class AsyncConversationResource:
@@ -181,9 +189,8 @@ class AsyncConversationResource:
             "GET",
             f"/v1/{self._organization_id}/conversation/{conversation_id}/interaction/{interaction_id}/insights",
         )
-        return ConversationGetInteractionInsightsResponse.model_validate_json(
-            response.text
-        )
+        payload = _normalize_interaction_insights_payload(json.loads(response.text))
+        return ConversationGetInteractionInsightsResponse.model_validate(payload)
 
     async def get_message_source(
         self, conversation_id: str, message_id: str
@@ -335,9 +342,8 @@ class ConversationResource:
             "GET",
             f"/v1/{self._organization_id}/conversation/{conversation_id}/interaction/{interaction_id}/insights",
         )
-        return ConversationGetInteractionInsightsResponse.model_validate_json(
-            response.text
-        )
+        payload = _normalize_interaction_insights_payload(json.loads(response.text))
+        return ConversationGetInteractionInsightsResponse.model_validate(payload)
 
     def get_message_source(
         self, conversation_id: str, message_id: str
