@@ -52,7 +52,7 @@ class AsyncUserResource:
         """Update user information. Returns None on success (e.g., 204)."""
         await self._http.request(
             "POST",
-            f"/v1/{self._organization_id}/user/{user_id}/user",
+            f"/v1/{self._organization_id}/user/{user_id}",
             json=body.model_dump(mode="json", exclude_none=True),
         )
 
@@ -92,6 +92,6 @@ class UserResource:
     def update_user(self, user_id: str, body: UserUpdateUserInfoRequest) -> None:
         self._http.request(
             "POST",
-            f"/v1/{self._organization_id}/user/{user_id}/user",
+            f"/v1/{self._organization_id}/user/{user_id}",
             json=body.model_dump(mode="json", exclude_none=True),
         )
