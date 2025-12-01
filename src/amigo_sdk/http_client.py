@@ -6,7 +6,7 @@ import time
 from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
 from email.utils import parsedate_to_datetime
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 
@@ -82,7 +82,7 @@ class _RetryConfig:
         return random.uniform(0.0, window)
 
 
-def _should_refresh_token(token: Optional[UserSignInWithApiKeyResponse]) -> bool:
+def _should_refresh_token(token: UserSignInWithApiKeyResponse | None) -> bool:
     if not token:
         return True
     return dt.datetime.now(dt.UTC) > token.expires_at - dt.timedelta(minutes=5)
@@ -133,7 +133,7 @@ class AmigoAsyncHttpClient:
         **httpx_kwargs: Any,
     ) -> None:
         self._cfg = cfg
-        self._token: Optional[UserSignInWithApiKeyResponse] = None
+        self._token: UserSignInWithApiKeyResponse | None = None
         self._client = httpx.AsyncClient(
             base_url=cfg.base_url,
             **httpx_kwargs,
@@ -274,7 +274,7 @@ class AmigoHttpClient:
         **httpx_kwargs: Any,
     ) -> None:
         self._cfg = cfg
-        self._token: Optional[UserSignInWithApiKeyResponse] = None
+        self._token: UserSignInWithApiKeyResponse | None = None
         self._client = httpx.Client(base_url=cfg.base_url, **httpx_kwargs)
         # Retry configuration
         self._retry_cfg = _RetryConfig(

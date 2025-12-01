@@ -48,7 +48,7 @@ class AsyncConversationResource:
         body: ConversationCreateConversationRequest,
         params: CreateConversationParametersQuery,
         abort_event: asyncio.Event | None = None,
-    ) -> "AsyncGenerator[ConversationCreateConversationResponse, None]":
+    ) -> "AsyncGenerator[ConversationCreateConversationResponse]":
         """Create a new conversation and stream NDJSON events.
 
         Returns an async generator yielding `ConversationCreateConversationResponse` events.
@@ -77,7 +77,7 @@ class AsyncConversationResource:
         text_message: str | None = None,
         audio_bytes: bytes | None = None,
         audio_content_type: Literal["audio/mpeg", "audio/wav"] | None = None,
-    ) -> "AsyncGenerator[ConversationInteractWithConversationResponse, None]":
+    ) -> "AsyncGenerator[ConversationInteractWithConversationResponse]":
         """Interact with a conversation and stream NDJSON events.
 
         Returns an async generator yielding `ConversationInteractWithConversationResponse` events.

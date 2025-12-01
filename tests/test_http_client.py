@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from email.utils import format_datetime
 from unittest.mock import Mock, patch
 
@@ -26,11 +26,11 @@ from tests.resources.helpers import (
 def _autouse_patch_sign_in():
     fresh_async = Mock(
         id_token="test-bearer-token",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
     fresh_sync = Mock(
         id_token="test-bearer-token",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
     with (
         patch(
@@ -78,7 +78,7 @@ def mock_config():
 def mock_token_response():
     return Mock(
         id_token="test-bearer-token",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
 
 
@@ -117,13 +117,13 @@ class TestAmigoAsyncHttpClient:
         # Set an expired token (timezone-aware)
         expired_token = Mock(
             id_token="expired-token",
-            expires_at=datetime.now(timezone.utc) - timedelta(minutes=10),  # Expired
+            expires_at=datetime.now(UTC) - timedelta(minutes=10),  # Expired
         )
         client._token = expired_token
 
         fresh_token = Mock(
             id_token="fresh-token",
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
         )
 
         with patch(
@@ -177,7 +177,7 @@ class TestAmigoAsyncHttpClient:
 
         fresh_token = Mock(
             id_token="fresh-token",
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
         )
         with patch(
             "amigo_sdk.http_client.sign_in_with_api_key_async", return_value=fresh_token
@@ -297,7 +297,7 @@ class TestAmigoAsyncHttpClient:
             (
                 lambda: {
                     "Retry-After": format_datetime(
-                        datetime.now(timezone.utc) + timedelta(seconds=3)
+                        datetime.now(UTC) + timedelta(seconds=3)
                     )
                 },
                 3.0,
@@ -415,7 +415,7 @@ class TestAmigoAsyncHttpClient:
             (
                 lambda: {
                     "Retry-After": format_datetime(
-                        datetime.now(timezone.utc) + timedelta(seconds=3)
+                        datetime.now(UTC) + timedelta(seconds=3)
                     )
                 },
                 3.0,
@@ -464,7 +464,7 @@ class TestAmigoAsyncHttpClient:
 
         client = AmigoAsyncHttpClient(mock_config)
         fresh_token = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
+            id_token="tok", expires_at=datetime.now(UTC) + timedelta(hours=1)
         )
         sleeps: list[float] = []
 
@@ -514,7 +514,7 @@ class TestAmigoAsyncHttpClient:
 
         client = AmigoAsyncHttpClient(mock_config)
         fresh_token = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
+            id_token="tok", expires_at=datetime.now(UTC) + timedelta(hours=1)
         )
 
         with patch(
@@ -538,7 +538,7 @@ class TestAmigoAsyncHttpClient:
             mock_config, retry_backoff_base=100.0, retry_max_delay_seconds=0.5
         )
         fresh_token = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
+            id_token="tok", expires_at=datetime.now(UTC) + timedelta(hours=1)
         )
         sleeps: list[float] = []
 
@@ -574,7 +574,7 @@ class TestAmigoAsyncHttpClient:
 
         client = AmigoAsyncHttpClient(mock_config, retry_max_attempts=3)
         fresh_token = Mock(
-            id_token="tok", expires_at=datetime.now(timezone.utc) + timedelta(hours=1)
+            id_token="tok", expires_at=datetime.now(UTC) + timedelta(hours=1)
         )
         sleeps: list[float] = []
 
@@ -621,12 +621,12 @@ class TestAmigoHttpClientSync:
         client = AmigoHttpClient(mock_config)
         expired = Mock(
             id_token="expired",
-            expires_at=datetime.now(timezone.utc) - timedelta(minutes=10),
+            expires_at=datetime.now(UTC) - timedelta(minutes=10),
         )
         client._token = expired
         fresh = Mock(
             id_token="fresh",
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
         )
         with patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh):
             token = client._ensure_token()
@@ -663,7 +663,7 @@ class TestAmigoHttpClientSync:
         client = AmigoHttpClient(mock_config)
         fresh = Mock(
             id_token="fresh",
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
         )
         with patch("amigo_sdk.http_client.sign_in_with_api_key", return_value=fresh):
             resp = client.request("GET", "/test")

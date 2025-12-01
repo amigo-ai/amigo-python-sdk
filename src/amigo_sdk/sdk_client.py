@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from amigo_sdk.config import AmigoConfig
 from amigo_sdk.http_client import AmigoAsyncHttpClient, AmigoHttpClient
@@ -20,12 +20,12 @@ class AsyncAmigoClient:
     def __init__(
         self,
         *,
-        api_key: Optional[str] = None,
-        api_key_id: Optional[str] = None,
-        user_id: Optional[str] = None,
-        organization_id: Optional[str] = None,
-        base_url: Optional[str] = None,
-        config: Optional[AmigoConfig] = None,
+        api_key: str | None = None,
+        api_key_id: str | None = None,
+        user_id: str | None = None,
+        organization_id: str | None = None,
+        base_url: str | None = None,
+        config: AmigoConfig | None = None,
         **httpx_kwargs: Any,
     ):
         """
@@ -119,12 +119,12 @@ class AmigoClient:
     def __init__(
         self,
         *,
-        api_key: Optional[str] = None,
-        api_key_id: Optional[str] = None,
-        user_id: Optional[str] = None,
-        organization_id: Optional[str] = None,
-        base_url: Optional[str] = None,
-        config: Optional[AmigoConfig] = None,
+        api_key: str | None = None,
+        api_key_id: str | None = None,
+        user_id: str | None = None,
+        organization_id: str | None = None,
+        base_url: str | None = None,
+        config: AmigoConfig | None = None,
         **httpx_kwargs: Any,
     ):
         if config:

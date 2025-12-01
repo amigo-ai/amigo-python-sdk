@@ -1,12 +1,11 @@
 import datetime as dt
 import random
 from email.utils import parsedate_to_datetime
-from typing import Optional
 
 DEFAULT_RETRYABLE_STATUS: set[int] = {429, 500, 502, 503, 504}
 
 
-def parse_retry_after_seconds(retry_after: Optional[str]) -> float | None:
+def parse_retry_after_seconds(retry_after: str | None) -> float | None:
     """Parse Retry-After header into seconds.
 
     Supports both numeric seconds and HTTP-date formats. Returns None when
@@ -55,7 +54,7 @@ def compute_retry_delay_seconds(
     attempt: int,
     backoff_base: float,
     max_delay_seconds: float,
-    retry_after_header: Optional[str],
+    retry_after_header: str | None,
 ) -> float:
     """Compute delay for a given retry attempt.
 
