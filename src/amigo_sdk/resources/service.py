@@ -1,4 +1,3 @@
-
 from amigo_sdk.generated.model import (
     GetServicesParametersQuery,
     ServiceGetServicesResponse,
