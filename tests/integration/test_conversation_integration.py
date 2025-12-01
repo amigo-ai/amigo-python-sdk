@@ -23,7 +23,7 @@ SERVICE_ID = os.getenv("AMIGO_TEST_SERVICE_ID", "689b81e7afdaf934f4b48f81")
 
 
 @pytest.fixture(scope="module", autouse=True)
-async def pre_suite_cleanup() -> AsyncGenerator[None, None]:
+async def pre_suite_cleanup() -> AsyncGenerator[None]:
     # Ensure env loaded and client can connect; verify service exists
     async with AsyncAmigoClient() as client:
         try:

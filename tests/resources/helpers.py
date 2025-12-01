@@ -1,7 +1,7 @@
 """Shared test helpers for resource tests."""
 
 from contextlib import asynccontextmanager, contextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 from amigo_sdk.generated.model import (
@@ -38,7 +38,7 @@ async def mock_http_request(mock_response_data, status_code=200):
     # Create fresh auth token
     fresh_token = Mock(
         id_token="test-bearer-token",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
 
     with (
@@ -94,7 +94,7 @@ async def mock_http_stream(lines, status_code: int = 200):
     # Create fresh auth token
     fresh_token = Mock(
         id_token="test-bearer-token",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
 
     with (
@@ -157,7 +157,7 @@ async def mock_http_stream_sequence(sequence):
 
     fresh_token = Mock(
         id_token="test-bearer-token",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
 
     with (
@@ -193,7 +193,7 @@ def mock_http_request_sync(mock_response_data, status_code=200):
 
     fresh_token = Mock(
         id_token="test-bearer-token",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
 
     with (
@@ -243,7 +243,7 @@ def mock_http_stream_sync(lines, status_code: int = 200):
 
     fresh_token = Mock(
         id_token="test-bearer-token",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
 
     with (
@@ -303,7 +303,7 @@ def mock_http_stream_sequence_sync(sequence):
 
     fresh_token = Mock(
         id_token="test-bearer-token",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
 
     with (

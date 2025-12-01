@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 
 class AmigoError(Exception):
@@ -10,9 +10,9 @@ class AmigoError(Exception):
         self,
         message: str,
         *,
-        status_code: Optional[int] = None,
-        error_code: Optional[str] = None,
-        response_body: Optional[Any] = None,
+        status_code: int | None = None,
+        error_code: str | None = None,
+        response_body: Any | None = None,
     ) -> None:
         super().__init__(message)
         self.status_code = status_code
@@ -55,7 +55,7 @@ class RateLimitError(AmigoError):  # 429
 
 # ---- Validation / semantic errors ------------------------------------------
 class ValidationError(BadRequestError):  # 422 or 400 with `errors` list
-    def __init__(self, *args, field_errors: Optional[dict[str, str]] = None, **kwargs):
+    def __init__(self, *args, field_errors: dict[str, str] | None = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.field_errors = field_errors or {}
 

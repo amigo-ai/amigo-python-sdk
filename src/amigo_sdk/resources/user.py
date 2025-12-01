@@ -1,5 +1,3 @@
-from typing import Optional
-
 from amigo_sdk.generated.model import (
     GetUsersParametersQuery,
     UserCreateInvitedUserRequest,
@@ -18,7 +16,7 @@ class AsyncUserResource:
         self._organization_id = organization_id
 
     async def get_users(
-        self, params: Optional[GetUsersParametersQuery] = None
+        self, params: GetUsersParametersQuery | None = None
     ) -> UserGetUsersResponse:
         """Get a list of users in the organization."""
         response = await self._http.request(
@@ -65,7 +63,7 @@ class UserResource:
         self._organization_id = organization_id
 
     def get_users(
-        self, params: Optional[GetUsersParametersQuery] = None
+        self, params: GetUsersParametersQuery | None = None
     ) -> UserGetUsersResponse:
         response = self._http.request(
             "GET",

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from amigo_sdk.generated.model import (
     GetServicesParametersQuery,
     ServiceGetServicesResponse,
@@ -15,7 +13,7 @@ class AsyncServiceResource:
         self._organization_id = organization_id
 
     async def get_services(
-        self, params: Optional[GetServicesParametersQuery] = None
+        self, params: GetServicesParametersQuery | None = None
     ) -> ServiceGetServicesResponse:
         """Get all services."""
         response = await self._http.request(
@@ -34,7 +32,7 @@ class ServiceResource:
         self._organization_id = organization_id
 
     def get_services(
-        self, params: Optional[GetServicesParametersQuery] = None
+        self, params: GetServicesParametersQuery | None = None
     ) -> ServiceGetServicesResponse:
         response = self._http.request(
             "GET",

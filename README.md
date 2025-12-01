@@ -8,6 +8,8 @@ The official Python SDK for the Amigo API, providing a simple and intuitive inte
 
 ## Installation
 
+This SDK requires Python 3.13 or newer.
+
 Install the SDK using pip:
 
 ```bash
