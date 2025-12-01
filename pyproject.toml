@@ -6,9 +6,13 @@ build-backend = "hatchling.build"
 name="amigo_sdk"
 description = "Amigo AI Python SDK"
 readme = "README.md"
-requires-python = ">= 3.9"
+requires-python = ">= 3.13"
 authors=[{name="Amigo AI"}]
-classifiers = ["Programming Language :: Python :: 3"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.13",
+]
 dynamic = ["version"]
 
 dependencies = [
@@ -104,7 +108,7 @@ skip_covered = false
 directory = "htmlcov"
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py313"
 line-length = 88
 exclude = [
     "src/amigo_sdk/generated",
