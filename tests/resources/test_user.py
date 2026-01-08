@@ -3,7 +3,7 @@ import pytest
 from amigo_sdk.config import AmigoConfig
 from amigo_sdk.errors import NotFoundError, ValidationError
 from amigo_sdk.generated.model import (
-    AmigoLibMongoCollectionsUserUserUserModelUserDimension,
+    MongoCollectionsUserUserUserModelUserDimension,
     GetUsersParametersQuery,
     UserCreateInvitedUserRequest,
     UserCreateInvitedUserResponse,
@@ -133,7 +133,7 @@ class TestUserResource:
                     content="model-content",
                     insight_ids=["insight-1"],
                     dimensions=[
-                        AmigoLibMongoCollectionsUserUserUserModelUserDimension(
+                        MongoCollectionsUserUserUserModelUserDimension(
                             description="detail", tags=["tag"]
                         )
                     ],
@@ -251,7 +251,7 @@ class TestUserResourceSync:
                     content="model-content",
                     insight_ids=["insight-1"],
                     dimensions=[
-                        AmigoLibMongoCollectionsUserUserUserModelUserDimension(
+                        MongoCollectionsUserUserUserModelUserDimension(
                             description="detail", tags=["tag"]
                         )
                     ],
