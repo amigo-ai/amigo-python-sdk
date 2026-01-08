@@ -2,6 +2,7 @@ from amigo_sdk.generated.model import (
     GetUsersParametersQuery,
     UserCreateInvitedUserRequest,
     UserCreateInvitedUserResponse,
+    UserGetUserModelResponse,
     UserGetUsersResponse,
     UserUpdateUserInfoRequest,
 )
@@ -54,6 +55,14 @@ class AsyncUserResource:
             json=body.model_dump(mode="json", exclude_none=True),
         )
 
+    async def get_user_model(self, user_id: str) -> UserGetUserModelResponse:
+        """Get the latest user model for a user."""
+        response = await self._http.request(
+            "GET",
+            f"/v1/{self._organization_id}/user/{user_id}/user_model",
+        )
+        return UserGetUserModelResponse.model_validate_json(response.text)
+
 
 class UserResource:
     """User resource (synchronous)."""
@@ -93,3 +102,10 @@ class UserResource:
             f"/v1/{self._organization_id}/user/{user_id}",
             json=body.model_dump(mode="json", exclude_none=True),
         )
+
+    def get_user_model(self, user_id: str) -> UserGetUserModelResponse:
+        response = self._http.request(
+            "GET",
+            f"/v1/{self._organization_id}/user/{user_id}/user_model",
+        )
+        return UserGetUserModelResponse.model_validate_json(response.text)
