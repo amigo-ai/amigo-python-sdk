@@ -60,6 +60,14 @@ class TestUserIntegration:
             assert by_email is not None
             assert any(u.email == type(self).created_user_email for u in by_email.users)
 
+    async def test_get_user_model(self):
+        assert type(self).created_user_id is not None
+        async with AsyncAmigoClient() as client:
+            result = await client.users.get_user_model(type(self).created_user_id)
+            assert result is not None
+            assert isinstance(result.user_models, list)
+            assert isinstance(result.additional_context, list)
+
     async def test_delete_user(self):
         assert type(self).created_user_id is not None
         async with AsyncAmigoClient() as client:
@@ -93,6 +101,10 @@ class TestUserIntegration:
             ) as bad_client:
                 with pytest.raises(errors.AuthenticationError):
                     await bad_client.users.get_users()
+
+            # Get user model for non-existent user
+            with pytest.raises(errors.NotFoundError):
+                await client.users.get_user_model("non-existent-id")
 
             # Delete non-existent user
             with pytest.raises(errors.NotFoundError):
@@ -148,6 +160,14 @@ class TestUserIntegrationSync:
             assert by_email is not None
             assert any(u.email == type(self).created_user_email for u in by_email.users)
 
+    def test_get_user_model(self):
+        assert type(self).created_user_id is not None
+        with AmigoClient() as client:
+            result = client.users.get_user_model(type(self).created_user_id)
+            assert result is not None
+            assert isinstance(result.user_models, list)
+            assert isinstance(result.additional_context, list)
+
     def test_delete_user(self):
         assert type(self).created_user_id is not None
         with AmigoClient() as client:
@@ -176,6 +196,9 @@ class TestUserIntegrationSync:
             with AmigoClient(organization_id="invalid-org-id-123") as bad_client:
                 with pytest.raises(errors.AuthenticationError):
                     bad_client.users.get_users()
+
+            with pytest.raises(errors.NotFoundError):
+                client.users.get_user_model("non-existent-id")
 
             with pytest.raises(errors.NotFoundError):
                 client.users.delete_user("non-existent-id")
