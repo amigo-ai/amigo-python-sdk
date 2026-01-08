@@ -3,8 +3,8 @@ import pytest
 from amigo_sdk.config import AmigoConfig
 from amigo_sdk.errors import NotFoundError, ValidationError
 from amigo_sdk.generated.model import (
-    MongoCollectionsUserUserUserModelUserDimension,
     GetUsersParametersQuery,
+    MongoCollectionsUserUserUserModelUserDimension,
     UserCreateInvitedUserRequest,
     UserCreateInvitedUserResponse,
     UserGetUserModelResponse,
