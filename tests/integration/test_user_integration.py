@@ -10,6 +10,10 @@ from amigo_sdk.generated.model import (
 )
 from amigo_sdk.sdk_client import AmigoClient, AsyncAmigoClient
 
+print("AMIGO_API_KEY_ID:", os.environ.get("AMIGO_API_KEY_ID"))
+print("AMIGO_ORGANIZATION_ID:", os.environ.get("AMIGO_ORGANIZATION_ID"))
+print("AMIGO_USER_ID:", os.environ.get("AMIGO_USER_ID"))
+print("AMIGO_BASE_URL:", os.environ.get("AMIGO_BASE_URL"))
 
 @pytest.mark.integration
 class TestUserIntegration:
