@@ -1,5 +1,8 @@
 name: Test
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]
@@ -51,13 +54,13 @@ jobs:
 
   integration-test:
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    needs: test  # Only run if unit tests pass
+    needs: test # Only run if unit tests pass
     # Skip for PRs from forks (they don't have access to secrets)
     # This runs on: pushes to main, PRs from same repo
     if: >
       github.event_name == 'push' || 
       github.event.pull_request.head.repo.full_name == github.repository
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
