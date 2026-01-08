@@ -65,10 +65,13 @@ class TestUserIntegration:
             assert by_email is not None
             assert any(u.email == type(self).created_user_email for u in by_email.users)
 
+    # we need to get the user model for the authenticated user because the permission grant for the user model
+    # does not allow access to non-admin user user models
     async def test_get_user_model(self):
-        assert type(self).created_user_id is not None
+        user_id = os.environ.get("AMIGO_USER_ID")
+        assert user_id is not None, "AMIGO_USER_ID environment variable must be set"
         async with AsyncAmigoClient() as client:
-            result = await client.users.get_user_model(type(self).created_user_id)
+            result = await client.users.get_user_model(user_id)
             assert result is not None
             assert isinstance(result.user_models, list)
             assert isinstance(result.additional_context, list)
@@ -166,9 +169,10 @@ class TestUserIntegrationSync:
             assert any(u.email == type(self).created_user_email for u in by_email.users)
 
     def test_get_user_model(self):
-        assert type(self).created_user_id is not None
+        user_id = os.environ.get("AMIGO_USER_ID")
+        assert user_id is not None, "AMIGO_USER_ID environment variable not set"
         with AmigoClient() as client:
-            result = client.users.get_user_model(type(self).created_user_id)
+            result = client.users.get_user_model(user_id)
             assert result is not None
             assert isinstance(result.user_models, list)
             assert isinstance(result.additional_context, list)
