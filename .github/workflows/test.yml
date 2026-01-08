@@ -1,5 +1,8 @@
 name: Test
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]
@@ -48,3 +51,36 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
           fail_ci_if_error: true
+
+  integration-test:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    needs: test # Only run if unit tests pass
+    # Skip for PRs from forks (they don't have access to secrets)
+    # This runs on: pushes to main, PRs from same repo
+    if: >
+      github.event_name == 'push' || 
+      github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run integration tests
+        env:
+          AMIGO_API_KEY: ${{ secrets.AMIGO_API_KEY }}
+          AMIGO_API_KEY_ID: ${{ secrets.AMIGO_API_KEY_ID }}
+          AMIGO_ORGANIZATION_ID: ${{ secrets.AMIGO_ORGANIZATION_ID }}
+          AMIGO_USER_ID: ${{ secrets.AMIGO_USER_ID }}
+          AMIGO_BASE_URL: ${{ secrets.AMIGO_BASE_URL }}
+        run: pytest -m integration -v

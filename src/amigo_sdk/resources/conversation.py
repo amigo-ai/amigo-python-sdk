@@ -166,7 +166,7 @@ class AsyncConversationResource:
     ) -> ConversationRecommendResponsesForInteractionResponse:
         """Recommend responses for an interaction."""
         response = await self._http.request(
-            "GET",
+            "POST",
             f"/v1/{self._organization_id}/conversation/{conversation_id}/interaction/{interaction_id}/recommend_responses",
         )
         return ConversationRecommendResponsesForInteractionResponse.model_validate_json(
@@ -321,7 +321,7 @@ class ConversationResource:
         self, conversation_id: str, interaction_id: str
     ) -> ConversationRecommendResponsesForInteractionResponse:
         response = self._http.request(
-            "GET",
+            "POST",
             f"/v1/{self._organization_id}/conversation/{conversation_id}/interaction/{interaction_id}/recommend_responses",
         )
         return ConversationRecommendResponsesForInteractionResponse.model_validate_json(
