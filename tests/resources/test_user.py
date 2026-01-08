@@ -3,10 +3,13 @@ import pytest
 from amigo_sdk.config import AmigoConfig
 from amigo_sdk.errors import NotFoundError, ValidationError
 from amigo_sdk.generated.model import (
+    AmigoLibMongoCollectionsUserUserUserModelUserDimension,
     GetUsersParametersQuery,
     UserCreateInvitedUserRequest,
     UserCreateInvitedUserResponse,
+    UserGetUserModelResponse,
     UserGetUsersResponse,
+    UserModel,
     UserUpdateUserInfoRequest,
 )
 from amigo_sdk.http_client import AmigoAsyncHttpClient, AmigoHttpClient
@@ -122,6 +125,34 @@ class TestUserResource:
             with pytest.raises(ValidationError):
                 await user_resource.update_user("u-1", body)
 
+    @pytest.mark.asyncio
+    async def test_get_user_model_returns_data(self, user_resource):
+        mock_response = UserGetUserModelResponse(
+            user_models=[
+                UserModel(
+                    content="model-content",
+                    insight_ids=["insight-1"],
+                    dimensions=[
+                        AmigoLibMongoCollectionsUserUserUserModelUserDimension(
+                            description="detail", tags=["tag"]
+                        )
+                    ],
+                )
+            ],
+            additional_context=["context"],
+        )
+
+        async with mock_http_request(mock_response):
+            result = await user_resource.get_user_model("u-1")
+            assert isinstance(result, UserGetUserModelResponse)
+            assert result.user_models[0].content == "model-content"
+
+    @pytest.mark.asyncio
+    async def test_get_user_model_not_found_raises(self, user_resource):
+        async with mock_http_request("{}", status_code=404):
+            with pytest.raises(NotFoundError):
+                await user_resource.get_user_model("missing")
+
 
 @pytest.mark.unit
 class TestUserResourceSync:
@@ -211,3 +242,30 @@ class TestUserResourceSync:
         with mock_http_request_sync({"detail": "bad"}, status_code=422):
             with pytest.raises(ValidationError):
                 res.update_user("u-1", body)
+
+    def test_get_user_model_returns_data_sync(self, mock_config):
+        res = self._resource(mock_config)
+        mock_response = UserGetUserModelResponse(
+            user_models=[
+                UserModel(
+                    content="model-content",
+                    insight_ids=["insight-1"],
+                    dimensions=[
+                        AmigoLibMongoCollectionsUserUserUserModelUserDimension(
+                            description="detail", tags=["tag"]
+                        )
+                    ],
+                )
+            ],
+            additional_context=["context"],
+        )
+        with mock_http_request_sync(mock_response):
+            result = res.get_user_model("u-1")
+            assert isinstance(result, UserGetUserModelResponse)
+            assert result.user_models[0].content == "model-content"
+
+    def test_get_user_model_not_found_raises_sync(self, mock_config):
+        res = self._resource(mock_config)
+        with mock_http_request_sync("{}", status_code=404):
+            with pytest.raises(NotFoundError):
+                res.get_user_model("missing")
