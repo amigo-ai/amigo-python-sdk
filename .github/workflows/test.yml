@@ -82,4 +82,5 @@ jobs:
           AMIGO_API_KEY_ID: ${{ secrets.AMIGO_API_KEY_ID }}
           AMIGO_ORGANIZATION_ID: ${{ secrets.AMIGO_ORGANIZATION_ID }}
           AMIGO_USER_ID: ${{ secrets.AMIGO_USER_ID }}
+          AMIGO_BASE_URL: ${{ secrets.AMIGO_BASE_URL }}
         run: pytest -m integration -v
