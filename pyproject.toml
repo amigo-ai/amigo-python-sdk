@@ -4,6 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name="amigo_sdk"
+version="0.105.0"
 description = "Amigo AI Python SDK"
 readme = "README.md"
 requires-python = ">= 3.13"
