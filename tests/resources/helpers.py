@@ -345,6 +345,7 @@ def create_services_response_data() -> ServiceGetServicesResponse:
                     {"key": "support", "value": "customer-support"},
                     {"key": "customer", "value": "external"},
                 ],
+                keyterms=["customer", "support", "refund"],
             ),
             ServiceInstance(
                 id="service-2",
@@ -355,6 +356,7 @@ def create_services_response_data() -> ServiceGetServicesResponse:
                 service_hierarchical_state_machine_id="hsm-2",
                 agent_id="agent-2",
                 tags=[{"key": "sales", "value": "internal"}],
+                keyterms=["sales", "pricing", "quote"],
             ),
         ],
         has_more=False,
