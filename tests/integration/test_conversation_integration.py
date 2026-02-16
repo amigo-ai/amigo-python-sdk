@@ -1,5 +1,7 @@
 import asyncio
+import io
 import os
+import wave
 from collections.abc import AsyncGenerator
 
 import pytest
@@ -20,6 +22,17 @@ from amigo_sdk.sdk_client import AmigoClient, AsyncAmigoClient
 
 # Constants
 SERVICE_ID = os.getenv("AMIGO_TEST_SERVICE_ID", "689b81e7afdaf934f4b48f81")
+
+
+def _build_test_wav_bytes() -> bytes:
+    """Build a short valid PCM WAV payload for voice-request integration tests."""
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(2)  # 16-bit PCM
+        wav_file.setframerate(16000)
+        wav_file.writeframes(b"\x00\x00" * 3200)  # ~0.2s of silence
+    return buf.getvalue()
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -194,6 +207,35 @@ class TestConversationIntegration:
                     request_format="text", response_format="text"
                 ),
                 initial_message_type="skip",
+            )
+
+            saw_interaction_complete = False
+            latest_interaction_id: str | None = None
+
+            async for evt in events:
+                e = evt.root
+                if isinstance(e, ErrorEvent):
+                    pytest.fail(f"error event: {e.model_dump_json()}")
+                if isinstance(e, InteractionCompleteEvent):
+                    saw_interaction_complete = True
+                    latest_interaction_id = e.interaction_id
+                    break
+
+            assert saw_interaction_complete is True
+            if latest_interaction_id:
+                type(self).interaction_id = latest_interaction_id
+
+    async def test_interact_with_conversation_voice_streams(self):
+        assert type(self).conversation_id is not None
+
+        async with AsyncAmigoClient() as client:
+            events = await client.conversation.interact_with_conversation(
+                type(self).conversation_id,
+                params=InteractWithConversationParametersQuery(
+                    request_format="voice", response_format="text"
+                ),
+                audio_bytes=_build_test_wav_bytes(),
+                audio_content_type="audio/wav",
             )
 
             saw_interaction_complete = False
@@ -396,6 +438,35 @@ class TestConversationIntegrationSync:
                     request_format="text", response_format="text"
                 ),
                 initial_message_type="skip",
+            )
+
+            saw_interaction_complete = False
+            latest_interaction_id: str | None = None
+
+            for evt in events:
+                e = evt.root
+                if isinstance(e, ErrorEvent):
+                    pytest.fail(f"error event: {e.model_dump_json()}")
+                if isinstance(e, InteractionCompleteEvent):
+                    saw_interaction_complete = True
+                    latest_interaction_id = e.interaction_id
+                    break
+
+            assert saw_interaction_complete is True
+            if latest_interaction_id:
+                type(self).interaction_id = latest_interaction_id
+
+    def test_interact_with_conversation_voice_streams(self):
+        assert type(self).conversation_id is not None
+
+        with AmigoClient() as client:
+            events = client.conversation.interact_with_conversation(
+                type(self).conversation_id,
+                params=InteractWithConversationParametersQuery(
+                    request_format="voice", response_format="text"
+                ),
+                audio_bytes=_build_test_wav_bytes(),
+                audio_content_type="audio/wav",
             )
 
             saw_interaction_complete = False
