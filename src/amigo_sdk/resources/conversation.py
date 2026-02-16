@@ -94,9 +94,10 @@ class AsyncConversationResource:
             }
 
             if initial_message_type == "skip":
-                request_kwargs["data"] = {
-                    "initial_message_type": "skip",
-                    "recorded_message": "",
+                # Force multipart/form-data for skip mode to match API contract.
+                request_kwargs["files"] = {
+                    "initial_message_type": (None, "skip"),
+                    "recorded_message": (None, ""),
                 }
             else:
                 # Route based on requested format for user-message / external-event
@@ -129,7 +130,7 @@ class AsyncConversationResource:
                         "recorded_message": (
                             f"audio.{ext}",
                             audio_bytes,
-                            audio_content_type,
+                            "application/octet-stream",
                         )
                     }
                 else:
@@ -277,9 +278,10 @@ class ConversationResource:
             }
 
             if initial_message_type == "skip":
-                request_kwargs["data"] = {
-                    "initial_message_type": "skip",
-                    "recorded_message": "",
+                # Force multipart/form-data for skip mode to match API contract.
+                request_kwargs["files"] = {
+                    "initial_message_type": (None, "skip"),
+                    "recorded_message": (None, ""),
                 }
             else:
                 # Route based on requested format for user-message / external-event

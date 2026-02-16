@@ -297,9 +297,9 @@ class TestAsyncConversationResourceUnit:
             async for _ in events:
                 break
             call = tracker["last_call"]
-            assert call["data"]["initial_message_type"] == "skip"
-            assert call["data"]["recorded_message"] == ""
-            assert "files" not in call
+            assert call["files"]["initial_message_type"] == (None, "skip")
+            assert call["files"]["recorded_message"] == (None, "")
+            assert "data" not in call
 
     @pytest.mark.asyncio
     async def test_interact_with_conversation_supports_abort(
@@ -784,9 +784,9 @@ class TestConversationResourceSync:
             )
             next(events)
             call = tracker["last_call"]
-            assert call["data"]["initial_message_type"] == "skip"
-            assert call["data"]["recorded_message"] == ""
-            assert "files" not in call
+            assert call["files"]["initial_message_type"] == (None, "skip")
+            assert call["files"]["recorded_message"] == (None, "")
+            assert "data" not in call
 
     def test_interact_with_conversation_supports_abort_sync(
         self, mock_config: AmigoConfig
