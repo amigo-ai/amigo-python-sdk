@@ -97,6 +97,9 @@ class AsyncConversationResource:
                         "text_message is required when request_format is 'text'"
                     )
                 text_bytes = text_message.encode("utf-8")
+                request_kwargs["data"] = {
+                    "initial_message_type": "user-message",
+                }
                 request_kwargs["files"] = {
                     "recorded_message": (
                         "message.txt",
@@ -109,10 +112,17 @@ class AsyncConversationResource:
                     raise ValueError(
                         "audio_bytes and audio_content_type are required when request_format is 'voice'"
                     )
-                # Send raw bytes with appropriate content type
-                request_kwargs["content"] = audio_bytes
-                request_kwargs.setdefault("headers", {})
-                request_kwargs["headers"]["Content-Type"] = audio_content_type
+                ext = "mp3" if audio_content_type == "audio/mpeg" else "wav"
+                request_kwargs["data"] = {
+                    "initial_message_type": "user-message",
+                }
+                request_kwargs["files"] = {
+                    "recorded_message": (
+                        f"audio.{ext}",
+                        audio_bytes,
+                        audio_content_type,
+                    )
+                }
             else:
                 raise ValueError("Unsupported or missing request_format in params")
 
@@ -258,6 +268,9 @@ class ConversationResource:
                         "text_message is required when request_format is 'text'"
                     )
                 text_bytes = text_message.encode("utf-8")
+                request_kwargs["data"] = {
+                    "initial_message_type": "user-message",
+                }
                 request_kwargs["files"] = {
                     "recorded_message": (
                         "message.txt",
@@ -270,9 +283,17 @@ class ConversationResource:
                     raise ValueError(
                         "audio_bytes and audio_content_type are required when request_format is 'voice'"
                     )
-                request_kwargs["content"] = audio_bytes
-                request_kwargs.setdefault("headers", {})
-                request_kwargs["headers"]["Content-Type"] = audio_content_type
+                ext = "mp3" if audio_content_type == "audio/mpeg" else "wav"
+                request_kwargs["data"] = {
+                    "initial_message_type": "user-message",
+                }
+                request_kwargs["files"] = {
+                    "recorded_message": (
+                        f"audio.{ext}",
+                        audio_bytes,
+                        audio_content_type,
+                    )
+                }
             else:
                 raise ValueError("Unsupported or missing request_format in params")
 

@@ -197,6 +197,7 @@ class TestAsyncConversationResourceUnit:
                 f"/v1/org-1/conversation/{TEST_INTERACTION_ID}/interact"
             )
             assert call["params"]["request_format"] == "text"
+            assert call["data"]["initial_message_type"] == "user-message"
             assert call["files"]["recorded_message"][2].startswith("text/plain")
 
             saw_complete = False
@@ -235,8 +236,12 @@ class TestAsyncConversationResourceUnit:
             async for _ in events:
                 break
             call = tracker["last_call"]
-            assert call["content"] == audio
-            assert call["headers"]["Content-Type"] == "audio/wav"
+            assert call["data"]["initial_message_type"] == "user-message"
+            assert call["files"]["recorded_message"] == (
+                "audio.wav",
+                audio,
+                "audio/wav",
+            )
 
     @pytest.mark.asyncio
     async def test_interact_with_conversation_supports_abort(
@@ -624,6 +629,7 @@ class TestConversationResourceSync:
                 f"/v1/org-1/conversation/{TEST_INTERACTION_ID}/interact"
             )
             assert call["params"]["request_format"] == "text"
+            assert call["data"]["initial_message_type"] == "user-message"
             assert call["files"]["recorded_message"][2].startswith("text/plain")
 
             saw_complete = False
@@ -661,8 +667,12 @@ class TestConversationResourceSync:
             )
             next(events)
             call = tracker["last_call"]
-            assert call["content"] == audio
-            assert call["headers"]["Content-Type"] == "audio/wav"
+            assert call["data"]["initial_message_type"] == "user-message"
+            assert call["files"]["recorded_message"] == (
+                "audio.wav",
+                audio,
+                "audio/wav",
+            )
 
     def test_interact_with_conversation_supports_abort_sync(
         self, mock_config: AmigoConfig
