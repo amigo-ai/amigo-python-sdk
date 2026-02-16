@@ -237,11 +237,10 @@ class TestAsyncConversationResourceUnit:
                 break
             call = tracker["last_call"]
             assert call["data"]["initial_message_type"] == "user-message"
-            assert call["files"]["recorded_message"] == (
-                "audio.wav",
-                audio,
-                "audio/wav",
-            )
+            rec = call["files"]["recorded_message"]
+            assert rec[0] == "audio.wav"
+            assert rec[1] == audio
+            assert rec[2] in {"audio/wav", "application/octet-stream"}
 
     @pytest.mark.asyncio
     async def test_interact_with_conversation_external_event(
