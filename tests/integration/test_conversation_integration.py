@@ -1,7 +1,6 @@
 import asyncio
-import io
 import os
-import wave
+from pathlib import Path
 from collections.abc import AsyncGenerator
 
 import pytest
@@ -27,14 +26,9 @@ SERVICE_ID = os.getenv("AMIGO_TEST_SERVICE_ID", "689b81e7afdaf934f4b48f81")
 
 
 def _build_test_wav_bytes() -> bytes:
-    """Build a short valid PCM WAV payload for voice-request integration tests."""
-    buf = io.BytesIO()
-    with wave.open(buf, "wb") as wav_file:
-        wav_file.setnchannels(1)
-        wav_file.setsampwidth(2)  # 16-bit PCM
-        wav_file.setframerate(16000)
-        wav_file.writeframes(b"\x00\x00" * 3200)  # ~0.2s of silence
-    return buf.getvalue()
+    """Load a short spoken WAV fixture for voice-request integration tests."""
+    fixture_path = Path(__file__).with_name("fixtures") / "hello.wav"
+    return fixture_path.read_bytes()
 
 
 @pytest.fixture(scope="module", autouse=True)

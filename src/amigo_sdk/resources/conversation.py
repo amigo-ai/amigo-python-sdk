@@ -133,7 +133,7 @@ class AsyncConversationResource:
                     "recorded_message": (
                         f"audio.{ext}",
                         audio_bytes,
-                        "application/octet-stream",
+                        audio_content_type,
                     )
                 }
             else:
