@@ -74,7 +74,9 @@ class AsyncConversationResource:
         params: InteractWithConversationParametersQuery,
         abort_event: asyncio.Event | None = None,
         *,
-        initial_message_type: Literal["user-message", "external-event"] = "user-message",
+        initial_message_type: Literal[
+            "user-message", "external-event"
+        ] = "user-message",
         text_message: str | None = None,
         audio_bytes: bytes | None = None,
         audio_content_type: Literal["audio/mpeg", "audio/wav"] | None = None,
@@ -256,7 +258,9 @@ class ConversationResource:
         params: InteractWithConversationParametersQuery,
         abort_event: threading.Event | None = None,
         *,
-        initial_message_type: Literal["user-message", "external-event"] = "user-message",
+        initial_message_type: Literal[
+            "user-message", "external-event"
+        ] = "user-message",
         text_message: str | None = None,
         audio_bytes: bytes | None = None,
         audio_content_type: Literal["audio/mpeg", "audio/wav"] | None = None,
