@@ -100,8 +100,7 @@ class AsyncConversationResource:
                 }
             else:
                 # Route based on requested format for user-message / external-event
-                req_format = getattr(params, "request_format", None)
-                if req_format == Format.text:
+                if params.request_format == Format.text:
                     if text_message is None:
                         raise ValueError(
                             "text_message is required when request_format is 'text'"
@@ -117,7 +116,7 @@ class AsyncConversationResource:
                             "text/plain; charset=utf-8",
                         )
                     }
-                elif req_format == Format.voice:
+                elif params.request_format == Format.voice:
                     if audio_bytes is None or audio_content_type is None:
                         raise ValueError(
                             "audio_bytes and audio_content_type are required when request_format is 'voice'"
