@@ -272,35 +272,6 @@ class TestAsyncConversationResourceUnit:
             assert call["files"]["recorded_message"][2].startswith("text/plain")
 
     @pytest.mark.asyncio
-    async def test_interact_with_conversation_skip(
-        self, conversation_resource: AsyncConversationResource
-    ) -> None:
-        async with mock_http_stream(
-            [
-                {
-                    "type": "interaction-complete",
-                    "interaction_id": "i-5",
-                    "message_id": "m-5",
-                    "full_message": "",
-                    "conversation_completed": False,
-                }
-            ]
-        ) as tracker:
-            events = await conversation_resource.interact_with_conversation(
-                TEST_INTERACTION_ID,
-                InteractWithConversationParametersQuery(
-                    request_format=Format.text, response_format=Format.text
-                ),
-                initial_message_type="skip",
-            )
-            async for _ in events:
-                break
-            call = tracker["last_call"]
-            assert call["files"]["initial_message_type"] == (None, "skip")
-            assert call["files"]["recorded_message"] == (None, "")
-            assert "data" not in call
-
-    @pytest.mark.asyncio
     async def test_interact_with_conversation_supports_abort(
         self, conversation_resource: AsyncConversationResource
     ) -> None:
@@ -758,34 +729,6 @@ class TestConversationResourceSync:
             call = tracker["last_call"]
             assert call["data"]["initial_message_type"] == "external-event"
             assert call["files"]["recorded_message"][2].startswith("text/plain")
-
-    def test_interact_with_conversation_skip_sync(
-        self, mock_config: AmigoConfig
-    ) -> None:
-        conv = self._resource(mock_config)
-        with mock_http_stream_sync(
-            [
-                {
-                    "type": "interaction-complete",
-                    "interaction_id": "i-5",
-                    "message_id": "m-5",
-                    "full_message": "",
-                    "conversation_completed": False,
-                }
-            ]
-        ) as tracker:
-            events = conv.interact_with_conversation(
-                TEST_INTERACTION_ID,
-                InteractWithConversationParametersQuery(
-                    request_format=Format.text, response_format=Format.text
-                ),
-                initial_message_type="skip",
-            )
-            next(events)
-            call = tracker["last_call"]
-            assert call["files"]["initial_message_type"] == (None, "skip")
-            assert call["files"]["recorded_message"] == (None, "")
-            assert "data" not in call
 
     def test_interact_with_conversation_supports_abort_sync(
         self, mock_config: AmigoConfig

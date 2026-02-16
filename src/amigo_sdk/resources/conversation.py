@@ -74,9 +74,7 @@ class AsyncConversationResource:
         params: InteractWithConversationParametersQuery,
         abort_event: asyncio.Event | None = None,
         *,
-        initial_message_type: Literal[
-            "user-message", "external-event", "skip"
-        ] = "user-message",
+        initial_message_type: Literal["user-message", "external-event"] = "user-message",
         text_message: str | None = None,
         audio_bytes: bytes | None = None,
         audio_content_type: Literal["audio/mpeg", "audio/wav"] | None = None,
@@ -93,48 +91,45 @@ class AsyncConversationResource:
                 "headers": {"Accept": "application/x-ndjson"},
             }
 
-            if initial_message_type == "skip":
-                # Force multipart/form-data for skip mode to match API contract.
+            if initial_message_type not in {"user-message", "external-event"}:
+                raise ValueError(
+                    "initial_message_type must be 'user-message' or 'external-event'"
+                )
+
+            if params.request_format == Format.text:
+                if text_message is None:
+                    raise ValueError(
+                        "text_message is required when request_format is 'text'"
+                    )
+                text_bytes = text_message.encode("utf-8")
+                request_kwargs["data"] = {
+                    "initial_message_type": initial_message_type,
+                }
                 request_kwargs["files"] = {
-                    "initial_message_type": (None, "skip"),
-                    "recorded_message": (None, ""),
+                    "recorded_message": (
+                        "message.txt",
+                        text_bytes,
+                        "text/plain; charset=utf-8",
+                    )
+                }
+            elif params.request_format == Format.voice:
+                if audio_bytes is None or audio_content_type is None:
+                    raise ValueError(
+                        "audio_bytes and audio_content_type are required when request_format is 'voice'"
+                    )
+                ext = "mp3" if audio_content_type == "audio/mpeg" else "wav"
+                request_kwargs["data"] = {
+                    "initial_message_type": initial_message_type,
+                }
+                request_kwargs["files"] = {
+                    "recorded_message": (
+                        f"audio.{ext}",
+                        audio_bytes,
+                        "application/octet-stream",
+                    )
                 }
             else:
-                # Route based on requested format for user-message / external-event
-                if params.request_format == Format.text:
-                    if text_message is None:
-                        raise ValueError(
-                            "text_message is required when request_format is 'text'"
-                        )
-                    text_bytes = text_message.encode("utf-8")
-                    request_kwargs["data"] = {
-                        "initial_message_type": initial_message_type,
-                    }
-                    request_kwargs["files"] = {
-                        "recorded_message": (
-                            "message.txt",
-                            text_bytes,
-                            "text/plain; charset=utf-8",
-                        )
-                    }
-                elif params.request_format == Format.voice:
-                    if audio_bytes is None or audio_content_type is None:
-                        raise ValueError(
-                            "audio_bytes and audio_content_type are required when request_format is 'voice'"
-                        )
-                    ext = "mp3" if audio_content_type == "audio/mpeg" else "wav"
-                    request_kwargs["data"] = {
-                        "initial_message_type": initial_message_type,
-                    }
-                    request_kwargs["files"] = {
-                        "recorded_message": (
-                            f"audio.{ext}",
-                            audio_bytes,
-                            "application/octet-stream",
-                        )
-                    }
-                else:
-                    raise ValueError("Unsupported or missing request_format in params")
+                raise ValueError("Unsupported or missing request_format in params")
 
             async for line in self._http.stream_lines(
                 "POST",
@@ -261,9 +256,7 @@ class ConversationResource:
         params: InteractWithConversationParametersQuery,
         abort_event: threading.Event | None = None,
         *,
-        initial_message_type: Literal[
-            "user-message", "external-event", "skip"
-        ] = "user-message",
+        initial_message_type: Literal["user-message", "external-event"] = "user-message",
         text_message: str | None = None,
         audio_bytes: bytes | None = None,
         audio_content_type: Literal["audio/mpeg", "audio/wav"] | None = None,
@@ -275,49 +268,46 @@ class ConversationResource:
                 "abort_event": abort_event,
             }
 
-            if initial_message_type == "skip":
-                # Force multipart/form-data for skip mode to match API contract.
+            if initial_message_type not in {"user-message", "external-event"}:
+                raise ValueError(
+                    "initial_message_type must be 'user-message' or 'external-event'"
+                )
+
+            req_format = getattr(params, "request_format", None)
+            if req_format == Format.text:
+                if text_message is None:
+                    raise ValueError(
+                        "text_message is required when request_format is 'text'"
+                    )
+                text_bytes = text_message.encode("utf-8")
+                request_kwargs["data"] = {
+                    "initial_message_type": initial_message_type,
+                }
                 request_kwargs["files"] = {
-                    "initial_message_type": (None, "skip"),
-                    "recorded_message": (None, ""),
+                    "recorded_message": (
+                        "message.txt",
+                        text_bytes,
+                        "text/plain; charset=utf-8",
+                    )
+                }
+            elif req_format == Format.voice:
+                if audio_bytes is None or audio_content_type is None:
+                    raise ValueError(
+                        "audio_bytes and audio_content_type are required when request_format is 'voice'"
+                    )
+                ext = "mp3" if audio_content_type == "audio/mpeg" else "wav"
+                request_kwargs["data"] = {
+                    "initial_message_type": initial_message_type,
+                }
+                request_kwargs["files"] = {
+                    "recorded_message": (
+                        f"audio.{ext}",
+                        audio_bytes,
+                        audio_content_type,
+                    )
                 }
             else:
-                # Route based on requested format for user-message / external-event
-                req_format = getattr(params, "request_format", None)
-                if req_format == Format.text:
-                    if text_message is None:
-                        raise ValueError(
-                            "text_message is required when request_format is 'text'"
-                        )
-                    text_bytes = text_message.encode("utf-8")
-                    request_kwargs["data"] = {
-                        "initial_message_type": initial_message_type,
-                    }
-                    request_kwargs["files"] = {
-                        "recorded_message": (
-                            "message.txt",
-                            text_bytes,
-                            "text/plain; charset=utf-8",
-                        )
-                    }
-                elif req_format == Format.voice:
-                    if audio_bytes is None or audio_content_type is None:
-                        raise ValueError(
-                            "audio_bytes and audio_content_type are required when request_format is 'voice'"
-                        )
-                    ext = "mp3" if audio_content_type == "audio/mpeg" else "wav"
-                    request_kwargs["data"] = {
-                        "initial_message_type": initial_message_type,
-                    }
-                    request_kwargs["files"] = {
-                        "recorded_message": (
-                            f"audio.{ext}",
-                            audio_bytes,
-                            audio_content_type,
-                        )
-                    }
-                else:
-                    raise ValueError("Unsupported or missing request_format in params")
+                raise ValueError("Unsupported or missing request_format in params")
 
             for line in self._http.stream_lines(
                 "POST",
