@@ -1,7 +1,7 @@
 import asyncio
 import os
-from pathlib import Path
 from collections.abc import AsyncGenerator
+from pathlib import Path
 
 import pytest
 
