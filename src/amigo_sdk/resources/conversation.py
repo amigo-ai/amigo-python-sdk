@@ -134,9 +134,7 @@ class AsyncConversationResource:
                         )
                     }
                 else:
-                    raise ValueError(
-                        "Unsupported or missing request_format in params"
-                    )
+                    raise ValueError("Unsupported or missing request_format in params")
 
             async for line in self._http.stream_lines(
                 "POST",
@@ -319,9 +317,7 @@ class ConversationResource:
                         )
                     }
                 else:
-                    raise ValueError(
-                        "Unsupported or missing request_format in params"
-                    )
+                    raise ValueError("Unsupported or missing request_format in params")
 
             for line in self._http.stream_lines(
                 "POST",
