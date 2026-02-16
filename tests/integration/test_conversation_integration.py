@@ -1,6 +1,7 @@
 import asyncio
 import os
 from collections.abc import AsyncGenerator
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -29,6 +30,36 @@ def _build_test_wav_bytes() -> bytes:
     """Load a short spoken WAV fixture for voice-request integration tests."""
     fixture_path = Path(__file__).with_name("fixtures") / "hello.wav"
     return fixture_path.read_bytes()
+
+
+async def _latest_conversation_message_time_async(
+    client: AsyncAmigoClient, conversation_id: str
+) -> datetime:
+    page = await client.conversation.get_conversation_messages(
+        conversation_id,
+        GetConversationMessagesParametersQuery(limit=1, sort_by=["-created_at"]),
+    )
+    if not page.messages:
+        return datetime.now(UTC)
+    latest = page.messages[0]
+    return getattr(latest, "timestamp", None) or getattr(
+        latest, "created_at", datetime.now(UTC)
+    )
+
+
+def _latest_conversation_message_time_sync(
+    client: AmigoClient, conversation_id: str
+) -> datetime:
+    page = client.conversation.get_conversation_messages(
+        conversation_id,
+        GetConversationMessagesParametersQuery(limit=1, sort_by=["-created_at"]),
+    )
+    if not page.messages:
+        return datetime.now(UTC)
+    latest = page.messages[0]
+    return getattr(latest, "timestamp", None) or getattr(
+        latest, "created_at", datetime.now(UTC)
+    )
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -168,6 +199,20 @@ class TestConversationIntegration:
         assert type(self).conversation_id is not None
 
         async with AsyncAmigoClient() as client:
+            latest_message_time = await _latest_conversation_message_time_async(
+                client, type(self).conversation_id
+            )
+            external_event_message_content = [
+                "External event integration prelude #1.",
+                "External event integration prelude #2.",
+            ]
+            external_event_message_timestamp = [
+                latest_message_time + timedelta(seconds=1),
+                latest_message_time + timedelta(seconds=2),
+            ]
+            assert len(external_event_message_timestamp) == len(
+                external_event_message_content
+            )
             events = await client.conversation.interact_with_conversation(
                 type(self).conversation_id,
                 params=InteractWithConversationParametersQuery(
@@ -175,6 +220,8 @@ class TestConversationIntegration:
                 ),
                 initial_message_type="external-event",
                 text_message="External event integration test message.",
+                external_event_message_content=external_event_message_content,
+                external_event_message_timestamp=external_event_message_timestamp,
             )
 
             saw_interaction_complete = False
@@ -378,6 +425,20 @@ class TestConversationIntegrationSync:
         assert type(self).conversation_id is not None
 
         with AmigoClient() as client:
+            latest_message_time = _latest_conversation_message_time_sync(
+                client, type(self).conversation_id
+            )
+            external_event_message_content = [
+                "External event integration prelude #1.",
+                "External event integration prelude #2.",
+            ]
+            external_event_message_timestamp = [
+                latest_message_time + timedelta(seconds=1),
+                latest_message_time + timedelta(seconds=2),
+            ]
+            assert len(external_event_message_timestamp) == len(
+                external_event_message_content
+            )
             events = client.conversation.interact_with_conversation(
                 type(self).conversation_id,
                 params=InteractWithConversationParametersQuery(
@@ -385,6 +446,8 @@ class TestConversationIntegrationSync:
                 ),
                 initial_message_type="external-event",
                 text_message="External event integration test message.",
+                external_event_message_content=external_event_message_content,
+                external_event_message_timestamp=external_event_message_timestamp,
             )
 
             saw_interaction_complete = False

@@ -37,6 +37,23 @@ class GetMessageSourceResponse(BaseModel):
     content_type: Literal["audio/mpeg", "audio/wav"]
 
 
+def _build_interact_form_data(
+    *,
+    initial_message_type: Literal["user-message", "external-event"],
+    external_event_message_content: list[str] | None,
+    external_event_message_timestamp: list[datetime] | None,
+) -> list[tuple[str, tuple[None, str]]]:
+    """Build multipart form-data fields for the interact endpoint."""
+    data: list[tuple[str, tuple[None, str]]] = [
+        ("initial_message_type", (None, initial_message_type))
+    ]
+    for content in external_event_message_content or []:
+        data.append(("external_event_message_content", (None, content)))
+    for timestamp in external_event_message_timestamp or []:
+        data.append(("external_event_message_timestamp", (None, timestamp.isoformat())))
+    return data
+
+
 class AsyncConversationResource:
     """Conversation resource for Amigo API operations."""
 
@@ -81,6 +98,8 @@ class AsyncConversationResource:
         text_message: str | None = None,
         audio_bytes: bytes | None = None,
         audio_content_type: Literal["audio/mpeg", "audio/wav"] | None = None,
+        external_event_message_content: list[str] | None = None,
+        external_event_message_timestamp: list[datetime] | None = None,
     ) -> "AsyncGenerator[ConversationInteractWithConversationResponse]":
         """Interact with a conversation and stream NDJSON events.
 
@@ -110,32 +129,34 @@ class AsyncConversationResource:
                         "text_message is required when request_format is 'text'"
                     )
                 text_bytes = text_message.encode("utf-8")
-                request_kwargs["data"] = {
-                    "initial_message_type": initial_message_type,
-                }
-                request_kwargs["files"] = {
-                    "recorded_message": (
-                        "message.txt",
-                        text_bytes,
-                        "text/plain; charset=utf-8",
+                form_fields = _build_interact_form_data(
+                    initial_message_type=initial_message_type,
+                    external_event_message_content=external_event_message_content,
+                    external_event_message_timestamp=external_event_message_timestamp,
+                )
+                request_kwargs["files"] = form_fields + [
+                    (
+                        "recorded_message",
+                        ("message.txt", text_bytes, "text/plain; charset=utf-8"),
                     )
-                }
+                ]
             elif params.request_format == Format.voice:
                 if audio_bytes is None or audio_content_type is None:
                     raise ValueError(
                         "audio_bytes and audio_content_type are required when request_format is 'voice'"
                     )
                 ext = "mp3" if audio_content_type == "audio/mpeg" else "wav"
-                request_kwargs["data"] = {
-                    "initial_message_type": initial_message_type,
-                }
-                request_kwargs["files"] = {
-                    "recorded_message": (
-                        f"audio.{ext}",
-                        audio_bytes,
-                        audio_content_type,
+                form_fields = _build_interact_form_data(
+                    initial_message_type=initial_message_type,
+                    external_event_message_content=external_event_message_content,
+                    external_event_message_timestamp=external_event_message_timestamp,
+                )
+                request_kwargs["files"] = form_fields + [
+                    (
+                        "recorded_message",
+                        (f"audio.{ext}", audio_bytes, audio_content_type),
                     )
-                }
+                ]
             else:
                 raise ValueError("Unsupported or missing request_format in params")
 
@@ -270,6 +291,8 @@ class ConversationResource:
         text_message: str | None = None,
         audio_bytes: bytes | None = None,
         audio_content_type: Literal["audio/mpeg", "audio/wav"] | None = None,
+        external_event_message_content: list[str] | None = None,
+        external_event_message_timestamp: list[datetime] | None = None,
     ) -> Iterator[ConversationInteractWithConversationResponse]:
         def _iter():
             params_data = params.model_dump(mode="json", exclude_none=True)
@@ -295,32 +318,34 @@ class ConversationResource:
                         "text_message is required when request_format is 'text'"
                     )
                 text_bytes = text_message.encode("utf-8")
-                request_kwargs["data"] = {
-                    "initial_message_type": initial_message_type,
-                }
-                request_kwargs["files"] = {
-                    "recorded_message": (
-                        "message.txt",
-                        text_bytes,
-                        "text/plain; charset=utf-8",
+                form_fields = _build_interact_form_data(
+                    initial_message_type=initial_message_type,
+                    external_event_message_content=external_event_message_content,
+                    external_event_message_timestamp=external_event_message_timestamp,
+                )
+                request_kwargs["files"] = form_fields + [
+                    (
+                        "recorded_message",
+                        ("message.txt", text_bytes, "text/plain; charset=utf-8"),
                     )
-                }
+                ]
             elif req_format == Format.voice:
                 if audio_bytes is None or audio_content_type is None:
                     raise ValueError(
                         "audio_bytes and audio_content_type are required when request_format is 'voice'"
                     )
                 ext = "mp3" if audio_content_type == "audio/mpeg" else "wav"
-                request_kwargs["data"] = {
-                    "initial_message_type": initial_message_type,
-                }
-                request_kwargs["files"] = {
-                    "recorded_message": (
-                        f"audio.{ext}",
-                        audio_bytes,
-                        audio_content_type,
+                form_fields = _build_interact_form_data(
+                    initial_message_type=initial_message_type,
+                    external_event_message_content=external_event_message_content,
+                    external_event_message_timestamp=external_event_message_timestamp,
+                )
+                request_kwargs["files"] = form_fields + [
+                    (
+                        "recorded_message",
+                        (f"audio.{ext}", audio_bytes, audio_content_type),
                     )
-                }
+                ]
             else:
                 raise ValueError("Unsupported or missing request_format in params")
 
