@@ -37,17 +37,33 @@ TEST_SERVICE_ID_2 = "89abcdef0123456701234567"
 TEST_INTERACTION_ID = "fedcba987654321001234567"
 
 
-def _form_values(data: object, field: str) -> list[str]:
-    if isinstance(data, dict):
-        value = data.get(field)
+def _multipart_values(files: object, field: str) -> list[str]:
+    if isinstance(files, dict):
+        value = files.get(field)
         if value is None:
             return []
-        if isinstance(value, list):
-            return [str(v) for v in value]
-        return [str(value)]
-    if isinstance(data, list):
-        return [str(v) for k, v in data if k == field]
+        if isinstance(value, tuple) and len(value) >= 2 and value[0] is None:
+            return [str(value[1])]
+        return []
+    if isinstance(files, list):
+        out: list[str] = []
+        for k, v in files:
+            if k != field:
+                continue
+            if isinstance(v, tuple) and len(v) >= 2 and v[0] is None:
+                out.append(str(v[1]))
+        return out
     return []
+
+
+def _recorded_message_part(files: object) -> tuple[object, ...]:
+    if isinstance(files, dict):
+        return files["recorded_message"]
+    if isinstance(files, list):
+        for k, v in files:
+            if k == "recorded_message" and isinstance(v, tuple):
+                return v
+    raise AssertionError("recorded_message part not found")
 
 
 @pytest.fixture
@@ -214,10 +230,10 @@ class TestAsyncConversationResourceUnit:
                 f"/v1/org-1/conversation/{TEST_INTERACTION_ID}/interact"
             )
             assert call["params"]["request_format"] == "text"
-            assert _form_values(call["data"], "initial_message_type") == [
+            assert _multipart_values(call["files"], "initial_message_type") == [
                 "user-message"
             ]
-            assert call["files"]["recorded_message"][2].startswith("text/plain")
+            assert _recorded_message_part(call["files"])[2].startswith("text/plain")
 
             saw_complete = False
             async for resp in events:
@@ -262,7 +278,7 @@ class TestAsyncConversationResourceUnit:
             async for _ in events:
                 break
             call = tracker["last_call"]
-            assert _form_values(call["data"], "initial_message_type") == [
+            assert _multipart_values(call["files"], "initial_message_type") == [
                 "user-message"
             ]
             assert json.loads(call["params"]["request_audio_config"]) == {
@@ -271,7 +287,7 @@ class TestAsyncConversationResourceUnit:
                 "n_channels": 1,
                 "sample_width": 2,
             }
-            rec = call["files"]["recorded_message"]
+            rec = _recorded_message_part(call["files"])
             assert rec[0] == "audio.wav"
             assert rec[1] == audio
             assert rec[2] in {"audio/wav", "application/octet-stream"}
@@ -302,10 +318,10 @@ class TestAsyncConversationResourceUnit:
             async for _ in events:
                 break
             call = tracker["last_call"]
-            assert _form_values(call["data"], "initial_message_type") == [
+            assert _multipart_values(call["files"], "initial_message_type") == [
                 "external-event"
             ]
-            assert call["files"]["recorded_message"][2].startswith("text/plain")
+            assert _recorded_message_part(call["files"])[2].startswith("text/plain")
 
     @pytest.mark.asyncio
     async def test_interact_with_conversation_sends_external_event_context_fields(
@@ -336,14 +352,16 @@ class TestAsyncConversationResourceUnit:
             async for _ in events:
                 break
             call = tracker["last_call"]
-            assert _form_values(call["data"], "initial_message_type") == [
+            assert _multipart_values(call["files"], "initial_message_type") == [
                 "external-event"
             ]
-            assert _form_values(call["data"], "external_event_message_content") == [
+            assert _multipart_values(call["files"], "external_event_message_content") == [
                 "event-a",
                 "event-b",
             ]
-            assert _form_values(call["data"], "external_event_message_timestamp") == [
+            assert _multipart_values(
+                call["files"], "external_event_message_timestamp"
+            ) == [
                 ts.isoformat()
             ]
 
@@ -733,10 +751,10 @@ class TestConversationResourceSync:
                 f"/v1/org-1/conversation/{TEST_INTERACTION_ID}/interact"
             )
             assert call["params"]["request_format"] == "text"
-            assert _form_values(call["data"], "initial_message_type") == [
+            assert _multipart_values(call["files"], "initial_message_type") == [
                 "user-message"
             ]
-            assert call["files"]["recorded_message"][2].startswith("text/plain")
+            assert _recorded_message_part(call["files"])[2].startswith("text/plain")
 
             saw_complete = False
             for resp in events:
@@ -780,7 +798,7 @@ class TestConversationResourceSync:
             )
             next(events)
             call = tracker["last_call"]
-            assert _form_values(call["data"], "initial_message_type") == [
+            assert _multipart_values(call["files"], "initial_message_type") == [
                 "user-message"
             ]
             assert json.loads(call["params"]["request_audio_config"]) == {
@@ -789,7 +807,7 @@ class TestConversationResourceSync:
                 "n_channels": 1,
                 "sample_width": 2,
             }
-            assert call["files"]["recorded_message"] == (
+            assert _recorded_message_part(call["files"]) == (
                 "audio.wav",
                 audio,
                 "audio/wav",
@@ -820,10 +838,10 @@ class TestConversationResourceSync:
             )
             next(events)
             call = tracker["last_call"]
-            assert _form_values(call["data"], "initial_message_type") == [
+            assert _multipart_values(call["files"], "initial_message_type") == [
                 "external-event"
             ]
-            assert call["files"]["recorded_message"][2].startswith("text/plain")
+            assert _recorded_message_part(call["files"])[2].startswith("text/plain")
 
     def test_interact_with_conversation_sends_external_event_context_fields_sync(
         self, mock_config: AmigoConfig
@@ -853,14 +871,16 @@ class TestConversationResourceSync:
             )
             next(events)
             call = tracker["last_call"]
-            assert _form_values(call["data"], "initial_message_type") == [
+            assert _multipart_values(call["files"], "initial_message_type") == [
                 "external-event"
             ]
-            assert _form_values(call["data"], "external_event_message_content") == [
+            assert _multipart_values(call["files"], "external_event_message_content") == [
                 "event-a",
                 "event-b",
             ]
-            assert _form_values(call["data"], "external_event_message_timestamp") == [
+            assert _multipart_values(
+                call["files"], "external_event_message_timestamp"
+            ) == [
                 ts.isoformat()
             ]
 
