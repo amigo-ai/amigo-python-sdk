@@ -355,15 +355,15 @@ class TestAsyncConversationResourceUnit:
             assert _multipart_values(call["files"], "initial_message_type") == [
                 "external-event"
             ]
-            assert _multipart_values(call["files"], "external_event_message_content") == [
+            assert _multipart_values(
+                call["files"], "external_event_message_content"
+            ) == [
                 "event-a",
                 "event-b",
             ]
             assert _multipart_values(
                 call["files"], "external_event_message_timestamp"
-            ) == [
-                ts.isoformat()
-            ]
+            ) == [ts.isoformat()]
 
     @pytest.mark.asyncio
     async def test_interact_with_conversation_supports_abort(
@@ -874,15 +874,15 @@ class TestConversationResourceSync:
             assert _multipart_values(call["files"], "initial_message_type") == [
                 "external-event"
             ]
-            assert _multipart_values(call["files"], "external_event_message_content") == [
+            assert _multipart_values(
+                call["files"], "external_event_message_content"
+            ) == [
                 "event-a",
                 "event-b",
             ]
             assert _multipart_values(
                 call["files"], "external_event_message_timestamp"
-            ) == [
-                ts.isoformat()
-            ]
+            ) == [ts.isoformat()]
 
     def test_interact_with_conversation_supports_abort_sync(
         self, mock_config: AmigoConfig
