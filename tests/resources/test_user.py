@@ -4,9 +4,9 @@ from amigo_sdk.config import AmigoConfig
 from amigo_sdk.errors import NotFoundError, ValidationError
 from amigo_sdk.generated.model import (
     GetUsersParametersQuery,
-    MongoCollectionsUserUserUserModelUserDimension,
     UserCreateInvitedUserRequest,
     UserCreateInvitedUserResponse,
+    UserDimensionOutput,
     UserGetUserModelResponse,
     UserGetUsersResponse,
     UserModel,
@@ -133,9 +133,7 @@ class TestUserResource:
                     content="model-content",
                     insight_ids=["insight-1"],
                     dimensions=[
-                        MongoCollectionsUserUserUserModelUserDimension(
-                            description="detail", tags=["tag"]
-                        )
+                        UserDimensionOutput(description="detail", tags=["tag"])
                     ],
                 )
             ],
@@ -251,9 +249,7 @@ class TestUserResourceSync:
                     content="model-content",
                     insight_ids=["insight-1"],
                     dimensions=[
-                        MongoCollectionsUserUserUserModelUserDimension(
-                            description="detail", tags=["tag"]
-                        )
+                        UserDimensionOutput(description="detail", tags=["tag"])
                     ],
                 )
             ],

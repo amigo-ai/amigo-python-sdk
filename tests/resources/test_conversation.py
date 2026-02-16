@@ -1,4 +1,5 @@
 import asyncio
+import json
 import threading
 
 import pytest
@@ -13,6 +14,8 @@ from amigo_sdk.generated.model import (
     GetConversationMessagesParametersQuery,
     GetConversationsParametersQuery,
     InteractWithConversationParametersQuery,
+    PCMUserMessageAudioConfig,
+    SampleWidth,
 )
 from amigo_sdk.http_client import AmigoAsyncHttpClient, AmigoHttpClient
 from amigo_sdk.resources.conversation import (
@@ -197,6 +200,7 @@ class TestAsyncConversationResourceUnit:
                 f"/v1/org-1/conversation/{TEST_INTERACTION_ID}/interact"
             )
             assert call["params"]["request_format"] == "text"
+            assert call["data"]["initial_message_type"] == "user-message"
             assert call["files"]["recorded_message"][2].startswith("text/plain")
 
             saw_complete = False
@@ -227,7 +231,14 @@ class TestAsyncConversationResourceUnit:
             events = await conversation_resource.interact_with_conversation(
                 TEST_INTERACTION_ID,
                 InteractWithConversationParametersQuery(
-                    request_format=Format.voice, response_format=Format.text
+                    request_format=Format.voice,
+                    response_format=Format.text,
+                    request_audio_config=PCMUserMessageAudioConfig(
+                        type="pcm",
+                        frame_rate=16000,
+                        n_channels=1,
+                        sample_width=SampleWidth.integer_2,
+                    ),
                 ),
                 audio_bytes=audio,
                 audio_content_type="audio/wav",
@@ -235,8 +246,46 @@ class TestAsyncConversationResourceUnit:
             async for _ in events:
                 break
             call = tracker["last_call"]
-            assert call["content"] == audio
-            assert call["headers"]["Content-Type"] == "audio/wav"
+            assert call["data"]["initial_message_type"] == "user-message"
+            assert json.loads(call["params"]["request_audio_config"]) == {
+                "type": "pcm",
+                "frame_rate": 16000,
+                "n_channels": 1,
+                "sample_width": 2,
+            }
+            rec = call["files"]["recorded_message"]
+            assert rec[0] == "audio.wav"
+            assert rec[1] == audio
+            assert rec[2] in {"audio/wav", "application/octet-stream"}
+
+    @pytest.mark.asyncio
+    async def test_interact_with_conversation_external_event(
+        self, conversation_resource: AsyncConversationResource
+    ) -> None:
+        async with mock_http_stream(
+            [
+                {
+                    "type": "interaction-complete",
+                    "interaction_id": "i-4",
+                    "message_id": "m-4",
+                    "full_message": "",
+                    "conversation_completed": False,
+                }
+            ]
+        ) as tracker:
+            events = await conversation_resource.interact_with_conversation(
+                TEST_INTERACTION_ID,
+                InteractWithConversationParametersQuery(
+                    request_format=Format.text, response_format=Format.text
+                ),
+                initial_message_type="external-event",
+                text_message="event occurred",
+            )
+            async for _ in events:
+                break
+            call = tracker["last_call"]
+            assert call["data"]["initial_message_type"] == "external-event"
+            assert call["files"]["recorded_message"][2].startswith("text/plain")
 
     @pytest.mark.asyncio
     async def test_interact_with_conversation_supports_abort(
@@ -624,6 +673,7 @@ class TestConversationResourceSync:
                 f"/v1/org-1/conversation/{TEST_INTERACTION_ID}/interact"
             )
             assert call["params"]["request_format"] == "text"
+            assert call["data"]["initial_message_type"] == "user-message"
             assert call["files"]["recorded_message"][2].startswith("text/plain")
 
             saw_complete = False
@@ -654,15 +704,60 @@ class TestConversationResourceSync:
             events = conv.interact_with_conversation(
                 TEST_INTERACTION_ID,
                 InteractWithConversationParametersQuery(
-                    request_format=Format.voice, response_format=Format.text
+                    request_format=Format.voice,
+                    response_format=Format.text,
+                    request_audio_config=PCMUserMessageAudioConfig(
+                        type="pcm",
+                        frame_rate=16000,
+                        n_channels=1,
+                        sample_width=SampleWidth.integer_2,
+                    ),
                 ),
                 audio_bytes=audio,
                 audio_content_type="audio/wav",
             )
             next(events)
             call = tracker["last_call"]
-            assert call["content"] == audio
-            assert call["headers"]["Content-Type"] == "audio/wav"
+            assert call["data"]["initial_message_type"] == "user-message"
+            assert json.loads(call["params"]["request_audio_config"]) == {
+                "type": "pcm",
+                "frame_rate": 16000,
+                "n_channels": 1,
+                "sample_width": 2,
+            }
+            assert call["files"]["recorded_message"] == (
+                "audio.wav",
+                audio,
+                "audio/wav",
+            )
+
+    def test_interact_with_conversation_external_event_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        with mock_http_stream_sync(
+            [
+                {
+                    "type": "interaction-complete",
+                    "interaction_id": "i-4",
+                    "message_id": "m-4",
+                    "full_message": "",
+                    "conversation_completed": False,
+                }
+            ]
+        ) as tracker:
+            events = conv.interact_with_conversation(
+                TEST_INTERACTION_ID,
+                InteractWithConversationParametersQuery(
+                    request_format=Format.text, response_format=Format.text
+                ),
+                initial_message_type="external-event",
+                text_message="event occurred",
+            )
+            next(events)
+            call = tracker["last_call"]
+            assert call["data"]["initial_message_type"] == "external-event"
+            assert call["files"]["recorded_message"][2].startswith("text/plain")
 
     def test_interact_with_conversation_supports_abort_sync(
         self, mock_config: AmigoConfig

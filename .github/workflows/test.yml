@@ -54,7 +54,6 @@ jobs:
 
   integration-test:
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    needs: test # Only run if unit tests pass
     # Skip for PRs from forks (they don't have access to secrets)
     # This runs on: pushes to main, PRs from same repo
     if: >
