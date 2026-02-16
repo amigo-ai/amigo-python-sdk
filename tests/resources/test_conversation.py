@@ -1,4 +1,5 @@
 import asyncio
+import json
 import threading
 
 import pytest
@@ -13,6 +14,8 @@ from amigo_sdk.generated.model import (
     GetConversationMessagesParametersQuery,
     GetConversationsParametersQuery,
     InteractWithConversationParametersQuery,
+    PCMUserMessageAudioConfig,
+    SampleWidth,
 )
 from amigo_sdk.http_client import AmigoAsyncHttpClient, AmigoHttpClient
 from amigo_sdk.resources.conversation import (
@@ -228,7 +231,14 @@ class TestAsyncConversationResourceUnit:
             events = await conversation_resource.interact_with_conversation(
                 TEST_INTERACTION_ID,
                 InteractWithConversationParametersQuery(
-                    request_format=Format.voice, response_format=Format.text
+                    request_format=Format.voice,
+                    response_format=Format.text,
+                    request_audio_config=PCMUserMessageAudioConfig(
+                        type="pcm",
+                        frame_rate=16000,
+                        n_channels=1,
+                        sample_width=SampleWidth.integer_2,
+                    ),
                 ),
                 audio_bytes=audio,
                 audio_content_type="audio/wav",
@@ -237,6 +247,12 @@ class TestAsyncConversationResourceUnit:
                 break
             call = tracker["last_call"]
             assert call["data"]["initial_message_type"] == "user-message"
+            assert json.loads(call["params"]["request_audio_config"]) == {
+                "type": "pcm",
+                "frame_rate": 16000,
+                "n_channels": 1,
+                "sample_width": 2,
+            }
             rec = call["files"]["recorded_message"]
             assert rec[0] == "audio.wav"
             assert rec[1] == audio
@@ -688,7 +704,14 @@ class TestConversationResourceSync:
             events = conv.interact_with_conversation(
                 TEST_INTERACTION_ID,
                 InteractWithConversationParametersQuery(
-                    request_format=Format.voice, response_format=Format.text
+                    request_format=Format.voice,
+                    response_format=Format.text,
+                    request_audio_config=PCMUserMessageAudioConfig(
+                        type="pcm",
+                        frame_rate=16000,
+                        n_channels=1,
+                        sample_width=SampleWidth.integer_2,
+                    ),
                 ),
                 audio_bytes=audio,
                 audio_content_type="audio/wav",
@@ -696,6 +719,12 @@ class TestConversationResourceSync:
             next(events)
             call = tracker["last_call"]
             assert call["data"]["initial_message_type"] == "user-message"
+            assert json.loads(call["params"]["request_audio_config"]) == {
+                "type": "pcm",
+                "frame_rate": 16000,
+                "n_channels": 1,
+                "sample_width": 2,
+            }
             assert call["files"]["recorded_message"] == (
                 "audio.wav",
                 audio,

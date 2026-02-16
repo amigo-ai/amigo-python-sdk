@@ -1,4 +1,5 @@
 import asyncio
+import json
 import threading
 from collections.abc import AsyncGenerator, Iterator
 from datetime import datetime
@@ -87,8 +88,13 @@ class AsyncConversationResource:
         """
 
         async def _generator():
+            params_data = params.model_dump(mode="json", exclude_none=True)
+            if "request_audio_config" in params_data:
+                params_data["request_audio_config"] = json.dumps(
+                    params_data["request_audio_config"]
+                )
             request_kwargs: dict[str, Any] = {
-                "params": params.model_dump(mode="json", exclude_none=True),
+                "params": params_data,
                 "abort_event": abort_event,
                 "headers": {"Accept": "application/x-ndjson"},
             }
@@ -266,8 +272,13 @@ class ConversationResource:
         audio_content_type: Literal["audio/mpeg", "audio/wav"] | None = None,
     ) -> Iterator[ConversationInteractWithConversationResponse]:
         def _iter():
+            params_data = params.model_dump(mode="json", exclude_none=True)
+            if "request_audio_config" in params_data:
+                params_data["request_audio_config"] = json.dumps(
+                    params_data["request_audio_config"]
+                )
             request_kwargs: dict[str, Any] = {
-                "params": params.model_dump(mode="json", exclude_none=True),
+                "params": params_data,
                 "headers": {"Accept": "application/x-ndjson"},
                 "abort_event": abort_event,
             }
