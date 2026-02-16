@@ -1,4 +1,4 @@
-__version__ = "0.126.0"
+__version__ = "0.127.0"
 from .sdk_client import AmigoClient, AsyncAmigoClient
 
 __all__ = ["__version__", "AmigoClient", "AsyncAmigoClient"]
