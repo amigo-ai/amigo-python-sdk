@@ -6,7 +6,7 @@ from collections.abc import AsyncGenerator
 
 import pytest
 
-from amigo_sdk.errors import BadRequestError, ConflictError, NotFoundError, ServerError
+from amigo_sdk.errors import ConflictError, NotFoundError
 from amigo_sdk.generated.model import (
     ConversationCreateConversationRequest,
     ConversationCreatedEvent,
@@ -212,22 +212,17 @@ class TestConversationIntegration:
 
             saw_interaction_complete = False
             latest_interaction_id: str | None = None
-            voice_request_rejected = False
 
-            try:
-                async for evt in events:
-                    e = evt.root
-                    if isinstance(e, ErrorEvent):
-                        pytest.fail(f"error event: {e.model_dump_json()}")
-                    if isinstance(e, InteractionCompleteEvent):
-                        saw_interaction_complete = True
-                        latest_interaction_id = e.interaction_id
-                        break
-            except (BadRequestError, ServerError):
-                # Some environments do not have voice fully enabled for this service.
-                voice_request_rejected = True
+            async for evt in events:
+                e = evt.root
+                if isinstance(e, ErrorEvent):
+                    pytest.fail(f"error event: {e.model_dump_json()}")
+                if isinstance(e, InteractionCompleteEvent):
+                    saw_interaction_complete = True
+                    latest_interaction_id = e.interaction_id
+                    break
 
-            assert saw_interaction_complete is True or voice_request_rejected
+            assert saw_interaction_complete is True
             if latest_interaction_id:
                 type(self).interaction_id = latest_interaction_id
 
@@ -420,22 +415,17 @@ class TestConversationIntegrationSync:
 
             saw_interaction_complete = False
             latest_interaction_id: str | None = None
-            voice_request_rejected = False
 
-            try:
-                for evt in events:
-                    e = evt.root
-                    if isinstance(e, ErrorEvent):
-                        pytest.fail(f"error event: {e.model_dump_json()}")
-                    if isinstance(e, InteractionCompleteEvent):
-                        saw_interaction_complete = True
-                        latest_interaction_id = e.interaction_id
-                        break
-            except (BadRequestError, ServerError):
-                # Some environments do not have voice fully enabled for this service.
-                voice_request_rejected = True
+            for evt in events:
+                e = evt.root
+                if isinstance(e, ErrorEvent):
+                    pytest.fail(f"error event: {e.model_dump_json()}")
+                if isinstance(e, InteractionCompleteEvent):
+                    saw_interaction_complete = True
+                    latest_interaction_id = e.interaction_id
+                    break
 
-            assert saw_interaction_complete is True or voice_request_rejected
+            assert saw_interaction_complete is True
             if latest_interaction_id:
                 type(self).interaction_id = latest_interaction_id
 
