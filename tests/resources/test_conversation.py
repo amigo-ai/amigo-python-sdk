@@ -1,6 +1,7 @@
 import asyncio
 import json
 import threading
+from datetime import UTC, datetime
 
 import pytest
 
@@ -34,6 +35,19 @@ from .helpers import (
 TEST_SERVICE_ID = "0123456789abcdef01234567"
 TEST_SERVICE_ID_2 = "89abcdef0123456701234567"
 TEST_INTERACTION_ID = "fedcba987654321001234567"
+
+
+def _form_values(data: object, field: str) -> list[str]:
+    if isinstance(data, dict):
+        value = data.get(field)
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return [str(v) for v in value]
+        return [str(value)]
+    if isinstance(data, list):
+        return [str(v) for k, v in data if k == field]
+    return []
 
 
 @pytest.fixture
@@ -200,7 +214,9 @@ class TestAsyncConversationResourceUnit:
                 f"/v1/org-1/conversation/{TEST_INTERACTION_ID}/interact"
             )
             assert call["params"]["request_format"] == "text"
-            assert call["data"]["initial_message_type"] == "user-message"
+            assert _form_values(call["data"], "initial_message_type") == [
+                "user-message"
+            ]
             assert call["files"]["recorded_message"][2].startswith("text/plain")
 
             saw_complete = False
@@ -246,7 +262,9 @@ class TestAsyncConversationResourceUnit:
             async for _ in events:
                 break
             call = tracker["last_call"]
-            assert call["data"]["initial_message_type"] == "user-message"
+            assert _form_values(call["data"], "initial_message_type") == [
+                "user-message"
+            ]
             assert json.loads(call["params"]["request_audio_config"]) == {
                 "type": "pcm",
                 "frame_rate": 16000,
@@ -284,8 +302,50 @@ class TestAsyncConversationResourceUnit:
             async for _ in events:
                 break
             call = tracker["last_call"]
-            assert call["data"]["initial_message_type"] == "external-event"
+            assert _form_values(call["data"], "initial_message_type") == [
+                "external-event"
+            ]
             assert call["files"]["recorded_message"][2].startswith("text/plain")
+
+    @pytest.mark.asyncio
+    async def test_interact_with_conversation_sends_external_event_context_fields(
+        self, conversation_resource: AsyncConversationResource
+    ) -> None:
+        ts = datetime(2026, 1, 1, 12, 0, tzinfo=UTC)
+        async with mock_http_stream(
+            [
+                {
+                    "type": "interaction-complete",
+                    "interaction_id": "i-4b",
+                    "message_id": "m-4b",
+                    "full_message": "",
+                    "conversation_completed": False,
+                }
+            ]
+        ) as tracker:
+            events = await conversation_resource.interact_with_conversation(
+                TEST_INTERACTION_ID,
+                InteractWithConversationParametersQuery(
+                    request_format=Format.text, response_format=Format.text
+                ),
+                initial_message_type="external-event",
+                text_message="primary event",
+                external_event_message_content=["event-a", "event-b"],
+                external_event_message_timestamp=[ts],
+            )
+            async for _ in events:
+                break
+            call = tracker["last_call"]
+            assert _form_values(call["data"], "initial_message_type") == [
+                "external-event"
+            ]
+            assert _form_values(call["data"], "external_event_message_content") == [
+                "event-a",
+                "event-b",
+            ]
+            assert _form_values(call["data"], "external_event_message_timestamp") == [
+                ts.isoformat()
+            ]
 
     @pytest.mark.asyncio
     async def test_interact_with_conversation_supports_abort(
@@ -673,7 +733,9 @@ class TestConversationResourceSync:
                 f"/v1/org-1/conversation/{TEST_INTERACTION_ID}/interact"
             )
             assert call["params"]["request_format"] == "text"
-            assert call["data"]["initial_message_type"] == "user-message"
+            assert _form_values(call["data"], "initial_message_type") == [
+                "user-message"
+            ]
             assert call["files"]["recorded_message"][2].startswith("text/plain")
 
             saw_complete = False
@@ -718,7 +780,9 @@ class TestConversationResourceSync:
             )
             next(events)
             call = tracker["last_call"]
-            assert call["data"]["initial_message_type"] == "user-message"
+            assert _form_values(call["data"], "initial_message_type") == [
+                "user-message"
+            ]
             assert json.loads(call["params"]["request_audio_config"]) == {
                 "type": "pcm",
                 "frame_rate": 16000,
@@ -756,8 +820,49 @@ class TestConversationResourceSync:
             )
             next(events)
             call = tracker["last_call"]
-            assert call["data"]["initial_message_type"] == "external-event"
+            assert _form_values(call["data"], "initial_message_type") == [
+                "external-event"
+            ]
             assert call["files"]["recorded_message"][2].startswith("text/plain")
+
+    def test_interact_with_conversation_sends_external_event_context_fields_sync(
+        self, mock_config: AmigoConfig
+    ) -> None:
+        conv = self._resource(mock_config)
+        ts = datetime(2026, 1, 1, 12, 0, tzinfo=UTC)
+        with mock_http_stream_sync(
+            [
+                {
+                    "type": "interaction-complete",
+                    "interaction_id": "i-4b",
+                    "message_id": "m-4b",
+                    "full_message": "",
+                    "conversation_completed": False,
+                }
+            ]
+        ) as tracker:
+            events = conv.interact_with_conversation(
+                TEST_INTERACTION_ID,
+                InteractWithConversationParametersQuery(
+                    request_format=Format.text, response_format=Format.text
+                ),
+                initial_message_type="external-event",
+                text_message="primary event",
+                external_event_message_content=["event-a", "event-b"],
+                external_event_message_timestamp=[ts],
+            )
+            next(events)
+            call = tracker["last_call"]
+            assert _form_values(call["data"], "initial_message_type") == [
+                "external-event"
+            ]
+            assert _form_values(call["data"], "external_event_message_content") == [
+                "event-a",
+                "event-b",
+            ]
+            assert _form_values(call["data"], "external_event_message_timestamp") == [
+                ts.isoformat()
+            ]
 
     def test_interact_with_conversation_supports_abort_sync(
         self, mock_config: AmigoConfig
