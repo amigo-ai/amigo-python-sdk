@@ -17,6 +17,8 @@ from amigo_sdk.generated.model import (
     InteractionCompleteEvent,
     InteractWithConversationParametersQuery,
     NewMessageEvent,
+    PCMUserMessageAudioConfig,
+    SampleWidth,
 )
 from amigo_sdk.sdk_client import AmigoClient, AsyncAmigoClient
 
@@ -204,7 +206,14 @@ class TestConversationIntegration:
             events = await client.conversation.interact_with_conversation(
                 type(self).conversation_id,
                 params=InteractWithConversationParametersQuery(
-                    request_format="voice", response_format="text"
+                    request_format="voice",
+                    response_format="text",
+                    request_audio_config=PCMUserMessageAudioConfig(
+                        type="pcm",
+                        frame_rate=16000,
+                        n_channels=1,
+                        sample_width=SampleWidth.integer_2,
+                    ),
                 ),
                 audio_bytes=_build_test_wav_bytes(),
                 audio_content_type="audio/wav",
@@ -407,7 +416,14 @@ class TestConversationIntegrationSync:
             events = client.conversation.interact_with_conversation(
                 type(self).conversation_id,
                 params=InteractWithConversationParametersQuery(
-                    request_format="voice", response_format="text"
+                    request_format="voice",
+                    response_format="text",
+                    request_audio_config=PCMUserMessageAudioConfig(
+                        type="pcm",
+                        frame_rate=16000,
+                        n_channels=1,
+                        sample_width=SampleWidth.integer_2,
+                    ),
                 ),
                 audio_bytes=_build_test_wav_bytes(),
                 audio_content_type="audio/wav",
