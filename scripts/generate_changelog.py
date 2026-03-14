@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Generate changelog entries from git log between tags."""
+
 import argparse
 import re
 import subprocess
