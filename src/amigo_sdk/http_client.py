@@ -227,6 +227,10 @@ class AmigoAsyncHttpClient:
         headers = kwargs["headers"]
         headers["Authorization"] = f"Bearer {await self._ensure_token()}"
         headers.setdefault("Accept", "application/x-ndjson")
+        # Use a long read timeout for streaming — agent responses can take 60+ seconds
+        kwargs.setdefault(
+            "timeout", httpx.Timeout(connect=10.0, read=300.0, write=10.0, pool=10.0)
+        )
 
         async def _yield_from_response(resp: httpx.Response) -> AsyncIterator[str]:
             await _raise_status_with_body_async(resp)
@@ -360,6 +364,10 @@ class AmigoHttpClient:
         headers = kwargs["headers"]
         headers["Authorization"] = f"Bearer {self._ensure_token()}"
         headers.setdefault("Accept", "application/x-ndjson")
+        # Use a long read timeout for streaming — agent responses can take 60+ seconds
+        kwargs.setdefault(
+            "timeout", httpx.Timeout(connect=10.0, read=300.0, write=10.0, pool=10.0)
+        )
 
         def _yield_from_response(resp: httpx.Response) -> Iterator[str]:
             _raise_status_with_body_sync(resp)
