@@ -127,6 +127,17 @@ class AmigoClient:
         config: AmigoConfig | None = None,
         **httpx_kwargs: Any,
     ):
+        """Initialize the Amigo SDK client.
+
+        Args:
+            api_key: API key for authentication (or set AMIGO_API_KEY env var)
+            api_key_id: API key ID for authentication (or set AMIGO_API_KEY_ID env var)
+            user_id: User ID for API requests (or set AMIGO_USER_ID env var)
+            organization_id: Organization ID for API requests (or set AMIGO_ORGANIZATION_ID env var)
+            base_url: Base URL for the API (or set AMIGO_BASE_URL env var)
+            config: Pre-configured AmigoConfig instance (overrides individual params)
+            **httpx_kwargs: Additional arguments passed to httpx.Client
+        """
         if config:
             self._cfg = config
         else:
@@ -159,25 +170,31 @@ class AmigoClient:
 
     @property
     def config(self) -> AmigoConfig:
+        """Access the configuration object."""
         return self._cfg
 
     @property
     def organization(self) -> OrganizationResource:
+        """Access organization resource."""
         return self._organization
 
     @property
     def service(self) -> ServiceResource:
+        """Access service resource."""
         return self._service
 
     @property
     def conversation(self) -> ConversationResource:
+        """Access conversation resource."""
         return self._conversation
 
     @property
     def users(self) -> UserResource:
+        """Access user resource."""
         return self._users
 
     def aclose(self) -> None:
+        """Close the HTTP client."""
         self._http.aclose()
 
     def __enter__(self):

@@ -74,6 +74,7 @@ class UserResource:
     def get_users(
         self, params: GetUsersParametersQuery | None = None
     ) -> UserGetUsersResponse:
+        """Get a list of users in the organization."""
         response = self._http.request(
             "GET",
             f"/v1/{self._organization_id}/user/",
@@ -86,6 +87,7 @@ class UserResource:
     def create_user(
         self, body: UserCreateInvitedUserRequest
     ) -> UserCreateInvitedUserResponse:
+        """Create (invite) a new user to the organization."""
         response = self._http.request(
             "POST",
             f"/v1/{self._organization_id}/user/",
@@ -94,9 +96,11 @@ class UserResource:
         return UserCreateInvitedUserResponse.model_validate_json(response.text)
 
     def delete_user(self, user_id: str) -> None:
+        """Delete a user by ID."""
         self._http.request("DELETE", f"/v1/{self._organization_id}/user/{user_id}")
 
     def update_user(self, user_id: str, body: UserUpdateUserInfoRequest) -> None:
+        """Update user information."""
         self._http.request(
             "POST",
             f"/v1/{self._organization_id}/user/{user_id}",
@@ -104,6 +108,7 @@ class UserResource:
         )
 
     def get_user_model(self, user_id: str) -> UserGetUserModelResponse:
+        """Get the latest user model for a user."""
         response = self._http.request(
             "GET",
             f"/v1/{self._organization_id}/user/{user_id}/user_model",

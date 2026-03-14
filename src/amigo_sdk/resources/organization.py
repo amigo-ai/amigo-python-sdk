@@ -23,11 +23,14 @@ class AsyncOrganizationResource:
 
 
 class OrganizationResource:
+    """Organization resource for synchronous operations."""
+
     def __init__(self, http_client: AmigoHttpClient, organization_id: str) -> None:
         self._http = http_client
         self._organization_id = organization_id
 
     def get(self) -> OrganizationGetOrganizationResponse:
+        """Get the details of the organization."""
         response = self._http.request(
             "GET", f"/v1/{self._organization_id}/organization/"
         )

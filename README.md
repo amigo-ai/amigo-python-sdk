@@ -8,7 +8,7 @@ The official Python SDK for the Amigo API, providing a simple and intuitive inte
 
 ## Installation
 
-This SDK requires Python 3.13 or newer.
+This SDK requires Python 3.11 or newer.
 
 Install the SDK using pip:
 
@@ -76,6 +76,9 @@ For more SDK usage examples see the [examples overview](examples/README.md). Dir
 
 - **Conversation (sync)**: [examples/conversation/conversation.py](examples/conversation/conversation.py)
 - **Conversation (async)**: [examples/conversation/conversation_async.py](examples/conversation/conversation_async.py)
+- **Streaming events**: [examples/conversation/streaming_events.py](examples/conversation/streaming_events.py)
+- **Async client**: [examples/conversation/async_client.py](examples/conversation/async_client.py)
+- **Error handling**: [examples/error_handling.py](examples/error_handling.py)
 - **User management (sync)**: [examples/user/user-management.py](examples/user/user-management.py)
 
 ## Configuration
@@ -225,6 +228,28 @@ The HTTP client includes sensible, configurable retries:
 ## Development
 
 For detailed development setup, testing, and contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Troubleshooting
+
+### Authentication errors
+
+- **`AuthenticationError: Invalid API key`**: Verify your `api_key` and `api_key_id` are correct and haven't been revoked. Regenerate them from the Amigo dashboard if needed.
+- **`AuthenticationError: Token expired`**: The SDK refreshes tokens automatically. If this persists, check that your system clock is accurate.
+
+### Configuration issues
+
+- **`ValidationError` on client init**: Ensure all required fields (`api_key`, `api_key_id`, `user_id`, `organization_id`) are set either as arguments or environment variables.
+- **Environment variables not loading**: The SDK reads from `AMIGO_API_KEY`, `AMIGO_API_KEY_ID`, `AMIGO_USER_ID`, and `AMIGO_ORGANIZATION_ID`. Check for typos and that your `.env` file is in the working directory.
+
+### Connection issues
+
+- **`ConnectionError` or timeouts**: Check your network connectivity and that `https://api.amigo.ai` is reachable. If you're behind a proxy, configure it via `httpx` proxy settings.
+- **`RateLimitError`**: The SDK retries automatically on 429 responses. If you consistently hit rate limits, reduce request frequency or contact support.
+
+### Import errors
+
+- **`ModuleNotFoundError: No module named 'amigo_sdk'`**: Run `pip install amigo_sdk`. If using a virtual environment, ensure it is activated.
+- **Missing model types**: The SDK auto-generates types from the OpenAPI spec. Update to the latest version: `pip install --upgrade amigo_sdk`.
 
 ## Documentation
 

@@ -346,6 +346,8 @@ def create_services_response_data() -> ServiceGetServicesResponse:
                     {"key": "customer", "value": "external"},
                 ],
                 keyterms=["customer", "support", "refund"],
+                creator=None,
+                updated_by=None,
             ),
             ServiceInstance(
                 id="service-2",
@@ -357,6 +359,8 @@ def create_services_response_data() -> ServiceGetServicesResponse:
                 agent_id="agent-2",
                 tags=[{"key": "sales", "value": "internal"}],
                 keyterms=["sales", "pricing", "quote"],
+                creator=None,
+                updated_by=None,
             ),
         ],
         has_more=False,

@@ -47,7 +47,34 @@ Required environment variables (loaded via `python-dotenv` from `examples/.env`)
 - `AMIGO_SERVICE_ID` (required)
 - `AMIGO_BASE_URL` (optional)
 
-Notes:
+### Streaming Events (`examples/conversation`)
+
+- Stream NDJSON events with typed event dispatch
+- Handle partial text, completion, and other event types
+
+```bash
+python examples/conversation/streaming_events.py
+```
+
+### Async Client (`examples/conversation`)
+
+- Use `AsyncAmigoClient` with `async/await`
+- Concurrent operations with `asyncio.gather`
+
+```bash
+python examples/conversation/async_client.py
+```
+
+### Error Handling (`examples`)
+
+- Catch and inspect typed SDK errors
+- Authentication, not-found, rate-limit patterns
+
+```bash
+python examples/error_handling.py
+```
+
+## Notes
 
 - Errors like conflict/not-found during finish are tolerated due to eventual consistency.
 - Examples prioritize simplicity and clarity for easy replication.
