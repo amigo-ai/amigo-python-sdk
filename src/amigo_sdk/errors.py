@@ -75,7 +75,7 @@ class AuthenticationError(AmigoError):  # 401
     pass
 
 
-class PermissionError(AmigoError):  # 403
+class ForbiddenError(AmigoError):  # 403
     pass
 
 
@@ -118,7 +118,7 @@ def get_error_class_for_status_code(status_code: int) -> type[AmigoError]:
     error_map = {
         400: BadRequestError,
         401: AuthenticationError,
-        403: PermissionError,
+        403: ForbiddenError,
         404: NotFoundError,
         409: ConflictError,
         422: ValidationError,

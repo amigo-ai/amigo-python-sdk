@@ -63,6 +63,32 @@ class AsyncUserResource:
         )
         return UserGetUserModelResponse.model_validate_json(response.text)
 
+    # --- Convenience aliases ---
+
+    async def list(
+        self, params: GetUsersParametersQuery | None = None
+    ) -> UserGetUsersResponse:
+        """Alias for get_users."""
+        return await self.get_users(params)
+
+    async def create(
+        self, body: UserCreateInvitedUserRequest
+    ) -> UserCreateInvitedUserResponse:
+        """Alias for create_user."""
+        return await self.create_user(body)
+
+    async def delete(self, user_id: str) -> None:
+        """Alias for delete_user."""
+        return await self.delete_user(user_id)
+
+    async def update(self, user_id: str, body: UserUpdateUserInfoRequest) -> None:
+        """Alias for update_user."""
+        return await self.update_user(user_id, body)
+
+    async def get_model(self, user_id: str) -> UserGetUserModelResponse:
+        """Alias for get_user_model."""
+        return await self.get_user_model(user_id)
+
 
 class UserResource:
     """User resource (synchronous)."""
@@ -114,3 +140,29 @@ class UserResource:
             f"/v1/{self._organization_id}/user/{user_id}/user_model",
         )
         return UserGetUserModelResponse.model_validate_json(response.text)
+
+    # --- Convenience aliases ---
+
+    def list(
+        self, params: GetUsersParametersQuery | None = None
+    ) -> UserGetUsersResponse:
+        """Alias for get_users."""
+        return self.get_users(params)
+
+    def create(
+        self, body: UserCreateInvitedUserRequest
+    ) -> UserCreateInvitedUserResponse:
+        """Alias for create_user."""
+        return self.create_user(body)
+
+    def delete(self, user_id: str) -> None:
+        """Alias for delete_user."""
+        return self.delete_user(user_id)
+
+    def update(self, user_id: str, body: UserUpdateUserInfoRequest) -> None:
+        """Alias for update_user."""
+        return self.update_user(user_id, body)
+
+    def get_model(self, user_id: str) -> UserGetUserModelResponse:
+        """Alias for get_user_model."""
+        return self.get_user_model(user_id)

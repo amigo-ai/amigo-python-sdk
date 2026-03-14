@@ -65,7 +65,7 @@ class TestOrganizationIntegration:
         # Create client using environment variables
         async with AsyncAmigoClient() as client:
             # Get organization details
-            organization = await client.organization.get()
+            organization = await client.organizations.get()
 
             # Verify we got a valid response
             assert organization is not None
@@ -99,7 +99,7 @@ class TestOrganizationIntegration:
             async with AsyncAmigoClient(
                 api_key="invalid_key",
             ) as client:
-                await client.organization.get()
+                await client.organizations.get()
 
     async def test_client_config_property(self, required_env_vars):
         """Test that the client config property works correctly."""
@@ -139,7 +139,7 @@ class TestOrganizationIntegrationSync:
 
     def test_get_organization(self):
         with AmigoClient() as client:
-            organization = client.organization.get()
+            organization = client.organizations.get()
 
             assert organization is not None
             assert isinstance(organization, OrganizationGetOrganizationResponse)
@@ -156,7 +156,7 @@ class TestOrganizationIntegrationSync:
 
         with pytest.raises(AuthenticationError):
             with AmigoClient(api_key="invalid_key") as client:
-                client.organization.get()
+                client.organizations.get()
 
     def test_client_config_property(self, required_env_vars):
         with AmigoClient() as client:

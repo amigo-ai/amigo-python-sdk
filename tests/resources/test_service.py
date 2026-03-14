@@ -61,6 +61,62 @@ class TestServiceResource:
             with pytest.raises(NotFoundError):
                 await service_resource.get_services()
 
+    @pytest.mark.asyncio
+    async def test_create_service(self, service_resource):
+        from amigo_sdk.generated.model import ServiceCreateServiceRequest
+
+        mock_data = {"id": "svc-async-1"}
+        body = ServiceCreateServiceRequest(
+            name="test-svc",
+            description="desc",
+            keyterms=[],
+            tags={},
+            is_active=False,
+            agent_id="aaaaaaaaaaaaaaaaaaaaaaaa",
+            service_hierarchical_state_machine_id="bbbbbbbbbbbbbbbbbbbbbbbb",
+        )
+        async with mock_http_request(mock_data):
+            result = await service_resource.create_service(body)
+            assert result.id == "svc-async-1"
+
+    @pytest.mark.asyncio
+    async def test_update_service(self, service_resource):
+        from amigo_sdk.generated.model import ServiceUpdateServiceRequest
+
+        body = ServiceUpdateServiceRequest(is_active=True)
+        async with mock_http_request("", status_code=204):
+            await service_resource.update_service("svc-1", body)
+
+    @pytest.mark.asyncio
+    async def test_delete_version_set(self, service_resource):
+        async with mock_http_request("", status_code=204):
+            await service_resource.delete_version_set("svc-1", "staging")
+
+    @pytest.mark.asyncio
+    async def test_list_alias(self, service_resource):
+        mock_data = create_services_response_data()
+        async with mock_http_request(mock_data):
+            result = await service_resource.list()
+            assert isinstance(result, ServiceGetServicesResponse)
+
+    @pytest.mark.asyncio
+    async def test_create_alias(self, service_resource):
+        from amigo_sdk.generated.model import ServiceCreateServiceRequest
+
+        mock_data = {"id": "svc-alias-1"}
+        body = ServiceCreateServiceRequest(
+            name="test-svc",
+            description="desc",
+            keyterms=[],
+            tags={},
+            is_active=False,
+            agent_id="aaaaaaaaaaaaaaaaaaaaaaaa",
+            service_hierarchical_state_machine_id="bbbbbbbbbbbbbbbbbbbbbbbb",
+        )
+        async with mock_http_request(mock_data):
+            result = await service_resource.create(body)
+            assert result.id == "svc-alias-1"
+
 
 @pytest.mark.unit
 class TestServiceResourceSync:
@@ -88,3 +144,41 @@ class TestServiceResourceSync:
         ):
             with pytest.raises(NotFoundError):
                 res.get_services()
+
+    def test_create_service_sync(self, mock_config):
+        from amigo_sdk.generated.model import ServiceCreateServiceRequest
+
+        res = self._resource(mock_config)
+        mock_data = {"id": "svc-123"}
+        body = ServiceCreateServiceRequest(
+            name="test-svc",
+            description="A test service",
+            keyterms=[],
+            tags={},
+            is_active=False,
+            agent_id="aaaaaaaaaaaaaaaaaaaaaaaa",
+            service_hierarchical_state_machine_id="bbbbbbbbbbbbbbbbbbbbbbbb",
+        )
+        with mock_http_request_sync(mock_data):
+            result = res.create_service(body)
+            assert result.id == "svc-123"
+
+    def test_update_service_sync(self, mock_config):
+        from amigo_sdk.generated.model import ServiceUpdateServiceRequest
+
+        res = self._resource(mock_config)
+        body = ServiceUpdateServiceRequest(is_active=True)
+        with mock_http_request_sync("", status_code=204):
+            res.update_service("svc-123", body)
+
+    def test_delete_version_set_sync(self, mock_config):
+        res = self._resource(mock_config)
+        with mock_http_request_sync("", status_code=204):
+            res.delete_version_set("svc-123", "staging")
+
+    def test_list_alias_sync(self, mock_config):
+        res = self._resource(mock_config)
+        mock_data = create_services_response_data()
+        with mock_http_request_sync(mock_data):
+            result = res.list()
+            assert isinstance(result, ServiceGetServicesResponse)
