@@ -108,6 +108,7 @@ class UserResource:
         )
 
     def get_user_model(self, user_id: str) -> UserGetUserModelResponse:
+        """Get the latest user model for a user."""
         response = self._http.request(
             "GET",
             f"/v1/{self._organization_id}/user/{user_id}/user_model",
