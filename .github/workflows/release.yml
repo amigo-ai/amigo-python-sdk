@@ -169,6 +169,24 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Update CHANGELOG.md
+        if: ${{ !inputs.dry_run }}
+        run: |
+          NEW_VERSION="${{ steps.new_version.outputs.version }}"
+          PREV_TAG="v${{ steps.current_version.outputs.version }}"
+          if git rev-parse "$PREV_TAG" >/dev/null 2>&1; then
+            ENTRY=$(python scripts/generate_changelog.py --from-tag "$PREV_TAG" --version "$NEW_VERSION")
+          else
+            ENTRY=$(python scripts/generate_changelog.py --version "$NEW_VERSION")
+          fi
+          if [ -f CHANGELOG.md ]; then
+            { head -1 CHANGELOG.md; echo ""; echo "$ENTRY"; tail -n +2 CHANGELOG.md; } > CHANGELOG.tmp
+            mv CHANGELOG.tmp CHANGELOG.md
+          else
+            { echo "# Changelog"; echo ""; echo "$ENTRY"; } > CHANGELOG.md
+          fi
+          git add CHANGELOG.md
+
       - name: Build package
         run: |
           echo "🔄 Building package..."
