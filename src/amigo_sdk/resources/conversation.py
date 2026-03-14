@@ -10,6 +10,7 @@ from pydantic import AnyUrl, BaseModel
 from amigo_sdk.generated.model import (
     ConversationCreateConversationRequest,
     ConversationCreateConversationResponse,
+    ConversationEvent,
     ConversationGenerateConversationStarterRequest,
     ConversationGenerateConversationStarterResponse,
     ConversationGetConversationMessagesResponse,
@@ -182,10 +183,18 @@ class AsyncConversationResource:
                 f"/v1/{self._organization_id}/conversation/{conversation_id}/interact",
                 **request_kwargs,
             ):
-                # Each line is a JSON object representing a discriminated union event
-                yield ConversationInteractWithConversationResponse.model_validate_json(
-                    line
+                # Each line is a JSON object representing a discriminated union event.
+                # The response wraps events in ConversationEvent RootModel; unwrap
+                # so callers get concrete event types directly.
+                parsed = (
+                    ConversationInteractWithConversationResponse.model_validate_json(
+                        line
+                    )
                 )
+                event = parsed.root
+                if isinstance(event, ConversationEvent):
+                    parsed.root = event.root
+                yield parsed
 
         return _generator()
 
@@ -401,9 +410,15 @@ class ConversationResource:
                 f"/v1/{self._organization_id}/conversation/{conversation_id}/interact",
                 **request_kwargs,
             ):
-                yield ConversationInteractWithConversationResponse.model_validate_json(
-                    line
+                parsed = (
+                    ConversationInteractWithConversationResponse.model_validate_json(
+                        line
+                    )
                 )
+                event = parsed.root
+                if isinstance(event, ConversationEvent):
+                    parsed.root = event.root
+                yield parsed
 
         return _iter()
 
