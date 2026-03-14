@@ -189,7 +189,6 @@ class TestConversationIntegration:
                     latest_interaction_id = e.interaction_id
                     break
 
-            # Stream must yield at least one event and complete
             assert event_count > 0, "interact stream yielded no events"
             assert saw_interaction_complete is True, (
                 f"no InteractionCompleteEvent in {event_count} events"
@@ -458,7 +457,7 @@ class TestConversationIntegrationSync:
 
             assert event_count > 0, "sync interact stream yielded no events"
             assert saw_interaction_complete is True, (
-                f"no InteractionCompleteEvent in {event_count} events"
+                f"no InteractionCompleteEvent in {event_count} events (sync)"
             )
             if latest_interaction_id:
                 type(self).interaction_id = latest_interaction_id
