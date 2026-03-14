@@ -91,4 +91,5 @@ jobs:
           AMIGO_ORGANIZATION_ID: ${{ secrets.AMIGO_ORGANIZATION_ID }}
           AMIGO_USER_ID: ${{ secrets.AMIGO_USER_ID }}
           AMIGO_BASE_URL: ${{ secrets.AMIGO_BASE_URL }}
+          AMIGO_TEST_SERVICE_ID: ${{ secrets.AMIGO_TEST_SERVICE_ID }}
         run: pytest -m integration -v -s

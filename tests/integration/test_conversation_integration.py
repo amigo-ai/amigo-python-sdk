@@ -10,6 +10,7 @@ from amigo_sdk.errors import ConflictError, NotFoundError
 from amigo_sdk.generated.model import (
     ConversationCreateConversationRequest,
     ConversationCreatedEvent,
+    ConversationEvent,
     CreateConversationParametersQuery,
     ErrorEvent,
     GetConversationMessagesParametersQuery,
@@ -22,8 +23,16 @@ from amigo_sdk.generated.model import (
 )
 from amigo_sdk.sdk_client import AmigoClient, AsyncAmigoClient
 
+
+def _unwrap_event(e: object) -> object:
+    """Unwrap nested RootModel events (ConversationEvent wraps InteractionCompleteEvent etc.)."""
+    if isinstance(e, ConversationEvent):
+        return e.root
+    return e
+
+
 # Constants
-SERVICE_ID = os.getenv("AMIGO_TEST_SERVICE_ID", "689b81e7afdaf934f4b48f81")
+SERVICE_ID = os.getenv("AMIGO_TEST_SERVICE_ID", "66e0da39f5a09fb3cf18ea75")
 
 
 def _build_test_wav_bytes() -> bytes:
@@ -180,7 +189,7 @@ class TestConversationIntegration:
             event_count = 0
 
             async for evt in events:
-                e = evt.root
+                e = _unwrap_event(evt.root)
                 event_count += 1
                 if isinstance(e, ErrorEvent):
                     pytest.fail(f"error event: {e.model_dump_json()}")
@@ -230,7 +239,7 @@ class TestConversationIntegration:
             event_count = 0
 
             async for evt in events:
-                e = evt.root
+                e = _unwrap_event(evt.root)
                 event_count += 1
                 if isinstance(e, ErrorEvent):
                     pytest.fail(f"error event: {e.model_dump_json()}")
@@ -271,7 +280,7 @@ class TestConversationIntegration:
             event_count = 0
 
             async for evt in events:
-                e = evt.root
+                e = _unwrap_event(evt.root)
                 event_count += 1
                 if isinstance(e, ErrorEvent):
                     pytest.fail(f"error event: {e.model_dump_json()}")
@@ -446,7 +455,7 @@ class TestConversationIntegrationSync:
             event_count = 0
 
             for evt in events:
-                e = evt.root
+                e = _unwrap_event(evt.root)
                 event_count += 1
                 if isinstance(e, ErrorEvent):
                     pytest.fail(f"error event: {e.model_dump_json()}")
@@ -496,7 +505,7 @@ class TestConversationIntegrationSync:
             event_count = 0
 
             for evt in events:
-                e = evt.root
+                e = _unwrap_event(evt.root)
                 event_count += 1
                 if isinstance(e, ErrorEvent):
                     pytest.fail(f"error event: {e.model_dump_json()}")
@@ -537,7 +546,7 @@ class TestConversationIntegrationSync:
             event_count = 0
 
             for evt in events:
-                e = evt.root
+                e = _unwrap_event(evt.root)
                 event_count += 1
                 if isinstance(e, ErrorEvent):
                     pytest.fail(f"error event: {e.model_dump_json()}")
