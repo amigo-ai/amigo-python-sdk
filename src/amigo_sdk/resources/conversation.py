@@ -26,10 +26,7 @@ from amigo_sdk.http_client import AmigoAsyncHttpClient, AmigoHttpClient
 
 
 class GetMessageSourceResponse(BaseModel):
-    """
-    Response model for the `get_message_source` endpoint.
-    TODO: Remove once the OpenAPI spec contains the correct response model for this endpoint.
-    """
+    """Response model for the get_message_source endpoint."""
 
     url: AnyUrl
     expires_at: datetime
@@ -222,6 +219,8 @@ class ConversationResource:
         params: CreateConversationParametersQuery,
         abort_event: threading.Event | None = None,
     ) -> Iterator[ConversationCreateConversationResponse]:
+        """Create a new conversation and stream NDJSON events."""
+
         def _iter():
             for line in self._http.stream_lines(
                 "POST",
@@ -245,6 +244,8 @@ class ConversationResource:
         audio_bytes: bytes | None = None,
         audio_content_type: Literal["audio/mpeg", "audio/wav"] | None = None,
     ) -> Iterator[ConversationInteractWithConversationResponse]:
+        """Interact with a conversation and stream NDJSON events."""
+
         def _iter():
             request_kwargs: dict[str, Any] = {
                 "params": params.model_dump(mode="json", exclude_none=True),
@@ -288,6 +289,7 @@ class ConversationResource:
         return _iter()
 
     def finish_conversation(self, conversation_id: str) -> None:
+        """Finish a conversation."""
         self._http.request(
             "POST",
             f"/v1/{self._organization_id}/conversation/{conversation_id}/finish/",
@@ -296,6 +298,7 @@ class ConversationResource:
     def get_conversations(
         self, params: GetConversationsParametersQuery
     ) -> ConversationGetConversationsResponse:
+        """Get a list of conversations matching the query parameters."""
         response = self._http.request(
             "GET",
             f"/v1/{self._organization_id}/conversation/",
@@ -306,6 +309,7 @@ class ConversationResource:
     def get_conversation_messages(
         self, conversation_id: str, params: GetConversationMessagesParametersQuery
     ) -> ConversationGetConversationMessagesResponse:
+        """Get messages for a conversation."""
         response = self._http.request(
             "GET",
             f"/v1/{self._organization_id}/conversation/{conversation_id}/messages/",
@@ -320,6 +324,7 @@ class ConversationResource:
     def recommend_responses_for_interaction(
         self, conversation_id: str, interaction_id: str
     ) -> ConversationRecommendResponsesForInteractionResponse:
+        """Get recommended responses for an interaction."""
         response = self._http.request(
             "GET",
             f"/v1/{self._organization_id}/conversation/{conversation_id}/interaction/{interaction_id}/recommend_responses",
@@ -331,6 +336,7 @@ class ConversationResource:
     def get_interaction_insights(
         self, conversation_id: str, interaction_id: str
     ) -> ConversationGetInteractionInsightsResponse:
+        """Get insights for an interaction."""
         response = self._http.request(
             "GET",
             f"/v1/{self._organization_id}/conversation/{conversation_id}/interaction/{interaction_id}/insights",
@@ -342,6 +348,7 @@ class ConversationResource:
     def get_message_source(
         self, conversation_id: str, message_id: str
     ) -> GetMessageSourceResponse:
+        """Get the audio/media source URL for a message."""
         response = self._http.request(
             "GET",
             f"/v1/{self._organization_id}/conversation/{conversation_id}/messages/{message_id}/source",
@@ -351,6 +358,7 @@ class ConversationResource:
     def generate_conversation_starters(
         self, body: ConversationGenerateConversationStarterRequest
     ) -> ConversationGenerateConversationStarterResponse:
+        """Generate conversation starter suggestions."""
         response = self._http.request(
             "POST",
             f"/v1/{self._organization_id}/conversation/conversation_starter",

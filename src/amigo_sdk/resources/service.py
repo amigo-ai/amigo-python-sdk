@@ -27,6 +27,8 @@ class AsyncServiceResource:
 
 
 class ServiceResource:
+    """Service resource for synchronous operations."""
+
     def __init__(self, http_client: AmigoHttpClient, organization_id: str) -> None:
         self._http = http_client
         self._organization_id = organization_id
@@ -34,6 +36,7 @@ class ServiceResource:
     def get_services(
         self, params: GetServicesParametersQuery | None = None
     ) -> ServiceGetServicesResponse:
+        """Get all services for the organization."""
         response = self._http.request(
             "GET",
             f"/v1/{self._organization_id}/service/",

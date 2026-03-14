@@ -121,6 +121,8 @@ def _raise_status_with_body_sync(resp: httpx.Response) -> None:
 
 
 class AmigoAsyncHttpClient:
+    """Async HTTP client with automatic auth, retries, and NDJSON streaming."""
+
     def __init__(
         self,
         cfg: AmigoConfig,
@@ -160,6 +162,7 @@ class AmigoAsyncHttpClient:
         return self._token.id_token
 
     async def request(self, method: str, path: str, **kwargs) -> httpx.Response:
+        """Send an HTTP request with automatic auth and retry handling."""
         kwargs.setdefault("headers", {})
         attempt = 1
 
@@ -251,6 +254,7 @@ class AmigoAsyncHttpClient:
                 yield ln
 
     async def aclose(self) -> None:
+        """Close the underlying httpx client."""
         await self._client.aclose()
 
     # async-context-manager sugar
@@ -262,6 +266,8 @@ class AmigoAsyncHttpClient:
 
 
 class AmigoHttpClient:
+    """Synchronous HTTP client with automatic auth, retries, and NDJSON streaming."""
+
     def __init__(
         self,
         cfg: AmigoConfig,
@@ -294,6 +300,7 @@ class AmigoHttpClient:
         return self._token.id_token
 
     def request(self, method: str, path: str, **kwargs) -> httpx.Response:
+        """Send an HTTP request with automatic auth and retry handling."""
         kwargs.setdefault("headers", {})
         attempt = 1
 
@@ -337,6 +344,7 @@ class AmigoHttpClient:
         abort_event: threading.Event | None = None,
         **kwargs,
     ) -> Iterator[str]:
+        """Stream response lines with automatic auth and abort support."""
         kwargs.setdefault("headers", {})
         headers = kwargs["headers"]
         headers["Authorization"] = f"Bearer {self._ensure_token()}"
@@ -371,6 +379,7 @@ class AmigoHttpClient:
                 yield ln
 
     def aclose(self) -> None:
+        """Close the underlying httpx client."""
         self._client.close()
 
     def __enter__(self):
