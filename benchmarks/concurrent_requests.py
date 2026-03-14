@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Benchmark concurrent request handling."""
+
 import asyncio
 import os
 import time
@@ -37,7 +38,9 @@ async def bench_concurrent(n: int, token: str):
         ok = sum(1 for r in results if not isinstance(r, Exception))
         failed = n - ok
         rps = n / (elapsed / 1000)
-        print(f"  {n} parallel: {elapsed:.0f}ms ({ok} ok, {failed} failed, {rps:.1f} req/s)")
+        print(
+            f"  {n} parallel: {elapsed:.0f}ms ({ok} ok, {failed} failed, {rps:.1f} req/s)"
+        )
 
 
 async def main():

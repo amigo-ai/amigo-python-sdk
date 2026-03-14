@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Benchmark token refresh latency."""
+
 import os
 import time
 
