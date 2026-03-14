@@ -25,6 +25,8 @@ src/amigo_sdk/
   errors.py            # Error hierarchy: AmigoError -> BadRequestError, AuthenticationError, etc.
   _retry_utils.py      # Retry-After parsing, jitter, backoff helpers
   models.py            # Shared/manual Pydantic models
+  webhooks.py          # Typed webhook events, parse_webhook_event(), HMAC-SHA256 verification
+  rate_limits.py       # RateLimitInfo dataclass, parse_rate_limit_headers()
   generated/
     model.py           # Auto-generated Pydantic models from OpenAPI spec (DO NOT EDIT)
   resources/
@@ -37,6 +39,12 @@ scripts/
   gen_models.py        # Fetches OpenAPI spec and generates src/amigo_sdk/generated/model.py
   check.py             # Pre-release checks
   aliases.json         # Schema name aliases for code generation
+  generate_changelog.py # Generates categorized changelog from conventional commits
+
+benchmarks/
+  token_refresh.py         # Token refresh latency benchmark
+  concurrent_requests.py   # Concurrent request handling benchmark
+  run.sh                   # Runner script (requires AMIGO_* env vars)
 
 tests/
   conftest.py          # Shared pytest fixtures
