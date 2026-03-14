@@ -136,6 +136,7 @@ class AmigoAsyncHttpClient:
     ) -> None:
         self._cfg = cfg
         self._token: UserSignInWithApiKeyResponse | None = None
+        self._token_lock = asyncio.Lock()
         self._client = httpx.AsyncClient(
             base_url=cfg.base_url,
             **httpx_kwargs,
@@ -150,14 +151,18 @@ class AmigoAsyncHttpClient:
         )
 
     async def _ensure_token(self) -> str:
-        """Fetch or refresh bearer token ~5 min before expiry."""
-        if _should_refresh_token(self._token):
-            try:
-                self._token = await sign_in_with_api_key_async(self._cfg)
-            except Exception as e:
-                raise AuthenticationError(
-                    "API-key exchange failed",
-                ) from e
+        """Fetch or refresh bearer token ~5 min before expiry.
+
+        Uses asyncio.Lock to prevent concurrent token refresh requests.
+        """
+        async with self._token_lock:
+            if _should_refresh_token(self._token):
+                try:
+                    self._token = await sign_in_with_api_key_async(self._cfg)
+                except Exception as e:
+                    raise AuthenticationError(
+                        "API-key exchange failed",
+                    ) from e
 
         return self._token.id_token
 
@@ -281,6 +286,7 @@ class AmigoHttpClient:
     ) -> None:
         self._cfg = cfg
         self._token: UserSignInWithApiKeyResponse | None = None
+        self._token_lock = threading.Lock()
         self._client = httpx.Client(base_url=cfg.base_url, **httpx_kwargs)
         # Retry configuration
         self._retry_cfg = _RetryConfig(
@@ -292,11 +298,16 @@ class AmigoHttpClient:
         )
 
     def _ensure_token(self) -> str:
-        if _should_refresh_token(self._token):
-            try:
-                self._token = sign_in_with_api_key(self._cfg)
-            except Exception as e:
-                raise AuthenticationError("API-key exchange failed") from e
+        """Fetch or refresh bearer token ~5 min before expiry.
+
+        Uses threading.Lock to prevent concurrent token refresh requests.
+        """
+        with self._token_lock:
+            if _should_refresh_token(self._token):
+                try:
+                    self._token = sign_in_with_api_key(self._cfg)
+                except Exception as e:
+                    raise AuthenticationError("API-key exchange failed") from e
         return self._token.id_token
 
     def request(self, method: str, path: str, **kwargs) -> httpx.Response:
