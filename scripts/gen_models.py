@@ -112,7 +112,7 @@ def main() -> None:
         use_operation_id_as_name=True,
         reuse_model=True,
         aliases=aliases,
-        collapse_root_models=True,
+        collapse_root_models=False,
     )
 
     print(f"✅ Models regenerated → {output_file}")
