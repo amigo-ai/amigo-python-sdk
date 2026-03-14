@@ -57,11 +57,13 @@ jobs:
 
   integration-test:
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    # Skip for PRs from forks (they don't have access to secrets)
-    # This runs on: pushes to main, PRs from same repo
+    # Integration tests are informational — failures don't block PRs or releases.
+    # Skip for PRs from forks (they don't have access to secrets) and workflow_call (release).
+    continue-on-error: true
     if: >
-      github.event_name == 'push' || 
-      github.event.pull_request.head.repo.full_name == github.repository
+      github.event_name != 'workflow_call' &&
+      (github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository)
 
     steps:
       - name: Checkout code
