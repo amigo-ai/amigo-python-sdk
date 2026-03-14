@@ -54,7 +54,7 @@ class TestOrganizationIntegration:
     async def test_get_services(self):
         """Test getting services."""
         async with AsyncAmigoClient() as client:
-            services = await client.service.get_services()
+            services = await client.services.get_services()
 
             assert services is not None
             assert isinstance(services, ServiceGetServicesResponse)
@@ -132,7 +132,7 @@ class TestOrganizationIntegration:
 class TestOrganizationIntegrationSync:
     def test_get_services(self):
         with AmigoClient() as client:
-            services = client.service.get_services()
+            services = client.services.get_services()
 
             assert services is not None
             assert isinstance(services, ServiceGetServicesResponse)
