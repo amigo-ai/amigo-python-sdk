@@ -30,6 +30,7 @@ def _unwrap_event(e: object) -> object:
         return e.root
     return e
 
+
 # Constants
 SERVICE_ID = os.getenv("AMIGO_TEST_SERVICE_ID", "66e0da39f5a09fb3cf18ea75")
 
