@@ -2,6 +2,11 @@ from typing import Any
 
 from amigo_sdk.config import AmigoConfig
 from amigo_sdk.http_client import AmigoAsyncHttpClient, AmigoHttpClient
+from amigo_sdk.resources.agent import AgentResource, AsyncAgentResource
+from amigo_sdk.resources.context_graph import (
+    AsyncContextGraphResource,
+    ContextGraphResource,
+)
 from amigo_sdk.resources.conversation import (
     AsyncConversationResource,
     ConversationResource,
@@ -75,6 +80,10 @@ class AsyncAmigoClient:
             self._http, self._cfg.organization_id
         )
         self._users = AsyncUserResource(self._http, self._cfg.organization_id)
+        self._agents = AsyncAgentResource(self._http, self._cfg.organization_id)
+        self._context_graphs = AsyncContextGraphResource(
+            self._http, self._cfg.organization_id
+        )
 
     @property
     def config(self) -> AmigoConfig:
@@ -85,6 +94,16 @@ class AsyncAmigoClient:
     def organizations(self) -> AsyncOrganizationResource:
         """Access organization resource."""
         return self._organizations
+
+    @property
+    def agents(self) -> AsyncAgentResource:
+        """Access agent resource."""
+        return self._agents
+
+    @property
+    def context_graphs(self) -> AsyncContextGraphResource:
+        """Access context graph (HSM) resource."""
+        return self._context_graphs
 
     @property
     def services(self) -> AsyncServiceResource:
@@ -171,6 +190,10 @@ class AmigoClient:
             self._http, self._cfg.organization_id
         )
         self._users = UserResource(self._http, self._cfg.organization_id)
+        self._agents = AgentResource(self._http, self._cfg.organization_id)
+        self._context_graphs = ContextGraphResource(
+            self._http, self._cfg.organization_id
+        )
 
     @property
     def config(self) -> AmigoConfig:
@@ -181,6 +204,16 @@ class AmigoClient:
     def organizations(self) -> OrganizationResource:
         """Access organization resource."""
         return self._organizations
+
+    @property
+    def agents(self) -> AgentResource:
+        """Access agent resource."""
+        return self._agents
+
+    @property
+    def context_graphs(self) -> ContextGraphResource:
+        """Access context graph (HSM) resource."""
+        return self._context_graphs
 
     @property
     def services(self) -> ServiceResource:
