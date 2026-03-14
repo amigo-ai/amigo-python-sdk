@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Callable, Mapping
+from datetime import UTC, datetime
 
 
 @dataclass(frozen=True)
@@ -46,7 +46,7 @@ def parse_rate_limit_headers(
     return RateLimitInfo(
         limit=limit_int,
         remaining=remaining_int,
-        reset=datetime.fromtimestamp(reset_epoch, tz=timezone.utc),
+        reset=datetime.fromtimestamp(reset_epoch, tz=UTC),
     )
 
 

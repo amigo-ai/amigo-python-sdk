@@ -7,8 +7,7 @@ import hmac
 import json
 import time
 from dataclasses import dataclass
-from typing import Literal, Union
-
+from typing import Literal
 
 # -- Event types ---------------------------------------------------------------
 
@@ -30,7 +29,7 @@ class ConversationPostProcessingCompleteEvent:
     org_id: str
 
 
-WebhookEvent = Union[ConversationPostProcessingCompleteEvent]
+WebhookEvent = ConversationPostProcessingCompleteEvent
 """Discriminated union of all webhook event types."""
 
 WebhookEventType = Literal["conversation-post-processing-complete"]
