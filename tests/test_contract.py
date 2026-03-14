@@ -3,10 +3,11 @@ Contract tests that verify SDK resource methods match the live OpenAPI spec.
 Run with: RUN_CONTRACT=true pytest tests/test_contract.py -v
 """
 
-import os
 import json
-import pytest
+import os
 import urllib.request
+
+import pytest
 
 OPENAPI_URL = "https://api.amigo.ai/v1/openapi.json"
 

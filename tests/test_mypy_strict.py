@@ -7,6 +7,7 @@ This test requires mypy to be installed: pip install mypy
 
 import subprocess
 import sys
+
 import pytest
 
 
