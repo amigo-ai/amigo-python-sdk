@@ -201,31 +201,46 @@ jobs:
           git tag -a "v${{ steps.new_version.outputs.version }}" -m "Release v${{ steps.new_version.outputs.version }}"
           git push origin "v${{ steps.new_version.outputs.version }}"
 
+      - name: Build release notes
+        if: ${{ !inputs.dry_run }}
+        env:
+          REPO: ${{ github.repository }}
+          NEW_VERSION: ${{ steps.new_version.outputs.version }}
+          PREV_VERSION: ${{ steps.current_version.outputs.version }}
+        run: |
+          PREV_TAG="v${PREV_VERSION}"
+          NEW_TAG="v${NEW_VERSION}"
+
+          if ! git rev-parse "$PREV_TAG" >/dev/null 2>&1; then
+            PREV_TAG=$(git rev-list --max-parents=0 HEAD)
+          fi
+
+          {
+            echo "## What's Changed in ${NEW_TAG}"
+            echo ""
+            echo "${{ steps.release_commits.outputs.markdown }}"
+            echo ""
+            echo "---"
+            echo ""
+            echo "**Full Changelog**: https://github.com/${REPO}/compare/${PREV_TAG}...${NEW_TAG}"
+            echo ""
+            echo "### Installation"
+            echo "\`\`\`bash"
+            echo "pip install amigo_sdk==${NEW_VERSION}"
+            echo "\`\`\`"
+          } > release-notes.md
+
+          echo "Generated release notes:"
+          cat release-notes.md
+
       - name: Create GitHub Release
         if: ${{ !inputs.dry_run }}
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        uses: softprops/action-gh-release@v2
         with:
+          token: ${{ steps.app-token.outputs.token }}
           tag_name: "v${{ steps.new_version.outputs.version }}"
-          release_name: "Release v${{ steps.new_version.outputs.version }}"
-          body: |
-            ## Changes in v${{ steps.new_version.outputs.version }}
-
-            This release was automatically created by the GitHub Actions release workflow.
-
-            ### Package Information
-            - **Version**: ${{ steps.new_version.outputs.version }}
-            - **Target**: PyPI
-            - **Type**: ${{ inputs.version_type }} release
-
-            ### Links
-            ${{ format('- [View on PyPI](https://pypi.org/project/amigo_sdk/{0}/)', steps.new_version.outputs.version) }}
-
-            ### Installation
-            ```bash
-            pip install amigo_sdk
-            ```
+          name: "Release v${{ steps.new_version.outputs.version }}"
+          body_path: release-notes.md
           draft: false
 
       - name: Upload build artifacts
