@@ -11,7 +11,7 @@ Amigo AI Python SDK (`amigo_sdk`) -- a Python client library for the Amigo AI AP
 - **Format:** `ruff format src/ tests/` (check only: `ruff format --check src/ tests/`)
 - **Generate models from OpenAPI:** `python scripts/gen_models.py`
 - **Build:** `hatch build` (outputs sdist and wheel to `dist/`)
-- **Type check:** not configured (no mypy/pyright in project)
+- **Type check:** `mypy src/amigo_sdk/` (mypy in dev deps, CI step runs with continue-on-error)
 
 ## Architecture
 
@@ -22,7 +22,7 @@ src/amigo_sdk/
   http_client.py       # AmigoAsyncHttpClient / AmigoHttpClient -- httpx wrappers with auth, retry, streaming
   auth.py              # API key sign-in, token refresh (async and sync)
   config.py            # AmigoConfig (pydantic-settings, env var support)
-  errors.py            # Error hierarchy: AmigoError -> BadRequestError, AuthenticationError, etc.
+  errors.py            # Error hierarchy: AmigoError -> BadRequestError, AuthenticationError, ForbiddenError, etc.
   _retry_utils.py      # Retry-After parsing, jitter, backoff helpers
   models.py            # Shared/manual Pydantic models
   webhooks.py          # Typed webhook events, parse_webhook_event(), HMAC-SHA256 verification
@@ -30,9 +30,11 @@ src/amigo_sdk/
   generated/
     model.py           # Auto-generated Pydantic models from OpenAPI spec (DO NOT EDIT)
   resources/
+    agent.py           # AsyncAgentResource / AgentResource (create/list/delete agents, create/get versions)
+    context_graph.py   # AsyncContextGraphResource / ContextGraphResource (create/list/delete graphs, create/get versions)
     conversation.py    # AsyncConversationResource / ConversationResource
     organization.py    # AsyncOrganizationResource / OrganizationResource
-    service.py         # AsyncServiceResource / ServiceResource
+    service.py         # AsyncServiceResource / ServiceResource (get/create/update services, upsert/delete version sets)
     user.py            # AsyncUserResource / UserResource
 
 scripts/
@@ -88,5 +90,6 @@ Tests for resources use shared helpers in `tests/resources/helpers.py`:
 GitHub Actions workflow (`.github/workflows/test.yml`) runs on Python 3.11, 3.12, 3.13:
 1. `ruff check .`
 2. `ruff format --check .`
-3. `pytest --cov=src`
-4. Integration tests run separately (non-blocking, require secrets)
+3. `mypy src/amigo_sdk/` (continue-on-error)
+4. `pytest --cov=src`
+5. Integration tests run separately (non-blocking, require secrets)

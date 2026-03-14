@@ -6,7 +6,7 @@
 
 ::: amigo_sdk.errors.AuthenticationError
 
-::: amigo_sdk.errors.PermissionError
+::: amigo_sdk.errors.ForbiddenError
 
 ::: amigo_sdk.errors.NotFoundError
 
