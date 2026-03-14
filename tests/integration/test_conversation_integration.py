@@ -1,6 +1,8 @@
 import asyncio
 import os
 from collections.abc import AsyncGenerator
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import pytest
 
@@ -15,11 +17,49 @@ from amigo_sdk.generated.model import (
     InteractionCompleteEvent,
     InteractWithConversationParametersQuery,
     NewMessageEvent,
+    PCMUserMessageAudioConfig,
+    SampleWidth,
 )
 from amigo_sdk.sdk_client import AmigoClient, AsyncAmigoClient
 
 # Constants
 SERVICE_ID = os.getenv("AMIGO_TEST_SERVICE_ID", "689b81e7afdaf934f4b48f81")
+
+
+def _build_test_wav_bytes() -> bytes:
+    """Load a short spoken WAV fixture for voice-request integration tests."""
+    fixture_path = Path(__file__).with_name("fixtures") / "hello.wav"
+    return fixture_path.read_bytes()
+
+
+async def _latest_conversation_message_time_async(
+    client: AsyncAmigoClient, conversation_id: str
+) -> datetime:
+    page = await client.conversation.get_conversation_messages(
+        conversation_id,
+        GetConversationMessagesParametersQuery(limit=1, sort_by=["-created_at"]),
+    )
+    if not page.messages:
+        return datetime.now(UTC)
+    latest = page.messages[0]
+    return getattr(latest, "timestamp", None) or getattr(
+        latest, "created_at", datetime.now(UTC)
+    )
+
+
+def _latest_conversation_message_time_sync(
+    client: AmigoClient, conversation_id: str
+) -> datetime:
+    page = client.conversation.get_conversation_messages(
+        conversation_id,
+        GetConversationMessagesParametersQuery(limit=1, sort_by=["-created_at"]),
+    )
+    if not page.messages:
+        return datetime.now(UTC)
+    latest = page.messages[0]
+    return getattr(latest, "timestamp", None) or getattr(
+        latest, "created_at", datetime.now(UTC)
+    )
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -155,6 +195,87 @@ class TestConversationIntegration:
             if latest_interaction_id:
                 type(self).interaction_id = latest_interaction_id
 
+    async def test_interact_with_conversation_external_event_streams(self):
+        assert type(self).conversation_id is not None
+
+        async with AsyncAmigoClient() as client:
+            latest_message_time = await _latest_conversation_message_time_async(
+                client, type(self).conversation_id
+            )
+            external_event_message_content = [
+                "External event integration prelude #1.",
+                "External event integration prelude #2.",
+            ]
+            external_event_message_timestamp = [
+                latest_message_time + timedelta(seconds=1),
+                latest_message_time + timedelta(seconds=2),
+            ]
+            assert len(external_event_message_timestamp) == len(
+                external_event_message_content
+            )
+            events = await client.conversation.interact_with_conversation(
+                type(self).conversation_id,
+                params=InteractWithConversationParametersQuery(
+                    request_format="text", response_format="text"
+                ),
+                initial_message_type="external-event",
+                text_message="External event integration test message.",
+                external_event_message_content=external_event_message_content,
+                external_event_message_timestamp=external_event_message_timestamp,
+            )
+
+            saw_interaction_complete = False
+            latest_interaction_id: str | None = None
+
+            async for evt in events:
+                e = evt.root
+                if isinstance(e, ErrorEvent):
+                    pytest.fail(f"error event: {e.model_dump_json()}")
+                if isinstance(e, InteractionCompleteEvent):
+                    saw_interaction_complete = True
+                    latest_interaction_id = e.interaction_id
+                    break
+
+            assert saw_interaction_complete is True
+            if latest_interaction_id:
+                type(self).interaction_id = latest_interaction_id
+
+    async def test_interact_with_conversation_voice_streams(self):
+        assert type(self).conversation_id is not None
+
+        async with AsyncAmigoClient() as client:
+            events = await client.conversation.interact_with_conversation(
+                type(self).conversation_id,
+                params=InteractWithConversationParametersQuery(
+                    request_format="voice",
+                    response_format="text",
+                    request_audio_config=PCMUserMessageAudioConfig(
+                        type="pcm",
+                        frame_rate=16000,
+                        n_channels=1,
+                        sample_width=SampleWidth.integer_2,
+                    ),
+                ),
+                audio_bytes=_build_test_wav_bytes(),
+                audio_content_type="audio/wav",
+            )
+
+            saw_interaction_complete = False
+            latest_interaction_id: str | None = None
+
+            async for evt in events:
+                e = evt.root
+                if isinstance(e, ErrorEvent):
+                    pytest.fail(f"error event: {e.model_dump_json()}")
+                if isinstance(e, InteractionCompleteEvent):
+                    saw_interaction_complete = True
+                    latest_interaction_id = e.interaction_id
+                    break
+
+            assert saw_interaction_complete is True
+            if latest_interaction_id:
+                type(self).interaction_id = latest_interaction_id
+
     async def test_get_conversation_messages_pagination(self):
         assert type(self).conversation_id is not None
 
@@ -276,6 +397,7 @@ class TestConversationIntegrationSync:
                 params=InteractWithConversationParametersQuery(
                     request_format="text", response_format="text"
                 ),
+                initial_message_type="user-message",
                 text_message="Hello, I'm sending a text message from the Python SDK synchronously!",
             )
 
@@ -295,6 +417,87 @@ class TestConversationIntegrationSync:
                     break
 
             assert saw_new_message is True
+            assert saw_interaction_complete is True
+            if latest_interaction_id:
+                type(self).interaction_id = latest_interaction_id
+
+    def test_interact_with_conversation_external_event_streams(self):
+        assert type(self).conversation_id is not None
+
+        with AmigoClient() as client:
+            latest_message_time = _latest_conversation_message_time_sync(
+                client, type(self).conversation_id
+            )
+            external_event_message_content = [
+                "External event integration prelude #1.",
+                "External event integration prelude #2.",
+            ]
+            external_event_message_timestamp = [
+                latest_message_time + timedelta(seconds=1),
+                latest_message_time + timedelta(seconds=2),
+            ]
+            assert len(external_event_message_timestamp) == len(
+                external_event_message_content
+            )
+            events = client.conversation.interact_with_conversation(
+                type(self).conversation_id,
+                params=InteractWithConversationParametersQuery(
+                    request_format="text", response_format="text"
+                ),
+                initial_message_type="external-event",
+                text_message="External event integration test message.",
+                external_event_message_content=external_event_message_content,
+                external_event_message_timestamp=external_event_message_timestamp,
+            )
+
+            saw_interaction_complete = False
+            latest_interaction_id: str | None = None
+
+            for evt in events:
+                e = evt.root
+                if isinstance(e, ErrorEvent):
+                    pytest.fail(f"error event: {e.model_dump_json()}")
+                if isinstance(e, InteractionCompleteEvent):
+                    saw_interaction_complete = True
+                    latest_interaction_id = e.interaction_id
+                    break
+
+            assert saw_interaction_complete is True
+            if latest_interaction_id:
+                type(self).interaction_id = latest_interaction_id
+
+    def test_interact_with_conversation_voice_streams(self):
+        assert type(self).conversation_id is not None
+
+        with AmigoClient() as client:
+            events = client.conversation.interact_with_conversation(
+                type(self).conversation_id,
+                params=InteractWithConversationParametersQuery(
+                    request_format="voice",
+                    response_format="text",
+                    request_audio_config=PCMUserMessageAudioConfig(
+                        type="pcm",
+                        frame_rate=16000,
+                        n_channels=1,
+                        sample_width=SampleWidth.integer_2,
+                    ),
+                ),
+                audio_bytes=_build_test_wav_bytes(),
+                audio_content_type="audio/wav",
+            )
+
+            saw_interaction_complete = False
+            latest_interaction_id: str | None = None
+
+            for evt in events:
+                e = evt.root
+                if isinstance(e, ErrorEvent):
+                    pytest.fail(f"error event: {e.model_dump_json()}")
+                if isinstance(e, InteractionCompleteEvent):
+                    saw_interaction_complete = True
+                    latest_interaction_id = e.interaction_id
+                    break
+
             assert saw_interaction_complete is True
             if latest_interaction_id:
                 type(self).interaction_id = latest_interaction_id

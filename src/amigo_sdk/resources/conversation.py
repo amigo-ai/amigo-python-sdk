@@ -1,4 +1,5 @@
 import asyncio
+import json
 import threading
 from collections.abc import AsyncGenerator, Iterator
 from datetime import datetime
@@ -31,6 +32,23 @@ class GetMessageSourceResponse(BaseModel):
     url: AnyUrl
     expires_at: datetime
     content_type: Literal["audio/mpeg", "audio/wav"]
+
+
+def _build_interact_form_data(
+    *,
+    initial_message_type: Literal["user-message", "external-event"],
+    external_event_message_content: list[str] | None,
+    external_event_message_timestamp: list[datetime] | None,
+) -> list[tuple[str, tuple[None, str]]]:
+    """Build multipart form-data fields for the interact endpoint."""
+    data: list[tuple[str, tuple[None, str]]] = [
+        ("initial_message_type", (None, initial_message_type))
+    ]
+    for content in external_event_message_content or []:
+        data.append(("external_event_message_content", (None, content)))
+    for timestamp in external_event_message_timestamp or []:
+        data.append(("external_event_message_timestamp", (None, timestamp.isoformat())))
+    return data
 
 
 class AsyncConversationResource:
@@ -71,9 +89,14 @@ class AsyncConversationResource:
         params: InteractWithConversationParametersQuery,
         abort_event: asyncio.Event | None = None,
         *,
+        initial_message_type: Literal[
+            "user-message", "external-event"
+        ] = "user-message",
         text_message: str | None = None,
         audio_bytes: bytes | None = None,
         audio_content_type: Literal["audio/mpeg", "audio/wav"] | None = None,
+        external_event_message_content: list[str] | None = None,
+        external_event_message_timestamp: list[datetime] | None = None,
     ) -> "AsyncGenerator[ConversationInteractWithConversationResponse]":
         """Interact with a conversation and stream NDJSON events.
 
@@ -81,35 +104,56 @@ class AsyncConversationResource:
         """
 
         async def _generator():
+            params_data = params.model_dump(mode="json", exclude_none=True)
+            if "request_audio_config" in params_data:
+                params_data["request_audio_config"] = json.dumps(
+                    params_data["request_audio_config"]
+                )
             request_kwargs: dict[str, Any] = {
-                "params": params.model_dump(mode="json", exclude_none=True),
+                "params": params_data,
                 "abort_event": abort_event,
                 "headers": {"Accept": "application/x-ndjson"},
             }
-            # Route based on requested format
-            req_format = getattr(params, "request_format", None)
-            if req_format == Format.text:
+
+            if initial_message_type not in {"user-message", "external-event"}:
+                raise ValueError(
+                    "initial_message_type must be 'user-message' or 'external-event'"
+                )
+
+            if params.request_format == Format.text:
                 if text_message is None:
                     raise ValueError(
                         "text_message is required when request_format is 'text'"
                     )
                 text_bytes = text_message.encode("utf-8")
-                request_kwargs["files"] = {
-                    "recorded_message": (
-                        "message.txt",
-                        text_bytes,
-                        "text/plain; charset=utf-8",
+                form_fields = _build_interact_form_data(
+                    initial_message_type=initial_message_type,
+                    external_event_message_content=external_event_message_content,
+                    external_event_message_timestamp=external_event_message_timestamp,
+                )
+                request_kwargs["files"] = form_fields + [
+                    (
+                        "recorded_message",
+                        ("message.txt", text_bytes, "text/plain; charset=utf-8"),
                     )
-                }
-            elif req_format == Format.voice:
+                ]
+            elif params.request_format == Format.voice:
                 if audio_bytes is None or audio_content_type is None:
                     raise ValueError(
                         "audio_bytes and audio_content_type are required when request_format is 'voice'"
                     )
-                # Send raw bytes with appropriate content type
-                request_kwargs["content"] = audio_bytes
-                request_kwargs.setdefault("headers", {})
-                request_kwargs["headers"]["Content-Type"] = audio_content_type
+                ext = "mp3" if audio_content_type == "audio/mpeg" else "wav"
+                form_fields = _build_interact_form_data(
+                    initial_message_type=initial_message_type,
+                    external_event_message_content=external_event_message_content,
+                    external_event_message_timestamp=external_event_message_timestamp,
+                )
+                request_kwargs["files"] = form_fields + [
+                    (
+                        "recorded_message",
+                        (f"audio.{ext}", audio_bytes, audio_content_type),
+                    )
+                ]
             else:
                 raise ValueError("Unsupported or missing request_format in params")
 
@@ -163,7 +207,7 @@ class AsyncConversationResource:
     ) -> ConversationRecommendResponsesForInteractionResponse:
         """Recommend responses for an interaction."""
         response = await self._http.request(
-            "GET",
+            "POST",
             f"/v1/{self._organization_id}/conversation/{conversation_id}/interaction/{interaction_id}/recommend_responses",
         )
         return ConversationRecommendResponsesForInteractionResponse.model_validate_json(
@@ -240,18 +284,34 @@ class ConversationResource:
         params: InteractWithConversationParametersQuery,
         abort_event: threading.Event | None = None,
         *,
+        initial_message_type: Literal[
+            "user-message", "external-event"
+        ] = "user-message",
         text_message: str | None = None,
         audio_bytes: bytes | None = None,
         audio_content_type: Literal["audio/mpeg", "audio/wav"] | None = None,
+        external_event_message_content: list[str] | None = None,
+        external_event_message_timestamp: list[datetime] | None = None,
     ) -> Iterator[ConversationInteractWithConversationResponse]:
         """Interact with a conversation and stream NDJSON events."""
 
         def _iter():
+            params_data = params.model_dump(mode="json", exclude_none=True)
+            if "request_audio_config" in params_data:
+                params_data["request_audio_config"] = json.dumps(
+                    params_data["request_audio_config"]
+                )
             request_kwargs: dict[str, Any] = {
-                "params": params.model_dump(mode="json", exclude_none=True),
+                "params": params_data,
                 "headers": {"Accept": "application/x-ndjson"},
                 "abort_event": abort_event,
             }
+
+            if initial_message_type not in {"user-message", "external-event"}:
+                raise ValueError(
+                    "initial_message_type must be 'user-message' or 'external-event'"
+                )
+
             req_format = getattr(params, "request_format", None)
             if req_format == Format.text:
                 if text_message is None:
@@ -259,21 +319,34 @@ class ConversationResource:
                         "text_message is required when request_format is 'text'"
                     )
                 text_bytes = text_message.encode("utf-8")
-                request_kwargs["files"] = {
-                    "recorded_message": (
-                        "message.txt",
-                        text_bytes,
-                        "text/plain; charset=utf-8",
+                form_fields = _build_interact_form_data(
+                    initial_message_type=initial_message_type,
+                    external_event_message_content=external_event_message_content,
+                    external_event_message_timestamp=external_event_message_timestamp,
+                )
+                request_kwargs["files"] = form_fields + [
+                    (
+                        "recorded_message",
+                        ("message.txt", text_bytes, "text/plain; charset=utf-8"),
                     )
-                }
+                ]
             elif req_format == Format.voice:
                 if audio_bytes is None or audio_content_type is None:
                     raise ValueError(
                         "audio_bytes and audio_content_type are required when request_format is 'voice'"
                     )
-                request_kwargs["content"] = audio_bytes
-                request_kwargs.setdefault("headers", {})
-                request_kwargs["headers"]["Content-Type"] = audio_content_type
+                ext = "mp3" if audio_content_type == "audio/mpeg" else "wav"
+                form_fields = _build_interact_form_data(
+                    initial_message_type=initial_message_type,
+                    external_event_message_content=external_event_message_content,
+                    external_event_message_timestamp=external_event_message_timestamp,
+                )
+                request_kwargs["files"] = form_fields + [
+                    (
+                        "recorded_message",
+                        (f"audio.{ext}", audio_bytes, audio_content_type),
+                    )
+                ]
             else:
                 raise ValueError("Unsupported or missing request_format in params")
 
@@ -326,7 +399,7 @@ class ConversationResource:
     ) -> ConversationRecommendResponsesForInteractionResponse:
         """Get recommended responses for an interaction."""
         response = self._http.request(
-            "GET",
+            "POST",
             f"/v1/{self._organization_id}/conversation/{conversation_id}/interaction/{interaction_id}/recommend_responses",
         )
         return ConversationRecommendResponsesForInteractionResponse.model_validate_json(
