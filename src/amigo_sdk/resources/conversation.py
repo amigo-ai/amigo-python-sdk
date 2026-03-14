@@ -269,6 +269,32 @@ class AsyncConversationResource:
             response.text
         )
 
+    # --- Convenience aliases ---
+
+    async def list(
+        self, params: GetConversationsParametersQuery
+    ) -> ConversationGetConversationsResponse:
+        """Alias for get_conversations."""
+        return await self.get_conversations(params)
+
+    def create(self, *args, **kwargs):
+        """Alias for create_conversation."""
+        return self.create_conversation(*args, **kwargs)
+
+    def interact(self, *args, **kwargs):
+        """Alias for interact_with_conversation."""
+        return self.interact_with_conversation(*args, **kwargs)
+
+    async def finish(self, conversation_id: str) -> None:
+        """Alias for finish_conversation."""
+        return await self.finish_conversation(conversation_id)
+
+    async def messages(
+        self, conversation_id: str, params: GetConversationMessagesParametersQuery
+    ) -> ConversationGetConversationMessagesResponse:
+        """Alias for get_conversation_messages."""
+        return await self.get_conversation_messages(conversation_id, params)
+
 
 class ConversationResource:
     """Conversation resource for synchronous operations."""
@@ -460,3 +486,29 @@ class ConversationResource:
         return ConversationGenerateConversationStarterResponse.model_validate_json(
             response.text
         )
+
+    # --- Convenience aliases ---
+
+    def list(
+        self, params: GetConversationsParametersQuery
+    ) -> ConversationGetConversationsResponse:
+        """Alias for get_conversations."""
+        return self.get_conversations(params)
+
+    def create(self, *args, **kwargs):
+        """Alias for create_conversation."""
+        return self.create_conversation(*args, **kwargs)
+
+    def interact(self, *args, **kwargs):
+        """Alias for interact_with_conversation."""
+        return self.interact_with_conversation(*args, **kwargs)
+
+    def finish(self, conversation_id: str) -> None:
+        """Alias for finish_conversation."""
+        return self.finish_conversation(conversation_id)
+
+    def messages(
+        self, conversation_id: str, params: GetConversationMessagesParametersQuery
+    ) -> ConversationGetConversationMessagesResponse:
+        """Alias for get_conversation_messages."""
+        return self.get_conversation_messages(conversation_id, params)

@@ -35,7 +35,7 @@ def _build_test_wav_bytes() -> bytes:
 async def _latest_conversation_message_time_async(
     client: AsyncAmigoClient, conversation_id: str
 ) -> datetime:
-    page = await client.conversation.get_conversation_messages(
+    page = await client.conversations.get_conversation_messages(
         conversation_id,
         GetConversationMessagesParametersQuery(limit=1, sort_by=["-created_at"]),
     )
@@ -50,7 +50,7 @@ async def _latest_conversation_message_time_async(
 def _latest_conversation_message_time_sync(
     client: AmigoClient, conversation_id: str
 ) -> datetime:
-    page = client.conversation.get_conversation_messages(
+    page = client.conversations.get_conversation_messages(
         conversation_id,
         GetConversationMessagesParametersQuery(limit=1, sort_by=["-created_at"]),
     )
@@ -69,7 +69,7 @@ async def pre_suite_cleanup() -> AsyncGenerator[None]:
         try:
             from amigo_sdk.generated.model import GetServicesParametersQuery
 
-            services = await client.service.get_services(
+            services = await client.services.get_services(
                 GetServicesParametersQuery(id=[SERVICE_ID])
             )
             service_ids = [
@@ -83,7 +83,7 @@ async def pre_suite_cleanup() -> AsyncGenerator[None]:
 
         # Finish any ongoing conversations for this service (best-effort)
         try:
-            convs = await client.conversation.get_conversations(
+            convs = await client.conversations.get_conversations(
                 GetConversationsParametersQuery(
                     service_id=[SERVICE_ID],
                     is_finished=False,
@@ -93,7 +93,7 @@ async def pre_suite_cleanup() -> AsyncGenerator[None]:
             )
             for c in getattr(convs, "conversations", []) or []:
                 try:
-                    await client.conversation.finish_conversation(c.id)
+                    await client.conversations.finish_conversation(c.id)
                 except Exception:
                     pass
         except Exception:
@@ -111,7 +111,7 @@ class TestConversationIntegration:
 
     async def test_create_conversation_streams_and_returns_ids(self):
         async with AsyncAmigoClient() as client:
-            events = await client.conversation.create_conversation(
+            events = await client.conversations.create_conversation(
                 body=ConversationCreateConversationRequest(
                     service_id=SERVICE_ID,
                     service_version_set_name="release",
@@ -144,7 +144,7 @@ class TestConversationIntegration:
         assert type(self).interaction_id is not None
 
         async with AsyncAmigoClient() as client:
-            recs = await client.conversation.recommend_responses_for_interaction(
+            recs = await client.conversations.recommend_responses_for_interaction(
                 type(self).conversation_id, type(self).interaction_id
             )
 
@@ -155,7 +155,7 @@ class TestConversationIntegration:
         assert type(self).conversation_id is not None
 
         async with AsyncAmigoClient() as client:
-            resp = await client.conversation.get_conversations(
+            resp = await client.conversations.get_conversations(
                 GetConversationsParametersQuery(id=[type(self).conversation_id])
             )
 
@@ -167,7 +167,7 @@ class TestConversationIntegration:
         assert type(self).conversation_id is not None
 
         async with AsyncAmigoClient() as client:
-            events = await client.conversation.interact_with_conversation(
+            events = await client.conversations.interact_with_conversation(
                 type(self).conversation_id,
                 params=InteractWithConversationParametersQuery(
                     request_format="text", response_format="text"
@@ -214,7 +214,7 @@ class TestConversationIntegration:
             assert len(external_event_message_timestamp) == len(
                 external_event_message_content
             )
-            events = await client.conversation.interact_with_conversation(
+            events = await client.conversations.interact_with_conversation(
                 type(self).conversation_id,
                 params=InteractWithConversationParametersQuery(
                     request_format="text", response_format="text"
@@ -250,7 +250,7 @@ class TestConversationIntegration:
         assert type(self).conversation_id is not None
 
         async with AsyncAmigoClient() as client:
-            events = await client.conversation.interact_with_conversation(
+            events = await client.conversations.interact_with_conversation(
                 type(self).conversation_id,
                 params=InteractWithConversationParametersQuery(
                     request_format="voice",
@@ -291,7 +291,7 @@ class TestConversationIntegration:
         assert type(self).conversation_id is not None
 
         async with AsyncAmigoClient() as client:
-            page1 = await client.conversation.get_conversation_messages(
+            page1 = await client.conversations.get_conversation_messages(
                 type(self).conversation_id,
                 GetConversationMessagesParametersQuery(
                     limit=1, sort_by=["+created_at"]
@@ -304,7 +304,7 @@ class TestConversationIntegration:
 
             if page1.has_more:
                 assert page1.continuation_token is not None
-                page2 = await client.conversation.get_conversation_messages(
+                page2 = await client.conversations.get_conversation_messages(
                     type(self).conversation_id,
                     GetConversationMessagesParametersQuery(
                         limit=1,
@@ -321,7 +321,7 @@ class TestConversationIntegration:
         assert type(self).interaction_id is not None
 
         async with AsyncAmigoClient() as client:
-            insights = await client.conversation.get_interaction_insights(
+            insights = await client.conversations.get_interaction_insights(
                 type(self).conversation_id, type(self).interaction_id
             )
             assert insights is not None
@@ -332,7 +332,7 @@ class TestConversationIntegration:
 
         async with AsyncAmigoClient() as client:
             try:
-                await client.conversation.finish_conversation(
+                await client.conversations.finish_conversation(
                     type(self).conversation_id
                 )
             except Exception as e:
@@ -358,7 +358,7 @@ class TestConversationIntegrationSync:
                     # Best-effort: finish any lingering conversations
                     if attempt > 0:
                         try:
-                            convs = client.conversation.get_conversations(
+                            convs = client.conversations.get_conversations(
                                 GetConversationsParametersQuery(
                                     service_id=[SERVICE_ID],
                                     is_finished=False,
@@ -367,14 +367,14 @@ class TestConversationIntegrationSync:
                             )
                             for c in getattr(convs, "conversations", []) or []:
                                 try:
-                                    client.conversation.finish_conversation(c.id)
+                                    client.conversations.finish_conversation(c.id)
                                 except Exception:
                                     pass
                             time.sleep(1)
                         except Exception:
                             pass
 
-                    events = client.conversation.create_conversation(
+                    events = client.conversations.create_conversation(
                         body=ConversationCreateConversationRequest(
                             service_id=SERVICE_ID,
                             service_version_set_name="release",
@@ -409,7 +409,7 @@ class TestConversationIntegrationSync:
         assert type(self).interaction_id is not None
 
         with AmigoClient() as client:
-            recs = client.conversation.recommend_responses_for_interaction(
+            recs = client.conversations.recommend_responses_for_interaction(
                 type(self).conversation_id, type(self).interaction_id
             )
 
@@ -420,7 +420,7 @@ class TestConversationIntegrationSync:
         assert type(self).conversation_id is not None
 
         with AmigoClient() as client:
-            resp = client.conversation.get_conversations(
+            resp = client.conversations.get_conversations(
                 GetConversationsParametersQuery(id=[type(self).conversation_id])
             )
 
@@ -432,7 +432,7 @@ class TestConversationIntegrationSync:
         assert type(self).conversation_id is not None
 
         with AmigoClient() as client:
-            events = client.conversation.interact_with_conversation(
+            events = client.conversations.interact_with_conversation(
                 type(self).conversation_id,
                 params=InteractWithConversationParametersQuery(
                     request_format="text", response_format="text"
@@ -480,7 +480,7 @@ class TestConversationIntegrationSync:
             assert len(external_event_message_timestamp) == len(
                 external_event_message_content
             )
-            events = client.conversation.interact_with_conversation(
+            events = client.conversations.interact_with_conversation(
                 type(self).conversation_id,
                 params=InteractWithConversationParametersQuery(
                     request_format="text", response_format="text"
@@ -516,7 +516,7 @@ class TestConversationIntegrationSync:
         assert type(self).conversation_id is not None
 
         with AmigoClient() as client:
-            events = client.conversation.interact_with_conversation(
+            events = client.conversations.interact_with_conversation(
                 type(self).conversation_id,
                 params=InteractWithConversationParametersQuery(
                     request_format="voice",
@@ -557,7 +557,7 @@ class TestConversationIntegrationSync:
         assert type(self).conversation_id is not None
 
         with AmigoClient() as client:
-            page1 = client.conversation.get_conversation_messages(
+            page1 = client.conversations.get_conversation_messages(
                 type(self).conversation_id,
                 GetConversationMessagesParametersQuery(
                     limit=1, sort_by=["+created_at"]
@@ -570,7 +570,7 @@ class TestConversationIntegrationSync:
 
             if page1.has_more:
                 assert page1.continuation_token is not None
-                page2 = client.conversation.get_conversation_messages(
+                page2 = client.conversations.get_conversation_messages(
                     type(self).conversation_id,
                     GetConversationMessagesParametersQuery(
                         limit=1,
@@ -587,7 +587,7 @@ class TestConversationIntegrationSync:
         assert type(self).interaction_id is not None
 
         with AmigoClient() as client:
-            insights = client.conversation.get_interaction_insights(
+            insights = client.conversations.get_interaction_insights(
                 type(self).conversation_id, type(self).interaction_id
             )
             assert insights is not None
@@ -598,6 +598,6 @@ class TestConversationIntegrationSync:
 
         with AmigoClient() as client:
             try:
-                client.conversation.finish_conversation(type(self).conversation_id)
+                client.conversations.finish_conversation(type(self).conversation_id)
             except Exception as e:
                 assert isinstance(e, (ConflictError, NotFoundError))

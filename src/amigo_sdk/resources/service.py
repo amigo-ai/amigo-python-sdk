@@ -25,6 +25,12 @@ class AsyncServiceResource:
         )
         return ServiceGetServicesResponse.model_validate_json(response.text)
 
+    async def list(
+        self, params: GetServicesParametersQuery | None = None
+    ) -> ServiceGetServicesResponse:
+        """Alias for get_services."""
+        return await self.get_services(params)
+
 
 class ServiceResource:
     """Service resource for synchronous operations."""
@@ -45,3 +51,9 @@ class ServiceResource:
             else None,
         )
         return ServiceGetServicesResponse.model_validate_json(response.text)
+
+    def list(
+        self, params: GetServicesParametersQuery | None = None
+    ) -> ServiceGetServicesResponse:
+        """Alias for get_services."""
+        return self.get_services(params)

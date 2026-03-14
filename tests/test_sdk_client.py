@@ -66,10 +66,10 @@ class TestAsyncAmigoClient:
         client = AsyncAmigoClient(config=mock_config)
 
         # Should have resources (basic smoke test)
-        assert client.organization is not None
-        assert client.service is not None
-        assert hasattr(client.organization, "_http")
-        assert hasattr(client.service, "_http")
+        assert client.organizations is not None
+        assert client.services is not None
+        assert hasattr(client.organizations, "_http")
+        assert hasattr(client.services, "_http")
 
     @pytest.mark.asyncio
     async def test_async_context_manager(self, mock_config):
@@ -118,10 +118,10 @@ class TestAmigoClientSync:
 
     def test_resources_are_accessible_sync(self, mock_config):
         client = AmigoClient(config=mock_config)
-        assert client.organization is not None
-        assert client.service is not None
-        assert hasattr(client.organization, "_http")
-        assert hasattr(client.service, "_http")
+        assert client.organizations is not None
+        assert client.services is not None
+        assert hasattr(client.organizations, "_http")
+        assert hasattr(client.services, "_http")
 
     def test_context_manager_sync(self, mock_config):
         with AmigoClient(config=mock_config) as client:

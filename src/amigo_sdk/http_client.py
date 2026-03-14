@@ -397,7 +397,7 @@ class AmigoHttpClient:
             for ln in _yield_from_response(resp):
                 yield ln
 
-    def aclose(self) -> None:
+    def close(self) -> None:
         """Close the underlying httpx client."""
         self._client.close()
 
@@ -405,4 +405,4 @@ class AmigoHttpClient:
         return self
 
     def __exit__(self, *_):
-        self.aclose()
+        self.close()

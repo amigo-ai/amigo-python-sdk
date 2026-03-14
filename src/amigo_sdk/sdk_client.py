@@ -67,11 +67,11 @@ class AsyncAmigoClient:
 
         # Initialize HTTP client and resources
         self._http = AmigoAsyncHttpClient(self._cfg, **httpx_kwargs)
-        self._organization = AsyncOrganizationResource(
+        self._organizations = AsyncOrganizationResource(
             self._http, self._cfg.organization_id
         )
-        self._service = AsyncServiceResource(self._http, self._cfg.organization_id)
-        self._conversation = AsyncConversationResource(
+        self._services = AsyncServiceResource(self._http, self._cfg.organization_id)
+        self._conversations = AsyncConversationResource(
             self._http, self._cfg.organization_id
         )
         self._users = AsyncUserResource(self._http, self._cfg.organization_id)
@@ -82,19 +82,19 @@ class AsyncAmigoClient:
         return self._cfg
 
     @property
-    def organization(self) -> AsyncOrganizationResource:
+    def organizations(self) -> AsyncOrganizationResource:
         """Access organization resource."""
-        return self._organization
+        return self._organizations
 
     @property
-    def service(self) -> AsyncServiceResource:
+    def services(self) -> AsyncServiceResource:
         """Access service resource."""
-        return self._service
+        return self._services
 
     @property
-    def conversation(self) -> AsyncConversationResource:
+    def conversations(self) -> AsyncConversationResource:
         """Access conversation resource."""
-        return self._conversation
+        return self._conversations
 
     @property
     def users(self) -> AsyncUserResource:
@@ -163,9 +163,13 @@ class AmigoClient:
                 ) from e
 
         self._http = AmigoHttpClient(self._cfg, **httpx_kwargs)
-        self._organization = OrganizationResource(self._http, self._cfg.organization_id)
-        self._service = ServiceResource(self._http, self._cfg.organization_id)
-        self._conversation = ConversationResource(self._http, self._cfg.organization_id)
+        self._organizations = OrganizationResource(
+            self._http, self._cfg.organization_id
+        )
+        self._services = ServiceResource(self._http, self._cfg.organization_id)
+        self._conversations = ConversationResource(
+            self._http, self._cfg.organization_id
+        )
         self._users = UserResource(self._http, self._cfg.organization_id)
 
     @property
@@ -174,31 +178,31 @@ class AmigoClient:
         return self._cfg
 
     @property
-    def organization(self) -> OrganizationResource:
+    def organizations(self) -> OrganizationResource:
         """Access organization resource."""
-        return self._organization
+        return self._organizations
 
     @property
-    def service(self) -> ServiceResource:
+    def services(self) -> ServiceResource:
         """Access service resource."""
-        return self._service
+        return self._services
 
     @property
-    def conversation(self) -> ConversationResource:
+    def conversations(self) -> ConversationResource:
         """Access conversation resource."""
-        return self._conversation
+        return self._conversations
 
     @property
     def users(self) -> UserResource:
         """Access user resource."""
         return self._users
 
-    def aclose(self) -> None:
+    def close(self) -> None:
         """Close the HTTP client."""
-        self._http.aclose()
+        self._http.close()
 
     def __enter__(self):
         return self
 
     def __exit__(self, *_):
-        self.aclose()
+        self.close()
