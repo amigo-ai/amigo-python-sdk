@@ -1,4 +1,4 @@
-__version__ = "0.137.1"
+__version__ = "1.0.0rc1"
 from .config import AmigoConfig
 from .errors import (
     AmigoError,
