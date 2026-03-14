@@ -3,7 +3,7 @@ import json
 import threading
 from collections.abc import AsyncGenerator, Iterator
 from datetime import datetime
-from typing import Any, Literal
+from typing import Literal, TypedDict
 
 from pydantic import AnyUrl, BaseModel
 
@@ -24,6 +24,26 @@ from amigo_sdk.generated.model import (
     InteractWithConversationParametersQuery,
 )
 from amigo_sdk.http_client import AmigoAsyncHttpClient, AmigoHttpClient
+
+
+class InteractionInput(TypedDict, total=False):
+    """Typed dictionary for interact_with_conversation keyword arguments."""
+
+    initial_message_type: Literal["user-message", "external-event"]
+    text_message: str | None
+    audio_bytes: bytes | None
+    audio_content_type: Literal["audio/mpeg", "audio/wav"] | None
+    external_event_message_content: list[str] | None
+    external_event_message_timestamp: list[datetime] | None
+
+
+class _StreamRequestKwargs(TypedDict, total=False):
+    """Typed kwargs for HTTP streaming requests (replaces dict[str, Any])."""
+
+    params: dict[str, str | int | float | bool]
+    headers: dict[str, str]
+    abort_event: asyncio.Event | threading.Event | None
+    files: list[tuple[str, tuple[str | None, str | bytes, str]]]
 
 
 class GetMessageSourceResponse(BaseModel):
@@ -109,7 +129,7 @@ class AsyncConversationResource:
                 params_data["request_audio_config"] = json.dumps(
                     params_data["request_audio_config"]
                 )
-            request_kwargs: dict[str, Any] = {
+            request_kwargs: _StreamRequestKwargs = {
                 "params": params_data,
                 "abort_event": abort_event,
                 "headers": {"Accept": "application/x-ndjson"},
@@ -301,7 +321,7 @@ class ConversationResource:
                 params_data["request_audio_config"] = json.dumps(
                     params_data["request_audio_config"]
                 )
-            request_kwargs: dict[str, Any] = {
+            request_kwargs: _StreamRequestKwargs = {
                 "params": params_data,
                 "headers": {"Accept": "application/x-ndjson"},
                 "abort_event": abort_event,

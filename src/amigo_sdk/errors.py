@@ -1,5 +1,43 @@
 from typing import Any
 
+_SENSITIVE_KEYS = frozenset(
+    {
+        "token",
+        "id_token",
+        "access_token",
+        "refresh_token",
+        "key",
+        "api_key",
+        "secret",
+        "password",
+        "authorization",
+        "credential",
+        "credentials",
+        "session_token",
+    }
+)
+
+_MAX_RESPONSE_BODY_LENGTH = 500
+
+
+def _sanitize_response_body(body: Any) -> Any:
+    """Sanitize response body to prevent secret leakage in exceptions.
+
+    - Strips fields whose keys contain sensitive terms
+    - Truncates string bodies to _MAX_RESPONSE_BODY_LENGTH chars
+    """
+    if isinstance(body, dict):
+        sanitized = {}
+        for k, v in body.items():
+            if any(s in k.lower() for s in _SENSITIVE_KEYS):
+                sanitized[k] = "[REDACTED]"
+            else:
+                sanitized[k] = _sanitize_response_body(v)
+        return sanitized
+    if isinstance(body, str) and len(body) > _MAX_RESPONSE_BODY_LENGTH:
+        return body[:_MAX_RESPONSE_BODY_LENGTH] + "... [truncated]"
+    return body
+
 
 class AmigoError(Exception):
     """
@@ -17,7 +55,7 @@ class AmigoError(Exception):
         super().__init__(message)
         self.status_code = status_code
         self.error_code = error_code
-        self.response_body = response_body
+        self.response_body = _sanitize_response_body(response_body)
 
     def __str__(self) -> str:
         parts = [super().__str__()]
@@ -124,9 +162,14 @@ def raise_for_status(response, message: str = None) -> None:
         if isinstance(response_body, dict):
             error_code = response_body.get("error_code") or response_body.get("code")
     except Exception:
-        # If JSON parsing fails, use text content
+        # If JSON parsing fails, use text content (truncated)
         try:
-            response_body = response.text
+            text = response.text
+            response_body = (
+                text[:_MAX_RESPONSE_BODY_LENGTH] + "... [truncated]"
+                if len(text) > _MAX_RESPONSE_BODY_LENGTH
+                else text
+            )
         except Exception:
             response_body = None
 
