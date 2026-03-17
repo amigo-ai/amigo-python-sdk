@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.0] - 2026-03-17
+
+### Bug Fixes
+- unwrap nested ConversationEvent in SDK resource layer ([#35](https://github.com/amigo-ai/amigo-python-sdk/pull/35))
+- resolve integration test failures ([#34](https://github.com/amigo-ai/amigo-python-sdk/pull/34))
+- update integration test for plural resource property ([#33](https://github.com/amigo-ai/amigo-python-sdk/pull/33))
+- add resources/__init__.py for mkdocstrings resolution ([#32](https://github.com/amigo-ai/amigo-python-sdk/pull/32))
+- resolve CI doc build failure and update CLAUDE.md ([#31](https://github.com/amigo-ai/amigo-python-sdk/pull/31))
+
 All notable changes to the Amigo Python SDK will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/) and the format is based on [Keep a Changelog](https://keepachangelog.com/).
