@@ -24,7 +24,7 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License" /></a>
 </p>
 
-Synchronous and asynchronous Python clients for the classic org-scoped Amigo API, with generated Pydantic models, typed errors, and NDJSON conversation streaming.
+Synchronous and asynchronous Python clients for the classic org-scoped Amigo API, with generated Pydantic models from the committed OpenAPI snapshot, typed errors, and NDJSON conversation streaming.
 
 ## Classic API Context
 
@@ -141,6 +141,13 @@ from amigo_sdk.models import (
     ConversationCreateConversationRequest,
     GetConversationsParametersQuery,
 )
+```
+
+Public builds are generated from the committed [`specs/openapi-baseline.json`](./specs/openapi-baseline.json) snapshot in this repo so generated models stay deterministic across machines and CI runs. Refresh that snapshot before regenerating models:
+
+```bash
+sync-openapi
+gen-models
 ```
 
 ## Error Handling

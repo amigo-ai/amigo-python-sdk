@@ -326,6 +326,7 @@ def create_organization_response_data() -> OrganizationGetOrganizationResponse:
             "Let's get you started with your first assistant.",
         ],
         default_user_preferences=None,
+        tenant_id=None,
     )
 
 

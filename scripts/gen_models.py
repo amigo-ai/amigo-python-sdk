@@ -1,7 +1,7 @@
+import argparse
 import json
 from pathlib import Path
 
-import httpx
 from datamodel_code_generator import (
     DataModelType,
     InputFileType,
@@ -26,7 +26,6 @@ def strip_prefixes_from_schema(spec: dict) -> dict:
     if not schemas:
         return spec
 
-    # Build a mapping of old names to new names
     rename_map: dict[str, str] = {}
     for name in schemas:
         new_name = name
@@ -40,14 +39,12 @@ def strip_prefixes_from_schema(spec: dict) -> dict:
     if not rename_map:
         return spec
 
-    # Rename schemas
     new_schemas = {}
     for name, schema in schemas.items():
         new_name = rename_map.get(name, name)
         new_schemas[new_name] = schema
     spec["components"]["schemas"] = new_schemas
 
-    # Update all $ref pointers throughout the spec
     def update_refs(obj):
         if isinstance(obj, dict):
             if "$ref" in obj:
@@ -68,30 +65,54 @@ def strip_prefixes_from_schema(spec: dict) -> dict:
     return spec
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Generate Python models from the committed classic OpenAPI snapshot."
+    )
+    parser.add_argument(
+        "--spec",
+        type=Path,
+        help="Path to an OpenAPI JSON document. Defaults to specs/openapi-baseline.json.",
+    )
+    return parser.parse_args()
+
+
+def resolve_spec_path(root: Path, spec_arg: Path | None) -> Path:
+    if spec_arg is not None:
+        return spec_arg.expanduser().resolve()
+
+    default_spec = root / "specs" / "openapi-baseline.json"
+    if default_spec.exists():
+        return default_spec
+
+    raise FileNotFoundError(
+        "No committed OpenAPI snapshot found at specs/openapi-baseline.json. Run `sync-openapi` first."
+    )
+
+
+def load_spec(spec_path: Path) -> dict:
+    spec = json.loads(spec_path.read_text())
+    if not isinstance(spec, dict) or not isinstance(spec.get("openapi"), str):
+        raise ValueError(f"Invalid OpenAPI document: {spec_path}")
+    return spec
+
+
 def main() -> None:
-    schema_url = "https://api.amigo.ai/v1/openapi.json"
+    args = parse_args()
     root = Path(__file__).parent.parent
+    spec_path = resolve_spec_path(root, args.spec)
     out_dir = root / "src" / "amigo_sdk" / "generated"
     output_file = out_dir / "model.py"
     aliases_path = root / "scripts" / "aliases.json"
 
-    # Create the generated directory if it doesn't exist
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Remove existing model.py if it exists
     if output_file.exists():
         output_file.unlink()
 
-    # Fetch the OpenAPI schema from the remote URL
-    print(f"Fetching OpenAPI schema from {schema_url}...")
-    response = httpx.get(schema_url)
-    response.raise_for_status()
-    spec = response.json()
+    print(f"Generating models from {spec_path}...")
+    spec = strip_prefixes_from_schema(load_spec(spec_path))
 
-    # Pre-process: strip internal prefixes from schema names
-    spec = strip_prefixes_from_schema(spec)
-
-    # Load aliases as a mapping (Python API expects a dict)
     aliases: dict[str, str] = {}
     if aliases_path.exists():
         aliases = json.loads(aliases_path.read_text())
@@ -115,7 +136,7 @@ def main() -> None:
         collapse_root_models=False,
     )
 
-    print(f"✅ Models regenerated → {output_file}")
+    print(f"Generated models from {spec_path} -> {output_file}")
 
 
 if __name__ == "__main__":

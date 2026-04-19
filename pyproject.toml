@@ -37,6 +37,7 @@ Changelog = "https://github.com/amigo-ai/amigo-python-sdk/blob/main/CHANGELOG.md
 [project.scripts]
 gen-models = "scripts.gen_models:main"
 check = "scripts.check:main"
+sync-openapi = "scripts.sync_openapi:main"
 
 [project.optional-dependencies]
 dev = [

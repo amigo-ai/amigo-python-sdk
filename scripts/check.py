@@ -57,10 +57,13 @@ def main():
 
     # 1. Format check or fix
     if args.fix:
-        success = run_command(["ruff", "format", "."], "Code formatting (auto-fix)")
+        success = run_command(
+            [sys.executable, "-m", "ruff", "format", "."], "Code formatting (auto-fix)"
+        )
     else:
         success = run_command(
-            ["ruff", "format", "--check", "."], "Code formatting check"
+            [sys.executable, "-m", "ruff", "format", "--check", "."],
+            "Code formatting check",
         )
     all_passed &= success
 
@@ -68,9 +71,14 @@ def main():
 
     # 2. Lint check or fix
     if args.fix:
-        success = run_command(["ruff", "check", ".", "--fix"], "Linting (auto-fix)")
+        success = run_command(
+            [sys.executable, "-m", "ruff", "check", ".", "--fix"],
+            "Linting (auto-fix)",
+        )
     else:
-        success = run_command(["ruff", "check", "."], "Linting check")
+        success = run_command(
+            [sys.executable, "-m", "ruff", "check", "."], "Linting check"
+        )
     all_passed &= success
 
     print()
@@ -78,7 +86,7 @@ def main():
     # 3. Tests (unless --fast)
     if not args.fast:
         success = run_command(
-            ["pytest", "--cov=src", "--cov-report=term", "-v"],
+            [sys.executable, "-m", "pytest", "--cov=src", "--cov-report=term", "-v"],
             "Test suite with coverage",
         )
         all_passed &= success
