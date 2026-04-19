@@ -164,6 +164,7 @@ class AmigoAsyncHttpClient:
                         "API-key exchange failed",
                     ) from e
 
+        assert self._token is not None
         return self._token.id_token
 
     async def request(self, method: str, path: str, **kwargs) -> httpx.Response:
@@ -312,6 +313,7 @@ class AmigoHttpClient:
                     self._token = sign_in_with_api_key(self._cfg)
                 except Exception as e:
                     raise AuthenticationError("API-key exchange failed") from e
+        assert self._token is not None
         return self._token.id_token
 
     def request(self, method: str, path: str, **kwargs) -> httpx.Response:
@@ -382,13 +384,13 @@ class AmigoHttpClient:
                 yield line_stripped
 
         if abort_event and abort_event.is_set():
-            return iter(())
+            return
         with self._client.stream(method, path, **kwargs) as resp:
             if resp.status_code == 401:
                 self._token = None
                 headers["Authorization"] = f"Bearer {self._ensure_token()}"
                 if abort_event and abort_event.is_set():
-                    return iter(())
+                    return
                 with self._client.stream(method, path, **kwargs) as retry_resp:
                     for ln in _yield_from_response(retry_resp):
                         yield ln

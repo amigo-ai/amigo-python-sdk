@@ -11948,7 +11948,11 @@ class GetConversationMessagesParametersQuery(BaseModel):
         title='Id',
     )
     message_type: list[MessageType] | None = Field(
-        ['agent-message', 'user-message', 'external-event'],
+        [
+            MessageType.agent_message,
+            MessageType.user_message,
+            MessageType.external_event,
+        ],
         description='The type of messages to retrieve.',
         title='Message Type',
     )

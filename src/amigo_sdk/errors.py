@@ -138,7 +138,7 @@ def get_error_class_for_status_code(status_code: int) -> type[AmigoError]:
         return AmigoError
 
 
-def raise_for_status(response, message: str = None) -> None:
+def raise_for_status(response, message: str | None = None) -> None:
     """
     Raise an appropriate AmigoError for non-2xx status codes.
 
