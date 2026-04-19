@@ -4,7 +4,7 @@
 
 <h1 align="center">amigo_sdk</h1>
 
-<p align="center">Official Python SDK for the classic Amigo API.</p>
+<p align="center">Official Python SDK for the Classic Amigo API.</p>
 
 <p align="center">
   <a href="https://docs.amigo.ai">Product Docs</a>
@@ -19,35 +19,32 @@
 </p>
 
 <p align="center">
+  <a href="https://pypi.org/project/amigo-sdk/"><img src="https://img.shields.io/pypi/v/amigo-sdk?logo=pypi&label=PyPI" alt="PyPI version" /></a>
   <a href="https://github.com/amigo-ai/amigo-python-sdk/actions/workflows/test.yml"><img src="https://github.com/amigo-ai/amigo-python-sdk/actions/workflows/test.yml/badge.svg" alt="CI" /></a>
   <a href="https://codecov.io/gh/amigo-ai/amigo-python-sdk"><img src="https://codecov.io/gh/amigo-ai/amigo-python-sdk/graph/badge.svg?token=1A7KVPV9ZR" alt="codecov" /></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License" /></a>
 </p>
 
-Synchronous and asynchronous Python clients for the classic org-scoped Amigo API, with generated Pydantic models from the committed OpenAPI snapshot, typed errors, and NDJSON conversation streaming.
+Synchronous and asynchronous Python clients for the original org-scoped Amigo backend at `api.amigo.ai`, with generated Pydantic models from the committed OpenAPI snapshot, typed errors, and NDJSON conversation streaming.
 
-## Classic API Context
+## Classic Backend Context
 
-`amigo_sdk` is the Python client boundary for teams that integrate with the classic org-scoped Amigo API today. It keeps sync and async application code close to the live contract while a platform-native migration path is prepared.
+`amigo_sdk` targets the original org-scoped Amigo backend. Existing deployments still use this surface for conversations, services, organizations, users, agents, context graphs, webhooks, and streaming events.
 
-![Classic Python SDK architecture](./assets/readme/classic-python-architecture.png)
+![Classic text session flow](./assets/readme/classic-session-flow.svg)
 
 ## Product Status
 
-`amigo_sdk` remains the supported Python client for the classic Amigo API.
+`amigo_sdk` remains the supported Python client for the Classic API.
 
-The Platform API is the long-term direction for new workspace-scoped capabilities, but classic Python customers are not facing an abrupt end-of-life event. As equivalent platform surfaces become available, Amigo will publish a migration path and upgrade guidance before asking customers to move.
+The Platform API is where new workspace-scoped capabilities land first, but the Classic API is not being switched off abruptly. Amigo will publish a migration path, compatibility notes, and upgrade guidance before asking customers to move production workloads.
 
 ## Choose The Right Surface
 
 | If you need | Start here |
 | --- | --- |
-| The current org-scoped Amigo API from Python | `amigo_sdk` |
-| New workspace-scoped Platform API capabilities | [Platform API docs](https://docs.amigo.ai/api-reference) today. Python migration guidance will follow as platform-native coverage expands |
-
-## API Context
-
-This SDK is the Python client boundary for the classic Amigo API at `https://api.amigo.ai`. It covers the current org-scoped resource model used by existing Amigo deployments, including conversations, services, organizations, users, agents, context graphs, and streaming events.
+| Existing org-scoped integrations on `api.amigo.ai` from Python | `amigo_sdk` |
+| New workspace-scoped integrations on `api.platform.amigo.ai` | [Platform API docs](https://docs.amigo.ai/api-reference) today. A first-party Python migration path will follow as platform-native coverage expands |
 
 ## Documentation
 
@@ -58,6 +55,8 @@ This SDK is the Python client boundary for the classic Amigo API at `https://api
 | Generated API reference | [amigo-ai.github.io/amigo-python-sdk](https://amigo-ai.github.io/amigo-python-sdk/) |
 | Runnable examples | [examples/](https://github.com/amigo-ai/amigo-python-sdk/tree/main/examples) |
 | Release history | [CHANGELOG.md](https://github.com/amigo-ai/amigo-python-sdk/blob/main/CHANGELOG.md) |
+
+The docs site remains the primary reference. The repo-local examples stay close to the shipped package surface and the published package is validated in CI.
 
 ## Installation
 

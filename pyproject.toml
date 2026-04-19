@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name="amigo_sdk"
-description = "Official Python SDK for the classic Amigo API"
+description = "Official Python SDK for the Classic Amigo API at api.amigo.ai"
 readme = "README.md"
 requires-python = ">= 3.11"
 authors=[{name="Amigo Inc."}]

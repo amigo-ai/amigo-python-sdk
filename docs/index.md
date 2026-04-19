@@ -1,10 +1,10 @@
 # Amigo Python SDK
 
-Python client library for the classic Amigo API.
+Python SDK for the Classic Amigo API at `api.amigo.ai`.
 
 ## Status
 
-This SDK remains supported for current classic API integrations. The Platform API is the long-term direction for new workspace-scoped capabilities, and Amigo will publish a migration path for Python customers before recommending a move.
+This SDK remains supported for current Classic API integrations. The Platform API is the long-term direction for new workspace-scoped capabilities, and Amigo will publish a migration path for Python customers before recommending a move.
 
 ## Highlights
 
