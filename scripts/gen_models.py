@@ -1,5 +1,6 @@
 import argparse
 import json
+import re
 from pathlib import Path
 
 from datamodel_code_generator import (
@@ -19,12 +20,26 @@ STRIP_PREFIXES = [
 # The live classic API can omit org-branding fields even though the published
 # OpenAPI snapshot still marks them required. Relax them after generation so
 # released SDK models match the payloads customers actually receive.
-ORGANIZATION_RESPONSE_COMPAT_FIXES = {
-    "    title: str = Field(\n        ...,": "    title: str | None = Field(\n        None,",
-    "    main_description: str = Field(\n        ...,": "    main_description: str | None = Field(\n        None,",
-    "    sub_description: str = Field(\n        ...,": "    sub_description: str | None = Field(\n        None,",
-    "    onboarding_instructions: list[str] = Field(\n        ...,": "    onboarding_instructions: list[str] | None = Field(\n        None,",
-}
+ORGANIZATION_RESPONSE_COMPAT_FIXES = (
+    (
+        re.compile(r"(?ms)^    title: str = Field\(\s*\.\.\.,"),
+        "    title: str | None = Field(\n        None,",
+    ),
+    (
+        re.compile(r"(?ms)^    main_description: str = Field\(\s*\.\.\.,"),
+        "    main_description: str | None = Field(\n        None,",
+    ),
+    (
+        re.compile(r"(?ms)^    sub_description: str = Field\(\s*\.\.\.,"),
+        "    sub_description: str | None = Field(\n        None,",
+    ),
+    (
+        re.compile(
+            r"(?ms)^    onboarding_instructions: list\[str\] = Field\(\s*\.\.\.,"
+        ),
+        "    onboarding_instructions: list[str] | None = Field(\n        None,",
+    ),
+)
 
 
 def strip_prefixes_from_schema(spec: dict) -> dict:
@@ -109,12 +124,13 @@ def load_spec(spec_path: Path) -> dict:
 
 def apply_output_compat_fixes(output_file: Path) -> None:
     text = output_file.read_text()
-    for old, new in ORGANIZATION_RESPONSE_COMPAT_FIXES.items():
-        if old not in text:
+    for pattern, replacement in ORGANIZATION_RESPONSE_COMPAT_FIXES:
+        text, count = pattern.subn(replacement, text, count=1)
+        if count != 1:
             raise RuntimeError(
-                f"Unable to apply generated-model compatibility fix for pattern: {old}"
+                "Unable to apply generated-model compatibility fix for "
+                f"pattern: {pattern.pattern}"
             )
-        text = text.replace(old, new, 1)
     output_file.write_text(text)
 
 
