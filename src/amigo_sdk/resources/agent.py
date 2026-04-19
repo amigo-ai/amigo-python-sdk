@@ -8,6 +8,7 @@ from amigo_sdk.generated.model import (
     OrganizationCreateAgentVersionResponse,
     OrganizationGetAgentsResponse,
     OrganizationGetAgentVersionsResponse,
+    Version1,
 )
 from amigo_sdk.http_client import AmigoAsyncHttpClient, AmigoHttpClient
 
@@ -59,7 +60,7 @@ class AsyncAgentResource:
         """Create a new version for an agent."""
         params = None
         if version is not None:
-            query = CreateAgentVersionParametersQuery(version=version)
+            query = CreateAgentVersionParametersQuery(version=Version1(root=version))
             params = query.model_dump(mode="json", exclude_none=True)
         response = await self._http.request(
             "POST",
@@ -148,7 +149,7 @@ class AgentResource:
         """Create a new version for an agent."""
         params = None
         if version is not None:
-            query = CreateAgentVersionParametersQuery(version=version)
+            query = CreateAgentVersionParametersQuery(version=Version1(root=version))
             params = query.model_dump(mode="json", exclude_none=True)
         response = self._http.request(
             "POST",
