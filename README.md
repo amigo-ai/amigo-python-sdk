@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://docs.amigo.ai">Product Docs</a>
   ·
-  <a href="https://docs.amigo.ai/developer-guide">Developer Guide</a>
+  <a href="https://docs.amigo.ai/developer-guide/classic-api/sdks">Developer Guide</a>
   ·
   <a href="https://amigo-ai.github.io/amigo-python-sdk/">API Reference</a>
   ·
@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="https://pypi.org/project/amigo-sdk/"><img src="https://img.shields.io/pypi/v/amigo-sdk?logo=pypi&label=PyPI" alt="PyPI version" /></a>
+  <a href="https://pypi.org/project/amigo_sdk/"><img src="https://img.shields.io/pypi/v/amigo_sdk?logo=pypi&label=PyPI" alt="PyPI version" /></a>
   <a href="https://github.com/amigo-ai/amigo-python-sdk/actions/workflows/test.yml"><img src="https://github.com/amigo-ai/amigo-python-sdk/actions/workflows/test.yml/badge.svg" alt="CI" /></a>
   <a href="https://codecov.io/gh/amigo-ai/amigo-python-sdk"><img src="https://codecov.io/gh/amigo-ai/amigo-python-sdk/graph/badge.svg?token=1A7KVPV9ZR" alt="codecov" /></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License" /></a>
@@ -51,7 +51,7 @@ The Platform API is where new workspace-scoped capabilities land first, but the 
 | Need | Best entry point |
 | --- | --- |
 | Product overview and deployment context | [docs.amigo.ai](https://docs.amigo.ai/) |
-| Integration guidance and developer docs | [Developer Guide](https://docs.amigo.ai/developer-guide) |
+| Integration guidance and developer docs | [Developer Guide](https://docs.amigo.ai/developer-guide/classic-api/sdks) |
 | Generated API reference | [amigo-ai.github.io/amigo-python-sdk](https://amigo-ai.github.io/amigo-python-sdk/) |
 | Runnable examples | [examples/](https://github.com/amigo-ai/amigo-python-sdk/tree/main/examples) |
 | Release history | [CHANGELOG.md](https://github.com/amigo-ai/amigo-python-sdk/blob/main/CHANGELOG.md) |
