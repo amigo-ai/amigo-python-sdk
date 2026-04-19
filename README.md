@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./assets/readme/classic-python-banner.svg" alt="Classic Python SDK banner" width="100%" />
+  <img src="./assets/readme/amigo-banner.png" alt="Amigo banner" width="100%" />
 </p>
 
 <h1 align="center">amigo_sdk</h1>
