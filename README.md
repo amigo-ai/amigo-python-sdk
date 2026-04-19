@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/readme/classic-python-banner.svg" alt="Classic Python SDK banner" width="100%" />
+</p>
+
 <h1 align="center">amigo_sdk</h1>
 
 <p align="center">Official Python SDK for the classic Amigo API.</p>
@@ -21,6 +25,12 @@
 </p>
 
 Synchronous and asynchronous Python clients for the classic org-scoped Amigo API, with generated Pydantic models, typed errors, and NDJSON conversation streaming.
+
+## Classic API Context
+
+`amigo_sdk` is the Python client boundary for teams that integrate with the classic org-scoped Amigo API today. It keeps sync and async application code close to the live contract while a platform-native migration path is prepared.
+
+![Classic Python SDK architecture](./assets/readme/classic-python-architecture.svg)
 
 ## Product Status
 
