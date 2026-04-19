@@ -7,7 +7,7 @@ name="amigo_sdk"
 description = "Official Python SDK for the classic Amigo API"
 readme = "README.md"
 requires-python = ">= 3.11"
-authors=[{name="Amigo AI"}]
+authors=[{name="Amigo Inc."}]
 license = "MIT"
 keywords = ["amigo", "sdk", "python", "api", "conversation"]
 classifiers = [

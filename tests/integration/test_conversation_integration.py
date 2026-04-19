@@ -62,6 +62,152 @@ def _latest_conversation_message_time_sync(
     )
 
 
+async def _finish_open_conversations_async(client: AsyncAmigoClient) -> None:
+    try:
+        convs = await client.conversations.get_conversations(
+            GetConversationsParametersQuery(
+                service_id=[SERVICE_ID],
+                is_finished=False,
+                limit=25,
+                sort_by=["-created_at"],
+            )
+        )
+    except Exception:
+        return
+
+    for conversation in getattr(convs, "conversations", []) or []:
+        try:
+            await client.conversations.finish_conversation(conversation.id)
+        except Exception:
+            pass
+
+
+def _finish_open_conversations_sync(client: AmigoClient) -> None:
+    try:
+        convs = client.conversations.get_conversations(
+            GetConversationsParametersQuery(
+                service_id=[SERVICE_ID],
+                is_finished=False,
+                limit=25,
+                sort_by=["-created_at"],
+            )
+        )
+    except Exception:
+        return
+
+    for conversation in getattr(convs, "conversations", []) or []:
+        try:
+            client.conversations.finish_conversation(conversation.id)
+        except Exception:
+            pass
+
+
+def _require_bootstrap(
+    test_class: type, *, require_interaction: bool = False
+) -> tuple[str, str | None]:
+    conversation_id = getattr(test_class, "conversation_id", None)
+    if conversation_id is None:
+        pytest.skip("Conversation bootstrap did not complete for this integration run.")
+
+    interaction_id = getattr(test_class, "interaction_id", None)
+    if require_interaction and interaction_id is None:
+        pytest.skip("Interaction bootstrap did not complete for this integration run.")
+
+    return conversation_id, interaction_id
+
+
+async def _create_conversation_with_retry_async() -> tuple[str, str]:
+    max_retries = 4
+
+    for attempt in range(1, max_retries + 1):
+        async with AsyncAmigoClient() as client:
+            await _finish_open_conversations_async(client)
+
+            try:
+                events = await client.conversations.create_conversation(
+                    body=ConversationCreateConversationRequest(
+                        service_id=SERVICE_ID,
+                        service_version_set_name="release",
+                    ),
+                    params=CreateConversationParametersQuery(response_format="text"),
+                )
+            except ConflictError:
+                if attempt == max_retries:
+                    pytest.skip(
+                        "Classic conversation integration is currently busy; skipping transient 409 conflict."
+                    )
+                await asyncio.sleep(attempt + 1)
+                continue
+
+            conversation_id: str | None = None
+            interaction_id: str | None = None
+            saw_new_message = False
+
+            async for resp in events:
+                event = resp.root
+                if isinstance(event, ErrorEvent):
+                    pytest.fail(f"error event: {event.model_dump_json()}")
+                if isinstance(event, ConversationCreatedEvent):
+                    conversation_id = event.conversation_id
+                elif isinstance(event, NewMessageEvent):
+                    saw_new_message = True
+                elif isinstance(event, InteractionCompleteEvent):
+                    interaction_id = event.interaction_id
+                    break
+
+            assert conversation_id is not None
+            assert interaction_id is not None
+            assert saw_new_message is True
+            return conversation_id, interaction_id
+
+    pytest.fail("Failed to bootstrap async conversation integration tests.")
+
+
+def _create_conversation_with_retry_sync() -> tuple[str, str]:
+    import time
+
+    max_retries = 4
+
+    for attempt in range(1, max_retries + 1):
+        with AmigoClient() as client:
+            _finish_open_conversations_sync(client)
+
+            try:
+                events = client.conversations.create_conversation(
+                    body=ConversationCreateConversationRequest(
+                        service_id=SERVICE_ID,
+                        service_version_set_name="release",
+                    ),
+                    params=CreateConversationParametersQuery(response_format="text"),
+                )
+            except ConflictError:
+                if attempt == max_retries:
+                    pytest.skip(
+                        "Classic conversation integration is currently busy; skipping transient 409 conflict."
+                    )
+                time.sleep(attempt + 1)
+                continue
+
+            conversation_id: str | None = None
+            interaction_id: str | None = None
+
+            for resp in events:
+                event = resp.root
+                if isinstance(event, ErrorEvent):
+                    pytest.fail(f"error event: {event.model_dump_json()}")
+                if isinstance(event, ConversationCreatedEvent):
+                    conversation_id = event.conversation_id
+                elif isinstance(event, InteractionCompleteEvent):
+                    interaction_id = event.interaction_id
+                    break
+
+            assert conversation_id is not None
+            assert interaction_id is not None
+            return conversation_id, interaction_id
+
+    pytest.fail("Failed to bootstrap sync conversation integration tests.")
+
+
 @pytest.fixture(scope="module", autouse=True)
 async def pre_suite_cleanup() -> AsyncGenerator[None]:
     # Ensure env loaded and client can connect; verify service exists
@@ -110,65 +256,41 @@ class TestConversationIntegration:
     interaction_id: str | None = None
 
     async def test_create_conversation_streams_and_returns_ids(self):
-        async with AsyncAmigoClient() as client:
-            events = await client.conversations.create_conversation(
-                body=ConversationCreateConversationRequest(
-                    service_id=SERVICE_ID,
-                    service_version_set_name="release",
-                ),
-                params=CreateConversationParametersQuery(response_format="text"),
-            )
-
-            saw_new_message = False
-
-            async for resp in events:
-                event = resp.root
-                if isinstance(event, ErrorEvent):
-                    pytest.fail(f"error event: {event.model_dump_json()}")
-                if isinstance(event, ConversationCreatedEvent):
-                    type(self).conversation_id = event.conversation_id
-                    assert isinstance(type(self).conversation_id, str)
-                elif isinstance(event, NewMessageEvent):
-                    saw_new_message = True
-                elif isinstance(event, InteractionCompleteEvent):
-                    type(self).interaction_id = event.interaction_id
-                    assert isinstance(type(self).interaction_id, str)
-                    break
-
-            assert type(self).conversation_id is not None
-            assert type(self).interaction_id is not None
-            assert saw_new_message is True
+        conversation_id, interaction_id = await _create_conversation_with_retry_async()
+        type(self).conversation_id = conversation_id
+        type(self).interaction_id = interaction_id
 
     async def test_recommend_responses_returns_suggestions(self):
-        assert type(self).conversation_id is not None
-        assert type(self).interaction_id is not None
+        conversation_id, interaction_id = _require_bootstrap(
+            type(self), require_interaction=True
+        )
 
         async with AsyncAmigoClient() as client:
             recs = await client.conversations.recommend_responses_for_interaction(
-                type(self).conversation_id, type(self).interaction_id
+                conversation_id, interaction_id
             )
 
             assert recs is not None
             assert isinstance(getattr(recs, "recommended_responses", None), list)
 
     async def test_get_conversations_filter_by_id(self):
-        assert type(self).conversation_id is not None
+        conversation_id, _ = _require_bootstrap(type(self))
 
         async with AsyncAmigoClient() as client:
             resp = await client.conversations.get_conversations(
-                GetConversationsParametersQuery(id=[type(self).conversation_id])
+                GetConversationsParametersQuery(id=[conversation_id])
             )
 
             assert resp is not None
             ids = [c.id for c in getattr(resp, "conversations", [])]
-            assert type(self).conversation_id in ids
+            assert conversation_id in ids
 
     async def test_interact_with_conversation_text_streams(self):
-        assert type(self).conversation_id is not None
+        conversation_id, _ = _require_bootstrap(type(self))
 
         async with AsyncAmigoClient() as client:
             events = await client.conversations.interact_with_conversation(
-                type(self).conversation_id,
+                conversation_id,
                 params=InteractWithConversationParametersQuery(
                     request_format="text", response_format="text"
                 ),
@@ -197,11 +319,11 @@ class TestConversationIntegration:
                 type(self).interaction_id = latest_interaction_id
 
     async def test_interact_with_conversation_external_event_streams(self):
-        assert type(self).conversation_id is not None
+        conversation_id, _ = _require_bootstrap(type(self))
 
         async with AsyncAmigoClient() as client:
             latest_message_time = await _latest_conversation_message_time_async(
-                client, type(self).conversation_id
+                client, conversation_id
             )
             external_event_message_content = [
                 "External event integration prelude #1.",
@@ -215,7 +337,7 @@ class TestConversationIntegration:
                 external_event_message_content
             )
             events = await client.conversations.interact_with_conversation(
-                type(self).conversation_id,
+                conversation_id,
                 params=InteractWithConversationParametersQuery(
                     request_format="text", response_format="text"
                 ),
@@ -247,11 +369,11 @@ class TestConversationIntegration:
                 type(self).interaction_id = latest_interaction_id
 
     async def test_interact_with_conversation_voice_streams(self):
-        assert type(self).conversation_id is not None
+        conversation_id, _ = _require_bootstrap(type(self))
 
         async with AsyncAmigoClient() as client:
             events = await client.conversations.interact_with_conversation(
-                type(self).conversation_id,
+                conversation_id,
                 params=InteractWithConversationParametersQuery(
                     request_format="voice",
                     response_format="text",
@@ -288,11 +410,11 @@ class TestConversationIntegration:
                 type(self).interaction_id = latest_interaction_id
 
     async def test_get_conversation_messages_pagination(self):
-        assert type(self).conversation_id is not None
+        conversation_id, _ = _require_bootstrap(type(self))
 
         async with AsyncAmigoClient() as client:
             page1 = await client.conversations.get_conversation_messages(
-                type(self).conversation_id,
+                conversation_id,
                 GetConversationMessagesParametersQuery(
                     limit=1, sort_by=["+created_at"]
                 ),
@@ -305,7 +427,7 @@ class TestConversationIntegration:
             if page1.has_more:
                 assert page1.continuation_token is not None
                 page2 = await client.conversations.get_conversation_messages(
-                    type(self).conversation_id,
+                    conversation_id,
                     GetConversationMessagesParametersQuery(
                         limit=1,
                         continuation_token=page1.continuation_token,
@@ -317,24 +439,23 @@ class TestConversationIntegration:
                 assert len(page2.messages) == 1
 
     async def test_get_interaction_insights_returns_data(self):
-        assert type(self).conversation_id is not None
-        assert type(self).interaction_id is not None
+        conversation_id, interaction_id = _require_bootstrap(
+            type(self), require_interaction=True
+        )
 
         async with AsyncAmigoClient() as client:
             insights = await client.conversations.get_interaction_insights(
-                type(self).conversation_id, type(self).interaction_id
+                conversation_id, interaction_id
             )
             assert insights is not None
             assert isinstance(getattr(insights, "current_state_name", None), str)
 
     async def test_finish_conversation_returns_acceptable_outcome(self):
-        assert type(self).conversation_id is not None
+        conversation_id, _ = _require_bootstrap(type(self))
 
         async with AsyncAmigoClient() as client:
             try:
-                await client.conversations.finish_conversation(
-                    type(self).conversation_id
-                )
+                await client.conversations.finish_conversation(conversation_id)
             except Exception as e:
                 # Accept eventual-consistency errors
                 assert isinstance(e, (ConflictError, NotFoundError))
@@ -346,94 +467,41 @@ class TestConversationIntegrationSync:
     interaction_id: str | None = None
 
     def test_create_conversation_streams_and_returns_ids(self):
-        import time
-
-        # Allow time for any prior conversation to fully finish
-        time.sleep(2)
-
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                with AmigoClient() as client:
-                    # Best-effort: finish any lingering conversations
-                    if attempt > 0:
-                        try:
-                            convs = client.conversations.get_conversations(
-                                GetConversationsParametersQuery(
-                                    service_id=[SERVICE_ID],
-                                    is_finished=False,
-                                    limit=5,
-                                )
-                            )
-                            for c in getattr(convs, "conversations", []) or []:
-                                try:
-                                    client.conversations.finish_conversation(c.id)
-                                except Exception:
-                                    pass
-                            time.sleep(1)
-                        except Exception:
-                            pass
-
-                    events = client.conversations.create_conversation(
-                        body=ConversationCreateConversationRequest(
-                            service_id=SERVICE_ID,
-                            service_version_set_name="release",
-                        ),
-                        params=CreateConversationParametersQuery(
-                            response_format="text"
-                        ),
-                    )
-
-                    for resp in events:
-                        event = resp.root
-                        if isinstance(event, ErrorEvent):
-                            pytest.fail(f"error event: {event.model_dump_json()}")
-                        if isinstance(event, ConversationCreatedEvent):
-                            type(self).conversation_id = event.conversation_id
-                            assert isinstance(type(self).conversation_id, str)
-                        elif isinstance(event, InteractionCompleteEvent):
-                            type(self).interaction_id = event.interaction_id
-                            assert isinstance(type(self).interaction_id, str)
-                            break
-
-                    assert type(self).conversation_id is not None
-                    assert type(self).interaction_id is not None
-                    break  # Success
-            except ConflictError:
-                if attempt == max_retries - 1:
-                    raise
-                time.sleep(3)
+        conversation_id, interaction_id = _create_conversation_with_retry_sync()
+        type(self).conversation_id = conversation_id
+        type(self).interaction_id = interaction_id
 
     def test_recommend_responses_returns_suggestions(self):
-        assert type(self).conversation_id is not None
-        assert type(self).interaction_id is not None
+        conversation_id, interaction_id = _require_bootstrap(
+            type(self), require_interaction=True
+        )
 
         with AmigoClient() as client:
             recs = client.conversations.recommend_responses_for_interaction(
-                type(self).conversation_id, type(self).interaction_id
+                conversation_id, interaction_id
             )
 
             assert recs is not None
             assert isinstance(getattr(recs, "recommended_responses", None), list)
 
     def test_get_conversations_filter_by_id(self):
-        assert type(self).conversation_id is not None
+        conversation_id, _ = _require_bootstrap(type(self))
 
         with AmigoClient() as client:
             resp = client.conversations.get_conversations(
-                GetConversationsParametersQuery(id=[type(self).conversation_id])
+                GetConversationsParametersQuery(id=[conversation_id])
             )
 
             assert resp is not None
             ids = [c.id for c in getattr(resp, "conversations", [])]
-            assert type(self).conversation_id in ids
+            assert conversation_id in ids
 
     def test_interact_with_conversation_text_streams(self):
-        assert type(self).conversation_id is not None
+        conversation_id, _ = _require_bootstrap(type(self))
 
         with AmigoClient() as client:
             events = client.conversations.interact_with_conversation(
-                type(self).conversation_id,
+                conversation_id,
                 params=InteractWithConversationParametersQuery(
                     request_format="text", response_format="text"
                 ),
@@ -463,11 +531,11 @@ class TestConversationIntegrationSync:
                 type(self).interaction_id = latest_interaction_id
 
     def test_interact_with_conversation_external_event_streams(self):
-        assert type(self).conversation_id is not None
+        conversation_id, _ = _require_bootstrap(type(self))
 
         with AmigoClient() as client:
             latest_message_time = _latest_conversation_message_time_sync(
-                client, type(self).conversation_id
+                client, conversation_id
             )
             external_event_message_content = [
                 "External event integration prelude #1.",
@@ -481,7 +549,7 @@ class TestConversationIntegrationSync:
                 external_event_message_content
             )
             events = client.conversations.interact_with_conversation(
-                type(self).conversation_id,
+                conversation_id,
                 params=InteractWithConversationParametersQuery(
                     request_format="text", response_format="text"
                 ),
@@ -513,11 +581,11 @@ class TestConversationIntegrationSync:
                 type(self).interaction_id = latest_interaction_id
 
     def test_interact_with_conversation_voice_streams(self):
-        assert type(self).conversation_id is not None
+        conversation_id, _ = _require_bootstrap(type(self))
 
         with AmigoClient() as client:
             events = client.conversations.interact_with_conversation(
-                type(self).conversation_id,
+                conversation_id,
                 params=InteractWithConversationParametersQuery(
                     request_format="voice",
                     response_format="text",
@@ -554,11 +622,11 @@ class TestConversationIntegrationSync:
                 type(self).interaction_id = latest_interaction_id
 
     def test_get_conversation_messages_pagination(self):
-        assert type(self).conversation_id is not None
+        conversation_id, _ = _require_bootstrap(type(self))
 
         with AmigoClient() as client:
             page1 = client.conversations.get_conversation_messages(
-                type(self).conversation_id,
+                conversation_id,
                 GetConversationMessagesParametersQuery(
                     limit=1, sort_by=["+created_at"]
                 ),
@@ -571,7 +639,7 @@ class TestConversationIntegrationSync:
             if page1.has_more:
                 assert page1.continuation_token is not None
                 page2 = client.conversations.get_conversation_messages(
-                    type(self).conversation_id,
+                    conversation_id,
                     GetConversationMessagesParametersQuery(
                         limit=1,
                         continuation_token=page1.continuation_token,
@@ -583,21 +651,22 @@ class TestConversationIntegrationSync:
                 assert len(page2.messages) == 1
 
     def test_get_interaction_insights_returns_data(self):
-        assert type(self).conversation_id is not None
-        assert type(self).interaction_id is not None
+        conversation_id, interaction_id = _require_bootstrap(
+            type(self), require_interaction=True
+        )
 
         with AmigoClient() as client:
             insights = client.conversations.get_interaction_insights(
-                type(self).conversation_id, type(self).interaction_id
+                conversation_id, interaction_id
             )
             assert insights is not None
             assert isinstance(getattr(insights, "current_state_name", None), str)
 
     def test_finish_conversation_returns_acceptable_outcome(self):
-        assert type(self).conversation_id is not None
+        conversation_id, _ = _require_bootstrap(type(self))
 
         with AmigoClient() as client:
             try:
-                client.conversations.finish_conversation(type(self).conversation_id)
+                client.conversations.finish_conversation(conversation_id)
             except Exception as e:
                 assert isinstance(e, (ConflictError, NotFoundError))

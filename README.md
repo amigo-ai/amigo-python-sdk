@@ -30,7 +30,7 @@ Synchronous and asynchronous Python clients for the classic org-scoped Amigo API
 
 `amigo_sdk` is the Python client boundary for teams that integrate with the classic org-scoped Amigo API today. It keeps sync and async application code close to the live contract while a platform-native migration path is prepared.
 
-![Classic Python SDK architecture](./assets/readme/classic-python-architecture.svg)
+![Classic Python SDK architecture](./assets/readme/classic-python-architecture.png)
 
 ## Product Status
 
