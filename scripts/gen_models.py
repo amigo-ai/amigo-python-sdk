@@ -22,21 +22,19 @@ STRIP_PREFIXES = [
 # released SDK models match the payloads customers actually receive.
 ORGANIZATION_RESPONSE_COMPAT_FIXES = (
     (
-        re.compile(r"(?ms)^    title: str = Field\(\s*\.\.\.,"),
+        re.compile(r"(?ms)^    title: [^=\n]+ = Field\(\s*\.\.\.,"),
         "    title: str | None = Field(\n        None,",
     ),
     (
-        re.compile(r"(?ms)^    main_description: str = Field\(\s*\.\.\.,"),
+        re.compile(r"(?ms)^    main_description: [^=\n]+ = Field\(\s*\.\.\.,"),
         "    main_description: str | None = Field(\n        None,",
     ),
     (
-        re.compile(r"(?ms)^    sub_description: str = Field\(\s*\.\.\.,"),
+        re.compile(r"(?ms)^    sub_description: [^=\n]+ = Field\(\s*\.\.\.,"),
         "    sub_description: str | None = Field(\n        None,",
     ),
     (
-        re.compile(
-            r"(?ms)^    onboarding_instructions: list\[str\] = Field\(\s*\.\.\.,"
-        ),
+        re.compile(r"(?ms)^    onboarding_instructions: [^=\n]+ = Field\(\s*\.\.\.,"),
         "    onboarding_instructions: list[str] | None = Field(\n        None,",
     ),
 )
