@@ -17,6 +17,11 @@ on:
         required: false
         default: false
         type: boolean
+      regenerate_models:
+        description: "Regenerate models from the OpenAPI snapshot before releasing"
+        required: false
+        default: false
+        type: boolean
   workflow_call:
     inputs:
       version_type:
@@ -34,6 +39,11 @@ on:
         required: false
         type: string
         default: ""
+      regenerate_models:
+        description: "Regenerate models from the OpenAPI snapshot before releasing"
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -70,6 +80,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: Fetch OpenAPI spec
+        if: ${{ inputs.regenerate_models }}
         id: fetch_spec
         run: |
           SPEC_URL="${{ inputs.spec_url }}"
@@ -107,6 +118,7 @@ jobs:
           echo "Current version: $CURRENT_VERSION"
 
       - name: Generate models
+        if: ${{ inputs.regenerate_models }}
         run: |
           echo "🔄 Generating models from API spec..."
           python -m scripts.gen_models
