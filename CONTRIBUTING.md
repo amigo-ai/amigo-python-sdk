@@ -20,7 +20,8 @@ pip install -e ".[dev]"
 
 ### Codegen And Docs
 
-- `gen-models` regenerates models from the API schema
+- `gen-models` regenerates models from the committed `specs/openapi-baseline.json` snapshot
+- `sync-openapi` refreshes `specs/openapi-baseline.json` from the live classic API before regeneration
 - `mkdocs build --strict` builds the docs site
 
 ## Testing
@@ -28,9 +29,9 @@ pip install -e ".[dev]"
 Pytest is the test runner.
 
 ```bash
-pytest
-pytest -m integration
-pytest --cov=src
+python -m pytest
+python -m pytest -m integration
+python -m pytest --cov=src
 ```
 
 Integration tests require valid Amigo API credentials in the environment.
@@ -57,8 +58,8 @@ examples/
 Before opening a PR:
 
 1. Run `check --fix`
-2. Run `pytest`
-3. Rebuild generated models if the API contract changed
+2. Run `python -m pytest`
+3. Run `sync-openapi` and `gen-models` if the API contract changed
 4. Update README or docs if customer-visible behavior changed
 
 ## Release Notes

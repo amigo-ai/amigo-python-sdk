@@ -11,7 +11,7 @@ What does this PR do?
 
 ## Checklist
 
-- [ ] Tests pass (`hatch run check`)
-- [ ] Linting passes (`hatch run check --fast`)
+- [ ] Tests pass (`python scripts/check.py`)
+- [ ] Linting passes (`python scripts/check.py --fast`)
 - [ ] New code has tests
 - [ ] README updated (if applicable)
