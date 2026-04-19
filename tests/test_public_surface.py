@@ -20,7 +20,10 @@ from amigo_sdk.webhooks import (
 @pytest.mark.unit
 def test_models_module_reexports_public_types() -> None:
     assert "OrganizationGetOrganizationResponse" in models.__all__
-    assert models.OrganizationGetOrganizationResponse is OrganizationGetOrganizationResponse
+    assert (
+        models.OrganizationGetOrganizationResponse
+        is OrganizationGetOrganizationResponse
+    )
 
 
 @pytest.mark.unit

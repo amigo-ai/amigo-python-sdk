@@ -10781,23 +10781,23 @@ class OrganizationGetOrganizationResponse(BaseModel):
     org_name: str = Field(
         ..., description='A human friendly name of the organization.', title='Org Name'
     )
-    title: str = Field(
-        ...,
+    title: str | None = Field(
+        None,
         description='An advertising tagline for the services offered by this organization.',
         title='Title',
     )
-    main_description: str = Field(
-        ...,
+    main_description: str | None = Field(
+        None,
         description='A description of the services offered by this organization that is displayed on the login page for the Amigo frontend for this organization.',
         title='Main Description',
     )
-    sub_description: str = Field(
-        ...,
+    sub_description: str | None = Field(
+        None,
         description='Additional descriptions of the services offered by this organization that is displayed below `main_description` in a smaller font.',
         title='Sub Description',
     )
-    onboarding_instructions: list[str] = Field(
-        ...,
+    onboarding_instructions: list[str] | None = Field(
+        None,
         description="A list of markdown text that's displayed during the onboarding flow of this organization. Each entry corresponds to a page in the onboarding flow.",
         title='Onboarding Instructions',
     )

@@ -16,6 +16,16 @@ STRIP_PREFIXES = [
     "amigo_lib__",
 ]
 
+# The live classic API can omit org-branding fields even though the published
+# OpenAPI snapshot still marks them required. Relax them after generation so
+# released SDK models match the payloads customers actually receive.
+ORGANIZATION_RESPONSE_COMPAT_FIXES = {
+    "    title: str = Field(\n        ...,": "    title: str | None = Field(\n        None,",
+    "    main_description: str = Field(\n        ...,": "    main_description: str | None = Field(\n        None,",
+    "    sub_description: str = Field(\n        ...,": "    sub_description: str | None = Field(\n        None,",
+    "    onboarding_instructions: list[str] = Field(\n        ...,": "    onboarding_instructions: list[str] | None = Field(\n        None,",
+}
+
 
 def strip_prefixes_from_schema(spec: dict) -> dict:
     """
@@ -97,6 +107,17 @@ def load_spec(spec_path: Path) -> dict:
     return spec
 
 
+def apply_output_compat_fixes(output_file: Path) -> None:
+    text = output_file.read_text()
+    for old, new in ORGANIZATION_RESPONSE_COMPAT_FIXES.items():
+        if old not in text:
+            raise RuntimeError(
+                f"Unable to apply generated-model compatibility fix for pattern: {old}"
+            )
+        text = text.replace(old, new, 1)
+    output_file.write_text(text)
+
+
 def main() -> None:
     args = parse_args()
     root = Path(__file__).parent.parent
@@ -135,6 +156,7 @@ def main() -> None:
         aliases=aliases,
         collapse_root_models=False,
     )
+    apply_output_compat_fixes(output_file)
 
     print(f"Generated models from {spec_path} -> {output_file}")
 

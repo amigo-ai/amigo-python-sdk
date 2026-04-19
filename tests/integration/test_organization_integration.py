@@ -76,12 +76,20 @@ class TestOrganizationIntegration:
             # Verify model can serialize (proves it's valid)
             assert organization.model_dump_json() is not None
 
-            # Verify organization has a title field
-            assert hasattr(organization, "title"), (
-                "Organization should have a title field"
+            # Stable fields should always be present.
+            assert organization.org_id
+            assert organization.org_name
+
+            # Branding fields are optional on live classic org payloads.
+            assert organization.title is None or isinstance(organization.title, str)
+            assert organization.main_description is None or isinstance(
+                organization.main_description, str
             )
-            assert organization.title is not None, (
-                "Organization title should not be None"
+            assert organization.sub_description is None or isinstance(
+                organization.sub_description, str
+            )
+            assert organization.onboarding_instructions is None or isinstance(
+                organization.onboarding_instructions, list
             )
 
     async def test_invalid_credentials_raises_authentication_error(self):
@@ -144,8 +152,18 @@ class TestOrganizationIntegrationSync:
             assert organization is not None
             assert isinstance(organization, OrganizationGetOrganizationResponse)
             assert organization.model_dump_json() is not None
-            assert hasattr(organization, "title")
-            assert organization.title is not None
+            assert organization.org_id
+            assert organization.org_name
+            assert organization.title is None or isinstance(organization.title, str)
+            assert organization.main_description is None or isinstance(
+                organization.main_description, str
+            )
+            assert organization.sub_description is None or isinstance(
+                organization.sub_description, str
+            )
+            assert organization.onboarding_instructions is None or isinstance(
+                organization.onboarding_instructions, list
+            )
 
     def test_invalid_credentials_raises_authentication_error(self):
         if not os.getenv("AMIGO_API_KEY"):

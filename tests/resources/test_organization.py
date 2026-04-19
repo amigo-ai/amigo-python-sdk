@@ -66,6 +66,25 @@ class TestOrganizationResource:
             with pytest.raises(NotFoundError):
                 await organization_resource.get()
 
+    @pytest.mark.asyncio
+    async def test_get_organization_accepts_missing_optional_branding_fields(
+        self, organization_resource: AsyncOrganizationResource
+    ) -> None:
+        async with mock_http_request(
+            {
+                "org_id": "test-org-123",
+                "org_name": "Test Organization",
+                "default_user_preferences": None,
+                "tenant_id": None,
+            }
+        ):
+            result = await organization_resource.get()
+
+            assert result.title is None
+            assert result.main_description is None
+            assert result.sub_description is None
+            assert result.onboarding_instructions is None
+
 
 @pytest.mark.unit
 class TestOrganizationResourceSync:
@@ -93,3 +112,22 @@ class TestOrganizationResourceSync:
         ):
             with pytest.raises(NotFoundError):
                 res.get()
+
+    def test_get_organization_accepts_missing_optional_branding_fields_sync(
+        self, mock_config
+    ):
+        res = self._resource(mock_config)
+        with mock_http_request_sync(
+            {
+                "org_id": "test-org-123",
+                "org_name": "Test Organization",
+                "default_user_preferences": None,
+                "tenant_id": None,
+            }
+        ):
+            result = res.get()
+
+            assert result.title is None
+            assert result.main_description is None
+            assert result.sub_description is None
+            assert result.onboarding_instructions is None
