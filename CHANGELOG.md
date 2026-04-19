@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.3.1] - 2026-04-19
+
+### Bug Fixes
+- stabilize classic python sdk workflows
+
+### Documentation
+- replace broken readme art with gitbook diagrams
+- add visual front door for python sdk
+- elevate python sdk presentation
+- refresh public repo presentation
+
+### Other
+- Skip model regeneration for manual releases by default ([#43](https://github.com/amigo-ai/amigo-python-sdk/pull/43))
+- Broaden generator compatibility field matching ([#42](https://github.com/amigo-ai/amigo-python-sdk/pull/42))
+- Harden generated-model compatibility patches ([#41](https://github.com/amigo-ai/amigo-python-sdk/pull/41))
+- Fix classic Python SDK front door and CI drift ([#40](https://github.com/amigo-ai/amigo-python-sdk/pull/40))
+- Merge pull request [#39](https://github.com/amigo-ai/amigo-python-sdk/pull/39) from amigo-ai/fix/readme-diagrams-from-gitbook
+- Merge pull request [#38](https://github.com/amigo-ai/amigo-python-sdk/pull/38) from amigo-ai/polish/python-front-door-v2
+
 ## [1.3.0] - 2026-03-18
 
 ## [1.2.0] - 2026-03-18
