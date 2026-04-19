@@ -1,25 +1,32 @@
 # Amigo Python SDK
 
-Python client library for the Amigo AI API with both async and sync support.
+Official Python SDK for the classic Amigo API.
 
-- **Async and sync clients** — `AsyncAmigoClient` and `AmigoClient`
-- **Automatic authentication** — API key exchange with proactive token refresh
-- **NDJSON streaming** — Async generators for conversation endpoints
-- **Type safety** — Pydantic v2 models generated from OpenAPI spec
+## Status
+
+This SDK remains supported for current classic API integrations. The Platform API is the long-term direction for new workspace-scoped capabilities, and Amigo will publish a migration path for Python customers before recommending a move. Existing classic integrations are not end-of-life.
+
+## Highlights
+
+- Async and sync clients: `AsyncAmigoClient` and `AmigoClient`
+- Automatic authentication with token refresh
+- NDJSON streaming helpers for conversation endpoints
+- Pydantic v2 models generated from the OpenAPI schema
 
 ## Quick Start
 
 ```python
 from amigo_sdk import AmigoClient
 
-client = AmigoClient()
-org = client.organizations.get_organization()
+with AmigoClient() as client:
+    org = client.organizations.get()
+    print(org.id)
 ```
 
-## API Reference
+## Reference
 
-- [Client](reference/client.md) — `AmigoClient` and `AsyncAmigoClient`
-- [Resources](reference/resources.md) — Conversation, User, Organization, Service
-- [Models](reference/models.md) — Request/response Pydantic models
-- [Errors](reference/errors.md) — Error hierarchy and handling
-- [Configuration](reference/config.md) — `AmigoConfig` and environment variables
+- [Client](reference/client.md)
+- [Resources](reference/resources.md)
+- [Models](reference/models.md)
+- [Errors](reference/errors.md)
+- [Configuration](reference/config.md)

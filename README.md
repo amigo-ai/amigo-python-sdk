@@ -1,51 +1,64 @@
-# Amigo Python SDK
+# amigo_sdk
 
 [![Tests](https://github.com/amigo-ai/amigo-python-sdk/actions/workflows/test.yml/badge.svg)](https://github.com/amigo-ai/amigo-python-sdk/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/amigo-ai/amigo-python-sdk/graph/badge.svg?token=1A7KVPV9ZR)](https://codecov.io/gh/amigo-ai/amigo-python-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-The official Python SDK for the Amigo API, providing a simple and intuitive interface to interact with Amigo's AI services.
+Official Python SDK for the Amigo API.
+
+This repository provides synchronous and asynchronous Python clients for the classic org-scoped Amigo API, with generated Pydantic models, typed errors, and NDJSON conversation streaming.
+
+## Documentation
+
+- [Product Docs](https://docs.amigo.ai)
+- [Developer Guide](https://docs.amigo.ai/developer-guide)
+- [Repo Docs](https://github.com/amigo-ai/amigo-python-sdk/blob/main/docs/index.md)
+- [Examples](https://github.com/amigo-ai/amigo-python-sdk/tree/main/examples)
+- [Changelog](https://github.com/amigo-ai/amigo-python-sdk/blob/main/CHANGELOG.md)
+- [Contributing](https://github.com/amigo-ai/amigo-python-sdk/blob/main/CONTRIBUTING.md)
+
+## Status
+
+This package remains the supported Python SDK for the classic Amigo API. The Platform API is the long-term direction for new workspace-scoped capabilities, but classic Python customers are not facing an abrupt end-of-life event. As equivalent platform surfaces become available, Amigo will publish a migration path and upgrade guidance before asking customers to move.
+
+Existing classic integrations can continue to use `amigo_sdk` while that migration path is rolled out.
+
+## Choose The Right Surface
+
+| If you need | Start here |
+| --- | --- |
+| The current org-scoped Amigo API from Python | `amigo_sdk` |
+| New workspace-scoped Platform API capabilities | [Platform API docs](https://docs.amigo.ai/api-reference) today. Migration guidance for Python customers will follow as platform-native coverage expands |
 
 ## Installation
 
-This SDK requires Python 3.11 or newer.
-
-Install the SDK using pip:
+Python `3.11+` is required.
 
 ```bash
 pip install amigo_sdk
 ```
 
-Or add it to your requirements.txt:
+## Quick Start
 
-```txt
-amigo_sdk
-```
-
-### API compatibility
-
-This SDK auto-generates its types from the latest [Amigo OpenAPI schema](https://api.amigo.ai/v1/openapi.json). As a result, only the latest published SDK version is guaranteed to match the current API. If you pin to an older version, it may not include the newest endpoints or fields.
-
-## Quick Start (sync)
+### Sync Client
 
 ```python
 from amigo_sdk import AmigoClient
 from amigo_sdk.models import GetConversationsParametersQuery
 
-# Initialize and use the client synchronously
 with AmigoClient(
     api_key="your-api-key",
     api_key_id="your-api-key-id",
     user_id="user-id",
     organization_id="your-organization-id",
 ) as client:
-    conversations = client.conversation.get_conversations(
+    conversations = client.conversations.get_conversations(
         GetConversationsParametersQuery(limit=10, sort_by=["-created_at"])
     )
-    print("Conversations:", conversations)
+    print(conversations.conversations[0].id if conversations.conversations else None)
 ```
 
-## Quick Start (async)
+### Async Client
 
 ```python
 import asyncio
@@ -54,212 +67,79 @@ from amigo_sdk import AsyncAmigoClient
 from amigo_sdk.models import GetConversationsParametersQuery
 
 
-async def main():
+async def main() -> None:
     async with AsyncAmigoClient(
         api_key="your-api-key",
         api_key_id="your-api-key-id",
         user_id="user-id",
         organization_id="your-organization-id",
     ) as client:
-        conversations = await client.conversation.get_conversations(
+        conversations = await client.conversations.get_conversations(
             GetConversationsParametersQuery(limit=10, sort_by=["-created_at"])
         )
-        print("Conversations:", conversations)
+        print(len(conversations.conversations))
 
 
 asyncio.run(main())
 ```
 
-## Examples
-
-For more SDK usage examples see the [examples overview](examples/README.md). Direct links:
-
-- **Conversation (sync)**: [examples/conversation/conversation.py](examples/conversation/conversation.py)
-- **Conversation (async)**: [examples/conversation/conversation_async.py](examples/conversation/conversation_async.py)
-- **Streaming events**: [examples/conversation/streaming_events.py](examples/conversation/streaming_events.py)
-- **Async client**: [examples/conversation/async_client.py](examples/conversation/async_client.py)
-- **Error handling**: [examples/error_handling.py](examples/error_handling.py)
-- **User management (sync)**: [examples/user/user-management.py](examples/user/user-management.py)
-
 ## Configuration
 
-The SDK requires the following configuration parameters:
+| Option | Type | Required | Description |
+| --- | --- | --- | --- |
+| `api_key` | `str` | Yes | API key from the Amigo dashboard |
+| `api_key_id` | `str` | Yes | API key ID paired with `api_key` |
+| `user_id` | `str` | Yes | User ID on whose behalf the request is made |
+| `organization_id` | `str` | Yes | Organization ID for the classic API |
+| `base_url` | `str` | No | Override the API base URL. Defaults to `https://api.amigo.ai` |
 
-| Parameter         | Type | Required | Description                                                    |
-| ----------------- | ---- | -------- | -------------------------------------------------------------- |
-| `api_key`         | str  | ✅       | API key from Amigo dashboard                                   |
-| `api_key_id`      | str  | ✅       | API key ID from Amigo dashboard                                |
-| `user_id`         | str  | ✅       | User ID on whose behalf the request is made                    |
-| `organization_id` | str  | ✅       | Your organization ID                                           |
-| `base_url`        | str  | ❌       | Base URL of the Amigo API (defaults to `https://api.amigo.ai`) |
-
-### Environment Variables
-
-You can also configure the SDK using environment variables:
+Environment variables are also supported:
 
 ```bash
 export AMIGO_API_KEY="your-api-key"
 export AMIGO_API_KEY_ID="your-api-key-id"
 export AMIGO_USER_ID="user-id"
 export AMIGO_ORGANIZATION_ID="your-organization-id"
-export AMIGO_BASE_URL="https://api.amigo.ai"  # optional
+export AMIGO_BASE_URL="https://api.amigo.ai"
 ```
 
-Then initialize the client without parameters:
+## What This SDK Covers
+
+- Conversations and streaming interaction events
+- Organizations, services, users, agents, and context graphs
+- Sync and async client APIs
+- Generated Pydantic request and response models
+- Typed errors and rate-limit helpers
+
+## Generated Models
+
+The SDK ships with generated Pydantic models and exposes them from `amigo_sdk.models`:
 
 ```python
-from amigo_sdk import AmigoClient
-
-# Automatically loads from environment variables
-with AmigoClient() as client:
-    ...
+from amigo_sdk.models import (
+    ConversationCreateConversationRequest,
+    GetConversationsParametersQuery,
+)
 ```
-
-### Using .env Files
-
-Create a `.env` file in your project root:
-
-```env
-AMIGO_API_KEY=your-api-key
-AMIGO_API_KEY_ID=your-api-key-id
-AMIGO_USER_ID=user-id
-AMIGO_ORG_ID=your-organization-id
-```
-
-The SDK will automatically load these variables.
-
-### Getting Your API Credentials
-
-1. **API Key & API Key ID**: Generate these from your Amigo admin dashboard or programmatically using the API
-2. **Organization ID**: Found in your Amigo dashboard URL or organization settings
-3. **User ID**: The ID of the user you want to impersonate for API calls
-
-For detailed instructions on generating API keys, see the [Authentication Guide](https://docs.amigo.ai/developer-guide).
-
-## Available Resources
-
-The SDK provides access to the following resources:
-
-- **Organizations**: Get Organization info
-- **Services**: Get available services
-- **Conversation**: Manage conversations
-- **User**: Manage users
-
-## Generated types
-
-The SDK ships with Pydantic models generated from the latest OpenAPI schema.
-
-- **Importing types**: Import directly from `amigo_sdk.models`
-
-  ```python
-  from amigo_sdk.models import (
-      GetConversationsParametersQuery,
-      ConversationCreateConversationRequest,
-      GetUsersParametersQuery,
-  )
-  ```
-
-- **Using types when calling SDK functions**: Pass request/query models to resource methods.
-
-  ```python
-  from amigo_sdk import AmigoClient
-  from amigo_sdk.models import GetConversationsParametersQuery
-
-  with AmigoClient() as client:
-     conversations = client.conversation.get_conversations(
-         GetConversationsParametersQuery(limit=20, sort_by=["-created_at"])
-     )
-  ```
-
-- **Parsing returned objects**: Responses are Pydantic models. Access fields directly or convert to dict/JSON.
-
-  ```python
-  # Access fields
-  first = conversations.conversations[0]
-  print(first.id, first.created_at)
-
-  # Convert to plain dict for logging/serialization
-  print(first.model_dump(mode="json"))
-  ```
 
 ## Error Handling
 
-The SDK provides typed error handling:
-
 ```python
 from amigo_sdk import AmigoClient
-from amigo_sdk.errors import (
-    AuthenticationError,
-    NotFoundError,
-    BadRequestError,
-    ValidationError,
-)
+from amigo_sdk.errors import AuthenticationError, NotFoundError, RateLimitError
 
 try:
     with AmigoClient() as client:
-        org = client.organization.get()
-        print("Organization:", org)
+        organization = client.organizations.get()
+        print(organization.id)
 except AuthenticationError as error:
     print("Authentication failed:", error)
 except NotFoundError as error:
     print("Resource not found:", error)
-except BadRequestError as error:
-    print("Bad request:", error)
-except ValidationError as error:
-    print("Validation error:", error)
-except Exception as error:
-    print("Unexpected error:", error)
+except RateLimitError as error:
+    print("Rate limited:", error)
 ```
-
-## Retries
-
-The HTTP client includes sensible, configurable retries:
-
-- **Defaults**:
-
-  - max attempts: 3
-  - backoff base: 0.25s (exponential with full jitter)
-  - max delay per attempt: 30s
-  - retry on status: {408, 429, 500, 502, 503, 504}
-  - retry on methods: {"GET"}
-  - special-case: POST is retried on 429 when `Retry-After` is present
-  - 401 triggers a one-time token refresh and immediate retry
-
-## Development
-
-For detailed development setup, testing, and contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Troubleshooting
-
-### Authentication errors
-
-- **`AuthenticationError: Invalid API key`**: Verify your `api_key` and `api_key_id` are correct and haven't been revoked. Regenerate them from the Amigo dashboard if needed.
-- **`AuthenticationError: Token expired`**: The SDK refreshes tokens automatically. If this persists, check that your system clock is accurate.
-
-### Configuration issues
-
-- **`ValidationError` on client init**: Ensure all required fields (`api_key`, `api_key_id`, `user_id`, `organization_id`) are set either as arguments or environment variables.
-- **Environment variables not loading**: The SDK reads from `AMIGO_API_KEY`, `AMIGO_API_KEY_ID`, `AMIGO_USER_ID`, and `AMIGO_ORGANIZATION_ID`. Check for typos and that your `.env` file is in the working directory.
-
-### Connection issues
-
-- **`ConnectionError` or timeouts**: Check your network connectivity and that `https://api.amigo.ai` is reachable. If you're behind a proxy, configure it via `httpx` proxy settings.
-- **`RateLimitError`**: The SDK retries automatically on 429 responses. If you consistently hit rate limits, reduce request frequency or contact support.
-
-### Import errors
-
-- **`ModuleNotFoundError: No module named 'amigo_sdk'`**: Run `pip install amigo_sdk`. If using a virtual environment, ensure it is activated.
-- **Missing model types**: The SDK auto-generates types from the OpenAPI spec. Update to the latest version: `pip install --upgrade amigo_sdk`.
-
-## Documentation
-
-- **Developer Guide**: [https://docs.amigo.ai/developer-guide](https://docs.amigo.ai/developer-guide)
-- **API Reference**: [https://docs.amigo.ai/api-reference](https://docs.amigo.ai/api-reference)
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 
-For questions, issues, or feature requests, please visit our [GitHub repository](https://github.com/amigo-ai/amigo-python-sdk) or contact support through the Amigo dashboard.
+Use the [issue tracker](https://github.com/amigo-ai/amigo-python-sdk/issues) for bugs and feature requests. For vulnerability reports, see [SECURITY.md](https://github.com/amigo-ai/amigo-python-sdk/blob/main/SECURITY.md).
