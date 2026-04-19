@@ -1,34 +1,53 @@
-# amigo_sdk
+<h1 align="center">amigo_sdk</h1>
 
-[![Tests](https://github.com/amigo-ai/amigo-python-sdk/actions/workflows/test.yml/badge.svg)](https://github.com/amigo-ai/amigo-python-sdk/actions/workflows/test.yml)
-[![codecov](https://codecov.io/gh/amigo-ai/amigo-python-sdk/graph/badge.svg?token=1A7KVPV9ZR)](https://codecov.io/gh/amigo-ai/amigo-python-sdk)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<p align="center">Official Python SDK for the classic Amigo API.</p>
 
-Official Python SDK for the Amigo API.
+<p align="center">
+  <a href="https://docs.amigo.ai">Product Docs</a>
+  ·
+  <a href="https://docs.amigo.ai/developer-guide">Developer Guide</a>
+  ·
+  <a href="https://amigo-ai.github.io/amigo-python-sdk/">API Reference</a>
+  ·
+  <a href="https://github.com/amigo-ai/amigo-python-sdk/tree/main/examples">Examples</a>
+  ·
+  <a href="https://github.com/amigo-ai/amigo-python-sdk/blob/main/CHANGELOG.md">Changelog</a>
+</p>
 
-This repository provides synchronous and asynchronous Python clients for the classic org-scoped Amigo API, with generated Pydantic models, typed errors, and NDJSON conversation streaming.
+<p align="center">
+  <a href="https://github.com/amigo-ai/amigo-python-sdk/actions/workflows/test.yml"><img src="https://github.com/amigo-ai/amigo-python-sdk/actions/workflows/test.yml/badge.svg" alt="CI" /></a>
+  <a href="https://codecov.io/gh/amigo-ai/amigo-python-sdk"><img src="https://codecov.io/gh/amigo-ai/amigo-python-sdk/graph/badge.svg?token=1A7KVPV9ZR" alt="codecov" /></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License" /></a>
+</p>
 
-## Documentation
+Synchronous and asynchronous Python clients for the classic org-scoped Amigo API, with generated Pydantic models, typed errors, and NDJSON conversation streaming.
 
-- [Product Docs](https://docs.amigo.ai)
-- [Developer Guide](https://docs.amigo.ai/developer-guide)
-- [Repo Docs](https://github.com/amigo-ai/amigo-python-sdk/blob/main/docs/index.md)
-- [Examples](https://github.com/amigo-ai/amigo-python-sdk/tree/main/examples)
-- [Changelog](https://github.com/amigo-ai/amigo-python-sdk/blob/main/CHANGELOG.md)
-- [Contributing](https://github.com/amigo-ai/amigo-python-sdk/blob/main/CONTRIBUTING.md)
+## Product Status
 
-## Status
+`amigo_sdk` remains the supported Python client for the classic Amigo API.
 
-This package remains the supported Python SDK for the classic Amigo API. The Platform API is the long-term direction for new workspace-scoped capabilities, but classic Python customers are not facing an abrupt end-of-life event. As equivalent platform surfaces become available, Amigo will publish a migration path and upgrade guidance before asking customers to move.
-
-Existing classic integrations can continue to use `amigo_sdk` while that migration path is rolled out.
+The Platform API is the long-term direction for new workspace-scoped capabilities, but classic Python customers are not facing an abrupt end-of-life event. As equivalent platform surfaces become available, Amigo will publish a migration path and upgrade guidance before asking customers to move.
 
 ## Choose The Right Surface
 
 | If you need | Start here |
 | --- | --- |
 | The current org-scoped Amigo API from Python | `amigo_sdk` |
-| New workspace-scoped Platform API capabilities | [Platform API docs](https://docs.amigo.ai/api-reference) today. Migration guidance for Python customers will follow as platform-native coverage expands |
+| New workspace-scoped Platform API capabilities | [Platform API docs](https://docs.amigo.ai/api-reference) today. Python migration guidance will follow as platform-native coverage expands |
+
+## API Context
+
+This SDK is the Python client boundary for the classic Amigo API at `https://api.amigo.ai`. It covers the current org-scoped resource model used by existing Amigo deployments, including conversations, services, organizations, users, agents, context graphs, and streaming events.
+
+## Documentation
+
+| Need | Best entry point |
+| --- | --- |
+| Product overview and deployment context | [docs.amigo.ai](https://docs.amigo.ai/) |
+| Integration guidance and developer docs | [Developer Guide](https://docs.amigo.ai/developer-guide) |
+| Generated API reference | [amigo-ai.github.io/amigo-python-sdk](https://amigo-ai.github.io/amigo-python-sdk/) |
+| Runnable examples | [examples/](https://github.com/amigo-ai/amigo-python-sdk/tree/main/examples) |
+| Release history | [CHANGELOG.md](https://github.com/amigo-ai/amigo-python-sdk/blob/main/CHANGELOG.md) |
 
 ## Installation
 
@@ -103,14 +122,6 @@ export AMIGO_ORGANIZATION_ID="your-organization-id"
 export AMIGO_BASE_URL="https://api.amigo.ai"
 ```
 
-## What This SDK Covers
-
-- Conversations and streaming interaction events
-- Organizations, services, users, agents, and context graphs
-- Sync and async client APIs
-- Generated Pydantic request and response models
-- Typed errors and rate-limit helpers
-
 ## Generated Models
 
 The SDK ships with generated Pydantic models and exposes them from `amigo_sdk.models`:
@@ -142,4 +153,4 @@ except RateLimitError as error:
 
 ## Support
 
-Use the [issue tracker](https://github.com/amigo-ai/amigo-python-sdk/issues) for bugs and feature requests. For vulnerability reports, see [SECURITY.md](https://github.com/amigo-ai/amigo-python-sdk/blob/main/SECURITY.md).
+Use the [issue tracker](https://github.com/amigo-ai/amigo-python-sdk/issues) for bugs and feature requests. For responsible disclosure, see [SECURITY.md](https://github.com/amigo-ai/amigo-python-sdk/blob/main/SECURITY.md).

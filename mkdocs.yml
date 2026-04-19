@@ -1,11 +1,18 @@
 site_name: Amigo Python SDK
 site_description: API reference for the Amigo AI Python SDK
+site_url: https://amigo-ai.github.io/amigo-python-sdk/
 repo_url: https://github.com/amigo-ai/amigo-python-sdk
+repo_name: amigo-ai/amigo-python-sdk
+edit_uri: edit/main/docs/
 
 theme:
   name: material
   palette:
     primary: indigo
+  features:
+    - navigation.instant
+    - navigation.sections
+    - content.code.copy
 
 nav:
   - Home: index.md

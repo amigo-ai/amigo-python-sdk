@@ -4,11 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name="amigo_sdk"
-description = "Amigo AI Python SDK"
+description = "Official Python SDK for the classic Amigo API"
 readme = "README.md"
 requires-python = ">= 3.11"
 authors=[{name="Amigo AI"}]
 license = "MIT"
+keywords = ["amigo", "sdk", "python", "api", "conversation"]
 classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
@@ -28,6 +29,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/amigo-ai/amigo-python-sdk"
 Documentation = "https://docs.amigo.ai"
+APIReference = "https://amigo-ai.github.io/amigo-python-sdk/"
 Repository = "https://github.com/amigo-ai/amigo-python-sdk"
 Issues = "https://github.com/amigo-ai/amigo-python-sdk/issues"
 Changelog = "https://github.com/amigo-ai/amigo-python-sdk/blob/main/CHANGELOG.md"
