@@ -28,7 +28,6 @@ on:
         description: "Version increment type (patch|minor|major)"
         required: true
         type: string
-        default: "patch"
       dry_run:
         description: "Dry run (skip upload)"
         required: false
@@ -94,7 +93,7 @@ jobs:
           curl -fSL -o specs/openapi-new.json "$SPEC_URL"
           cp specs/openapi-new.json specs/openapi-baseline.json
 
-      # Generator always fetches remote; no local spec path needed
+      # Generation uses the committed snapshot, or the explicit refresh above.
 
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
@@ -126,6 +125,13 @@ jobs:
           echo "🔄 Generating models from API spec..."
           python -m scripts.gen_models
           echo "✅ Models generated successfully"
+
+      - name: Validate regenerated package
+        if: ${{ inputs.regenerate_models }}
+        run: |
+          ruff check .
+          mypy src/amigo_sdk/ --ignore-missing-imports
+          pytest
 
       - name: Increment version
         id: new_version
@@ -208,6 +214,7 @@ jobs:
           REPO: ${{ github.repository }}
           NEW_VERSION: ${{ steps.new_version.outputs.version }}
           PREV_VERSION: ${{ steps.current_version.outputs.version }}
+          RELEASE_COMMITS: ${{ steps.release_commits.outputs.markdown }}
         run: |
           PREV_TAG="v${PREV_VERSION}"
           NEW_TAG="v${NEW_VERSION}"
@@ -219,7 +226,7 @@ jobs:
           {
             echo "## What's Changed in ${NEW_TAG}"
             echo ""
-            echo "${{ steps.release_commits.outputs.markdown }}"
+            printf '%s\n' "$RELEASE_COMMITS"
             echo ""
             echo "---"
             echo ""

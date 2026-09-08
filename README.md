@@ -44,7 +44,7 @@ The Platform API is where new workspace-scoped capabilities land first, but the 
 | If you need | Start here |
 | --- | --- |
 | Existing org-scoped integrations on `api.amigo.ai` from Python | `amigo_sdk` |
-| New workspace-scoped integrations on `api.platform.amigo.ai` | [Platform API docs](https://docs.amigo.ai/api-reference) today. A first-party Python migration path will follow as platform-native coverage expands |
+| New workspace-scoped integrations on `api.platform.amigo.ai` | [Platform API docs](https://docs.amigo.ai/api-reference) today. Use direct HTTP for Platform integrations from Python; this package remains Classic-only |
 
 ## Documentation
 
@@ -65,6 +65,10 @@ Python `3.11+` is required.
 ```bash
 pip install amigo_sdk
 ```
+
+Before making requests, obtain Classic organization credentials and a user authorized to read the target resources. Keep API keys in server-side environment variables or a secret manager. The examples below read conversation data; they require access to an existing organization.
+
+For the 2.0.0 generated-model changes, review the [current SDK upgrade guidance](https://docs.amigo.ai/api-reference/change-logs/sdk-ecosystem#september-2026-compatibility-releases) and recheck the package registry when choosing a version.
 
 ## Quick Start
 
@@ -142,11 +146,11 @@ from amigo_sdk.models import (
 )
 ```
 
-Public builds are generated from the committed [`specs/openapi-baseline.json`](./specs/openapi-baseline.json) snapshot in this repo so generated models stay deterministic across machines and CI runs. Refresh that snapshot before regenerating models:
+Public builds are generated from the committed [`specs/openapi-baseline.json`](./specs/openapi-baseline.json) snapshot in this repo so generated models stay deterministic across machines and CI runs. From a source checkout with development dependencies installed, refresh that snapshot before regenerating models:
 
 ```bash
-sync-openapi
-gen-models
+python scripts/sync_openapi.py
+python scripts/gen_models.py
 ```
 
 ## Error Handling

@@ -16,3 +16,9 @@ coverage.xml
 
 # CI/Temp OpenAPI spec (fetched during workflows)
 specs/openapi-new.json
+
+# Compiled Python artifacts
+*.py[cod]
+
+# Generated MkDocs site
+/site/
