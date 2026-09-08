@@ -56,11 +56,13 @@ jobs:
     uses: ./.github/workflows/test.yml
     with:
       skip_codecov: true
-    secrets: inherit
 
   release:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: test
+    env:
+      VERSION_TYPE: ${{ inputs.version_type }}
+      DRY_RUN: ${{ inputs.dry_run }}
 
     steps:
       - name: Create GitHub App token (release-bot)
@@ -84,8 +86,9 @@ jobs:
       - name: Fetch OpenAPI spec
         if: ${{ inputs.regenerate_models }}
         id: fetch_spec
+        env:
+          SPEC_URL: ${{ inputs.spec_url }}
         run: |
-          SPEC_URL="${{ inputs.spec_url }}"
           if [ -z "$SPEC_URL" ]; then
             SPEC_URL="https://api.amigo.ai/v1/openapi.json"
           fi
@@ -136,8 +139,12 @@ jobs:
       - name: Increment version
         id: new_version
         run: |
-          echo "🔄 Incrementing ${{ inputs.version_type }} version..."
-          hatch version ${{ inputs.version_type }}
+          case "$VERSION_TYPE" in
+            patch|minor|major) ;;
+            *) echo "::error::Unsupported version type"; exit 1 ;;
+          esac
+          echo "🔄 Incrementing $VERSION_TYPE version..."
+          hatch version "$VERSION_TYPE"
           NEW_VERSION=$(hatch version)
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "✅ Version updated: ${{ steps.current_version.outputs.version }} → $NEW_VERSION"
@@ -292,20 +299,22 @@ jobs:
           retention-days: 30
 
       - name: Release Summary
+        env:
+          RELEASE_COMMITS: ${{ steps.release_commits.outputs.markdown }}
         run: |
           echo "## 🎉 Release Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Version**: ${{ steps.new_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Previous**: ${{ steps.current_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Type**: ${{ inputs.version_type }} release" >> $GITHUB_STEP_SUMMARY
+          echo "- **Type**: $VERSION_TYPE release" >> $GITHUB_STEP_SUMMARY
           echo "- **Target**: PyPI" >> $GITHUB_STEP_SUMMARY
-          echo "- **Dry Run**: ${{ inputs.dry_run }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Dry Run**: $DRY_RUN" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🧾 New Commits" >> $GITHUB_STEP_SUMMARY
-          printf '%s\n' "${{ steps.release_commits.outputs.markdown }}" >> $GITHUB_STEP_SUMMARY
+          printf '%s\n' "$RELEASE_COMMITS" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [ "${{ inputs.dry_run }}" = "false" ]; then
+          if [ "$DRY_RUN" = "false" ]; then
             echo "### 📦 Package Links" >> $GITHUB_STEP_SUMMARY
             echo "- [PyPI Package](https://pypi.org/project/amigo_sdk/${{ steps.new_version.outputs.version }}/)" >> $GITHUB_STEP_SUMMARY
             echo "- [GitHub Release](https://github.com/${{ github.repository }}/releases/tag/v${{ steps.new_version.outputs.version }})" >> $GITHUB_STEP_SUMMARY
