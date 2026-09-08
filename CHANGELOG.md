@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.0.1] - 2026-09-08
+
+### Bug Fixes
+- repair packaging and secure reproducible release tooling ([#59](https://github.com/amigo-ai/amigo-python-sdk/pull/59))
+
 ## [2.0.0] - 2026-09-08
 
 ### Bug Fixes
