@@ -11,7 +11,7 @@ Amigo AI Python SDK (`amigo_sdk`) -- a Python client library for the Amigo AI AP
 - **Format:** `ruff format src/ tests/` (check only: `ruff format --check src/ tests/`)
 - **Generate models from OpenAPI:** `python scripts/gen_models.py`
 - **Build:** `hatch build` (outputs sdist and wheel to `dist/`)
-- **Type check:** `mypy src/amigo_sdk/` (mypy in dev deps, CI step runs with continue-on-error)
+- **Type check:** `mypy src/amigo_sdk/` (mypy in dev deps; required CI check)
 
 ## Architecture
 
@@ -90,6 +90,6 @@ Tests for resources use shared helpers in `tests/resources/helpers.py`:
 GitHub Actions workflow (`.github/workflows/test.yml`) runs on Python 3.11, 3.12, 3.13:
 1. `ruff check .`
 2. `ruff format --check .`
-3. `mypy src/amigo_sdk/` (continue-on-error)
+3. `mypy src/amigo_sdk/ --ignore-missing-imports` (required)
 4. `pytest --cov=src`
 5. Integration tests run separately (non-blocking, require secrets)

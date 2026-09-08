@@ -134,6 +134,7 @@ def main() -> None:
         use_operation_id_as_name=True,
         reuse_model=True,
         set_default_enum_member=True,
+        disable_timestamp=True,
         aliases=aliases,
         collapse_root_models=False,
     )
