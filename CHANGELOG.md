@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.0.0] - 2026-09-08
+
+### Bug Fixes
+- align Classic models with the current public contract ([#58](https://github.com/amigo-ai/amigo-python-sdk/pull/58))
+
+### Documentation
+- point classic SDK links at live docs routes ([#53](https://github.com/amigo-ai/amigo-python-sdk/pull/53))
+- sharpen the classic sdk front door ([#52](https://github.com/amigo-ai/amigo-python-sdk/pull/52))
+
+### CI
+- skip integration when secrets are unavailable ([#51](https://github.com/amigo-ai/amigo-python-sdk/pull/51))
+
+### Chores
+- run mypy on the primary Python target ([#50](https://github.com/amigo-ai/amigo-python-sdk/pull/50))
+- move docs deploy to node24 runtime ([#48](https://github.com/amigo-ai/amigo-python-sdk/pull/48))
+- remove transitive action runtime warnings ([#46](https://github.com/amigo-ai/amigo-python-sdk/pull/46))
+- harden release and CI workflows ([#44](https://github.com/amigo-ai/amigo-python-sdk/pull/44))
+
 ## [1.3.1] - 2026-04-19
 
 ### Bug Fixes
