@@ -133,6 +133,7 @@ def main() -> None:
         field_constraints=True,
         use_operation_id_as_name=True,
         reuse_model=True,
+        set_default_enum_member=True,
         aliases=aliases,
         collapse_root_models=False,
     )
