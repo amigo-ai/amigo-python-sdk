@@ -256,7 +256,7 @@ jobs:
       - name: Commit version bump
         if: ${{ !inputs.dry_run }}
         run: |
-          git add -A
+          git add src/amigo_sdk/__init__.py src/amigo_sdk/generated/model.py specs/openapi-baseline.json CHANGELOG.md
           git commit -m "Bump version to ${{ steps.new_version.outputs.version }}"
           git push origin HEAD
 

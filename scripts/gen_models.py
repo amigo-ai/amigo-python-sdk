@@ -17,28 +17,6 @@ STRIP_PREFIXES = [
     "amigo_lib__",
 ]
 
-# The live classic API can omit org-branding fields even though the published
-# OpenAPI snapshot still marks them required. Relax them after generation so
-# released SDK models match the payloads customers actually receive.
-ORGANIZATION_RESPONSE_COMPAT_FIXES = (
-    (
-        re.compile(r"(?ms)^    title: [^=\n]+ = Field\(\s*\.\.\.,"),
-        "    title: str | None = Field(\n        None,",
-    ),
-    (
-        re.compile(r"(?ms)^    main_description: [^=\n]+ = Field\(\s*\.\.\.,"),
-        "    main_description: str | None = Field(\n        None,",
-    ),
-    (
-        re.compile(r"(?ms)^    sub_description: [^=\n]+ = Field\(\s*\.\.\.,"),
-        "    sub_description: str | None = Field(\n        None,",
-    ),
-    (
-        re.compile(r"(?ms)^    onboarding_instructions: [^=\n]+ = Field\(\s*\.\.\.,"),
-        "    onboarding_instructions: list[str] | None = Field(\n        None,",
-    ),
-)
-
 
 def strip_prefixes_from_schema(spec: dict) -> dict:
     """
@@ -120,18 +98,6 @@ def load_spec(spec_path: Path) -> dict:
     return spec
 
 
-def apply_output_compat_fixes(output_file: Path) -> None:
-    text = output_file.read_text()
-    for pattern, replacement in ORGANIZATION_RESPONSE_COMPAT_FIXES:
-        text, count = pattern.subn(replacement, text, count=1)
-        if count != 1:
-            raise RuntimeError(
-                "Unable to apply generated-model compatibility fix for "
-                f"pattern: {pattern.pattern}"
-            )
-    output_file.write_text(text)
-
-
 def main() -> None:
     args = parse_args()
     root = Path(__file__).parent.parent
@@ -167,10 +133,36 @@ def main() -> None:
         field_constraints=True,
         use_operation_id_as_name=True,
         reuse_model=True,
+        set_default_enum_member=True,
         aliases=aliases,
         collapse_root_models=False,
     )
-    apply_output_compat_fixes(output_file)
+    # Keep the already-public optional branding attributes for older responses.
+    # Current OpenAPI no longer exposes them. Scope compatibility to this one
+    # response model so similarly named fields in other models stay canonical.
+    text = output_file.read_text()
+    pattern = r"(?ms)^(class OrganizationGetOrganizationResponse\(BaseModel\):\n)(.*?)(?=^class |\Z)"
+
+    def retain_branding(match: re.Match[str]) -> str:
+        fields = {
+            "title": "str",
+            "main_description": "str",
+            "sub_description": "str",
+            "onboarding_instructions": "list[str]",
+        }
+        additions = "".join(
+            f"    {name}: {kind} | None = None\n"
+            for name, kind in fields.items()
+            if not re.search(rf"^    {name}:", match[2], re.MULTILINE)
+        )
+        return match[1] + additions + match[2]
+
+    text, count = re.subn(pattern, retain_branding, text)
+    if count != 1:
+        raise RuntimeError(
+            "Organization response model changed; review compatibility attributes"
+        )
+    output_file.write_text(text)
 
     print(f"Generated models from {spec_path} -> {output_file}")
 
